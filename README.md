@@ -10,7 +10,8 @@ Open-world third-person adventure RPG prototype with a shared-world direction an
 - Stage 05 — Great Spirit Ability Core: PlayerState-owned GAS, replicated attributes, input-tag activation, five-slot loadouts and optional validated DataTable roster overrides.
 - Stage 06 — Great Spirit Combat System: server-authoritative melee hit detection, GAS damage effects, GAS-enabled enemies, perception-driven AI and three-phase boss state.
 - Stage 07 — Living Board Adventure Core: validated server-owned objective sets, replicated puzzle progress, and adventure completion gated by all objectives.
-- Stage 08 — Emerald Jungle Trial Actors: server-routed puzzle interactions, revision-checked submissions, replicated trial state and the first Root Rune sequence.\n- Stage 09 — Emerald Jungle Chapter Flow & Adventure UI: server-side chapter orchestration, replicated chapter phase, director-to-trial validation and a Blueprint-facing HUD base.
+- Stage 08 — Emerald Jungle Trial Actors: server-routed puzzle interactions, revision-checked submissions, replicated trial state and the first Root Rune sequence.
+- Stage 09 — Emerald Jungle Chapter Flow & Adventure UI: server-side chapter orchestration, replicated chapter phase, director-to-trial validation and a Blueprint-facing HUD base.
 
 ## The nine playable Great Spirits
 1. Great Spirit I — Duch Korzeni (Root / Guardian)
@@ -50,7 +51,8 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - Content/Combat/README.md — damage effect, enemy, boss and AI setup.
 - Docs/STAGE_07_LIVING_BOARD_ADVENTURE_CORE.md — objective replication, server validation, nine elemental trial concepts and acceptance checklist.
 - Content/Adventure/README.md — adventure asset layout and Blueprint integration contract.
-- Docs/STAGE_08_EMERALD_JUNGLE_TRIAL_ACTORS.md — native trial runtime, Root Rune Sequence, multiplayer interaction and acceptance checklist.\n- Docs/STAGE_09_EMERALD_JUNGLE_CHAPTER_FLOW.md — chapter director, replicated chapter state, HUD integration and nine-trial authoring contract.
+- Docs/STAGE_08_EMERALD_JUNGLE_TRIAL_ACTORS.md — native trial runtime, Root Rune Sequence, multiplayer interaction and acceptance checklist.
+- Docs/STAGE_09_EMERALD_JUNGLE_CHAPTER_FLOW.md — chapter director, replicated chapter state, HUD integration and nine-trial authoring contract.
 - Content/Adventure/Trials/README.md — Blueprint trial and UMG authoring guide.
 - Content/UI/README.md — Widget Blueprint asset setup.
 - Docs/Art/GreatSpiritCharacterArtBrief.md — individual visual targets and character art requirements.
@@ -80,7 +82,11 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - adventure lifecycle API in UJumanjiBoardWorldSubsystem, including StartBoardAdventure, AdvanceBoardAdventureObjective and CompleteBoardAdventure;
 - abstract AJumanjiTrialActor with replicated state, step index and revision;
 - AJumanjiRootRuneTrial with a three-step Seed → Sprout → Tree example;
-- PlayerController-owned server RPC for trial requests, with server-side range, option and stale-revision validation;\n- server-side AJumanjiAdventureChapterDirector for chapter startup, trial actor preflight and completion orchestration;\n- replicated FJumanjiAdventureChapterState with Active/Completed phases and revision;\n- UJumanjiAdventureHUDWidget Blueprint base with objective/chapter event subscriptions and progress getters;\n- local PlayerController creation of the configured adventure HUD widget.
+- PlayerController-owned server RPC for trial requests, with server-side range, option and stale-revision validation;
+- server-side AJumanjiAdventureChapterDirector for chapter startup, trial actor preflight and completion orchestration;
+- replicated FJumanjiAdventureChapterState with Active/Completed phases and revision;
+- UJumanjiAdventureHUDWidget Blueprint base with objective/chapter event subscriptions and progress getters;
+- local PlayerController creation of the configured adventure HUD widget.
 
 ## Not yet included
 This is a source-code foundation, not a finished game or installable Android build. The repository still needs:
@@ -88,7 +94,8 @@ This is a source-code foundation, not a finished game or installable Android bui
 - final portrait textures and 3D character models;
 - rigs, animation blueprints and facial animation;
 - a touch-first HUD and final Enhanced Input assets;
-- actual UMG Widget Blueprint .uasset files and card layout;\n- the configured Emerald Jungle chapter director instance and nine placed trial actors;
+- actual UMG Widget Blueprint .uasset files and card layout;
+- the configured Emerald Jungle chapter director instance and nine placed trial actors;
 - 45 character-specific ability Blueprint assets and configured Gameplay Effects;
 - configured enemy/boss meshes, animations and initialization effects;
 - final boss attack patterns and encounter reward service;
