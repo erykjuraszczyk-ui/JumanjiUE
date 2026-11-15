@@ -57,6 +57,7 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - Content/UI/README.md — Widget Blueprint asset setup.
 - Docs/Art/GreatSpiritCharacterArtBrief.md — individual visual targets and character art requirements.
 - Content/Characters/README.md — Unreal character asset naming and import plan.
+- [Docs/UE5_BUILD_PIPELINE.md](Docs/UE5_BUILD_PIPELINE.md) — GitHub Actions workflow, Windows self-hosted runner and Android toolchain setup.
 
 ## Current implementation
 - native Unreal Engine 5.8 C++ project descriptor and targets;
@@ -110,4 +111,4 @@ This is a source-code foundation, not a finished game or installable Android bui
 The supplied reference image is used as an art direction source. The binary image itself and Unreal binary assets are not added by the text-file GitHub workflow; add them through Git LFS with provenance/license notes.
 
 ## Build verification
-The source has not been compiled in an Unreal Editor environment during these repository changes. Complete the stage acceptance checklists locally before treating the project as build-verified.
+The source has not yet been compiled in an Unreal Engine 5.8 environment during these repository changes. The GitHub Actions workflow and `Scripts/Build-UE5.ps1` are included. The workflow requires a configured Windows self-hosted runner with a local UE 5.8 installation before it can execute. Complete the stage acceptance checklists locally before treating the project as build-verified. A successful C++ build alone does not prove that the game is playable or produce an installable Android package.

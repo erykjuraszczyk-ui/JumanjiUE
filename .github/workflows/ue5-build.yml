@@ -1,0 +1,82 @@
+name: Unreal Engine 5.8 - Compile
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "Source/**"
+      - "Config/**"
+      - "JumanjiUE.uproject"
+      - "Scripts/**"
+      - ".github/workflows/ue5-build.yml"
+  workflow_dispatch:
+    inputs:
+      build_android:
+        description: "Also compile the Android target (requires the UE 5.8 Android toolchain on the runner)"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ue5-8-build-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  compile-windows:
+    name: Compile Windows + Editor
+    runs-on: [self-hosted, windows, x64, ue5-8]
+    timeout-minutes: 120
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Compile Editor and Win64 game targets
+        shell: pwsh
+        env:
+          UE_ROOT: ${{ vars.UE_ROOT }}
+        run: |
+          .\Scripts\Build-UE5.ps1 -Platform Win64 -BuildEditor
+
+      - name: Upload Win64 compiler output
+        uses: actions/upload-artifact@v4
+        with:
+          name: JumanjiUE-UE5.8-Win64-Development
+          path: |
+            Binaries/Win64/**
+            Saved/BuildLogs/**
+          if-no-files-found: error
+          retention-days: 14
+
+  compile-android:
+    name: Compile Android target
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.build_android }}
+    runs-on: [self-hosted, windows, x64, ue5-8]
+    timeout-minutes: 120
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Compile Android game target
+        shell: pwsh
+        env:
+          UE_ROOT: ${{ vars.UE_ROOT }}
+        run: |
+          .\Scripts\Build-UE5.ps1 -Platform Android
+
+      - name: Upload Android compiler output
+        uses: actions/upload-artifact@v4
+        with:
+          name: JumanjiUE-UE5.8-Android-Development
+          path: |
+            Binaries/Android/**
+            Saved/BuildLogs/**
+          if-no-files-found: error
+          retention-days: 14
