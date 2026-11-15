@@ -33,6 +33,54 @@ void AJumanjiGameState::SetBoardEventState(FName EventId, bool bIsActive)
     ForceNetUpdate();
 }
 
+bool AJumanjiGameState::BeginAdventureChapter(
+    FName ChapterId,
+    FName BoardEventId,
+    FText DisplayName,
+    FText Description)
+{
+    if (!HasAuthority()
+        || ChapterId.IsNone()
+        || BoardEventId.IsNone()
+        || DisplayName.IsEmpty()
+        || Description.IsEmpty()
+        || AdventureChapterState.Phase == EJumanjiAdventureChapterPhase::Active)
+    {
+        return false;
+    }
+
+    FJumanjiAdventureChapterState NewChapterState;
+    NewChapterState.ChapterId = ChapterId;
+    NewChapterState.BoardEventId = BoardEventId;
+    NewChapterState.DisplayName = MoveTemp(DisplayName);
+    NewChapterState.Description = MoveTemp(Description);
+    NewChapterState.Phase = EJumanjiAdventureChapterPhase::Active;
+    NewChapterState.Revision = AdventureChapterState.Revision + 1;
+
+    AdventureChapterState = MoveTemp(NewChapterState);
+    OnAdventureChapterChanged.Broadcast(AdventureChapterState);
+    ForceNetUpdate();
+    return true;
+}
+
+bool AJumanjiGameState::CompleteAdventureChapter(FName ChapterId)
+{
+    if (!HasAuthority()
+        || ChapterId.IsNone()
+        || AdventureChapterState.ChapterId != ChapterId
+        || AdventureChapterState.Phase != EJumanjiAdventureChapterPhase::Active)
+    {
+        return false;
+    }
+
+    AdventureChapterState.Phase = EJumanjiAdventureChapterPhase::Completed;
+    ++AdventureChapterState.Revision;
+
+    OnAdventureChapterChanged.Broadcast(AdventureChapterState);
+    ForceNetUpdate();
+    return true;
+}
+
 bool AJumanjiGameState::InitializeAdventureObjectives(
     const TArray<FJumanjiAdventureObjectiveState>& Objectives)
 {
@@ -147,6 +195,11 @@ void AJumanjiGameState::OnRep_AdventureObjectiveSet()
     OnAdventureObjectivesChanged.Broadcast(AdventureObjectiveSet.Revision);
 }
 
+void AJumanjiGameState::OnRep_AdventureChapterState()
+{
+    OnAdventureChapterChanged.Broadcast(AdventureChapterState);
+}
+
 void AJumanjiGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
@@ -154,5 +207,6 @@ void AJumanjiGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
     DOREPLIFETIME(AJumanjiGameState, ActiveBoardEventId);
     DOREPLIFETIME(AJumanjiGameState, bBoardEventActive);
     DOREPLIFETIME(AJumanjiGameState, BoardEventRevision);
+    DOREPLIFETIME(AJumanjiGameState, AdventureChapterState);
     DOREPLIFETIME(AJumanjiGameState, AdventureObjectiveSet);
 }
