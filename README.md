@@ -8,6 +8,7 @@ Open-world third-person adventure RPG prototype with a shared-world direction an
 - Stage 03 — Great Spirit Presentation Core: binds replicated PlayerState selection to the pawn and applies the matching skeletal mesh when an asset is assigned.
 - Stage 04 — Great Spirit Select UI: C++ UMG widget base, roster card data flow, preview/confirm/cancel behavior and controller open/close methods.
 - Stage 05 — Great Spirit Ability Core: PlayerState-owned GAS, replicated attributes, input-tag activation, five-slot loadouts and optional validated DataTable roster overrides.
+- Stage 06 — Great Spirit Combat System: server-authoritative melee hit detection, GAS damage effects, GAS-enabled enemies, perception-driven AI and three-phase boss state.
 
 ## The nine playable Great Spirits
 1. Great Spirit I — Duch Korzeni (Root / Guardian)
@@ -42,6 +43,9 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - Docs/STAGE_05_GREAT_SPIRIT_ABILITY_CORE.md — GAS architecture, slots, input tags and acceptance checklist.
 - Docs/Design/GreatSpiritAbilityDesign.md — proposed five-slot ability kits for each spirit.
 - Content/Abilities/README.md — Blueprint ability and Gameplay Effect asset authoring guide.
+- Docs/STAGE_06_GREAT_SPIRIT_COMBAT_SYSTEM.md — combat runtime, asset setup, flow and acceptance tests.
+- Docs/Design/FirstCombatEncounter.md — first three-phase boss encounter design.
+- Content/Combat/README.md — damage effect, enemy, boss and AI setup.
 - Content/UI/README.md — Widget Blueprint asset setup.
 - Docs/Art/GreatSpiritCharacterArtBrief.md — individual visual targets and character art requirements.
 - Content/Characters/README.md — Unreal character asset naming and import plan.
@@ -59,7 +63,12 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - PlayerState-owned replicated GAS ASC and AttributeSet;
 - Great Spirit loadout grants validated by slot and input tag;
 - primary, active, ultimate and dodge input routing;
-- optional nine-row DataTable override for designer-assigned ability and character assets.
+- optional nine-row DataTable override for designer-assigned ability and character assets;
+- server-only melee sweep ability with Defense-aware damage calculation and Data.Damage SetByCaller effect;
+- hit Gameplay Event dispatch to target ASC;
+- GAS-enabled enemy base with damage/defeat callbacks;
+- perception-based enemy AI pursuit and attack ability requests;
+- three-phase boss health thresholds and replicated phase tags.
 
 ## Not yet included
 This is a source-code foundation, not a finished game or installable Android build. The repository still needs:
@@ -69,8 +78,11 @@ This is a source-code foundation, not a finished game or installable Android bui
 - a touch-first HUD and final Enhanced Input assets;
 - actual UMG Widget Blueprint .uasset files and card layout;
 - 45 character-specific ability Blueprint assets and configured Gameplay Effects;
+- configured enemy/boss meshes, animations and initialization effects;
+- final boss attack patterns and encounter reward service;
 - asynchronous asset preloading and device profiling;
 - account persistence, unlock progression and backend services;
+- team/faction filtering before enabling PvP;
 - dedicated-server deployment;
 - a packaged and device-tested APK/AAB.
 
