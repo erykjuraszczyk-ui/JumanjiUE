@@ -1,4 +1,5 @@
 #include "JumanjiMeleeAttackAbility.h"
+#include "JumanjiCombatDefaults.h"
 
 #include "AbilitySystemBlueprintLibrary.h"
 #include "GameplayTagContainer.h"
@@ -15,6 +16,7 @@ UJumanjiMeleeAttackAbility::UJumanjiMeleeAttackAbility()
     // through GAS; no client-side hit result is accepted as authoritative.
     NetExecutionPolicy = EGameplayAbilityNetExecutionPolicy::ServerOnly;
     InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
+    DamageEffectClass = UJumanjiDefaultDamageGameplayEffect::StaticClass();
 }
 
 void UJumanjiMeleeAttackAbility::ActivateAbility(
@@ -61,12 +63,9 @@ void UJumanjiMeleeAttackAbility::ApplyMeleeDamage(
         return;
     }
 
-    const FGameplayTag DamageTag =
-        FGameplayTag::RequestGameplayTag(DamageSetByCallerTagName, false);
-
-    if (!DamageTag.IsValid())
+    if (DamageSetByCallerName.IsNone())
     {
-        UE_LOG(LogTemp, Error, TEXT("JUMANJI: missing SetByCaller tag for melee damage."));
+        UE_LOG(LogTemp, Error, TEXT("JUMANJI: missing SetByCaller data name for melee damage."));
         return;
     }
 
@@ -148,7 +147,7 @@ void UJumanjiMeleeAttackAbility::ApplyMeleeDamage(
         }
 
         // Health modifiers in GE_Damage_Base use this negative SetByCaller value.
-        SpecHandle.Data->SetSetByCallerMagnitude(DamageTag, -FinalDamage);
+        SpecHandle.Data->SetSetByCallerMagnitude(DamageSetByCallerName, -FinalDamage);
         TargetASC->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
 
         const FGameplayTag HitEventTag = FGameplayTag::RequestGameplayTag(
