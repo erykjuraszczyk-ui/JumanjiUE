@@ -37,13 +37,14 @@ void UJumanjiMeleeAttackAbility::ActivateAbility(
 
     if (ActorInfo->AvatarActor->HasAuthority())
     {
-        ApplyMeleeDamage(ActorInfo);
+        ApplyMeleeDamage(Handle, ActorInfo);
     }
 
     EndAbility(Handle, ActorInfo, ActivationInfo, true, false);
 }
 
 void UJumanjiMeleeAttackAbility::ApplyMeleeDamage(
+    const FGameplayAbilitySpecHandle Handle,
     const FGameplayAbilityActorInfo* ActorInfo)
 {
     if (!DamageEffectClass || !ActorInfo || !ActorInfo->AvatarActor.IsValid())
