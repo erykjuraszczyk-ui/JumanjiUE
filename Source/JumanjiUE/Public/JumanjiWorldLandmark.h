@@ -6,6 +6,8 @@
 
 class USphereComponent;
 class UStaticMeshComponent;
+class UPrimitiveComponent;
+struct FHitResult;
 
 /**
  * Discoverable point of interest. The server records the visit in the
