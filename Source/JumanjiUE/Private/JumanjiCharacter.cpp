@@ -2,9 +2,12 @@
 
 #include "Camera/CameraComponent.h"
 #include "Components/InputComponent.h"
+#include "Engine/GameInstance.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "JumanjiCharacterRosterSubsystem.h"
+#include "JumanjiPlayerState.h"
 #include "Math/RotationMatrix.h"
 
 AJumanjiCharacter::AJumanjiCharacter()
@@ -32,6 +35,79 @@ AJumanjiCharacter::AJumanjiCharacter()
     FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
     FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
     FollowCamera->bUsePawnControlRotation = false;
+}
+
+void AJumanjiCharacter::BeginPlay()
+{
+    Super::BeginPlay();
+    BindToPlayerCharacterSelection();
+}
+
+void AJumanjiCharacter::OnRep_PlayerState()
+{
+    Super::OnRep_PlayerState();
+    BindToPlayerCharacterSelection();
+}
+
+void AJumanjiCharacter::BindToPlayerCharacterSelection()
+{
+    AJumanjiPlayerState* JumanjiPlayerState = GetPlayerState<AJumanjiPlayerState>();
+    if (!JumanjiPlayerState)
+    {
+        return;
+    }
+
+    JumanjiPlayerState->OnSelectedCharacterChanged.RemoveDynamic(
+        this, &AJumanjiCharacter::HandleSelectedCharacterChanged);
+    JumanjiPlayerState->OnSelectedCharacterChanged.AddDynamic(
+        this, &AJumanjiCharacter::HandleSelectedCharacterChanged);
+
+    ApplySelectedCharacterPresentation();
+}
+
+void AJumanjiCharacter::HandleSelectedCharacterChanged(FName CharacterId)
+{
+    if (CharacterId != LastAppliedCharacterId)
+    {
+        ApplySelectedCharacterPresentation();
+    }
+}
+
+void AJumanjiCharacter::ApplySelectedCharacterPresentation()
+{
+    AJumanjiPlayerState* JumanjiPlayerState = GetPlayerState<AJumanjiPlayerState>();
+    const UGameInstance* GameInstance = GetGameInstance();
+    const UJumanjiCharacterRosterSubsystem* Roster =
+        GameInstance ? GameInstance->GetSubsystem<UJumanjiCharacterRosterSubsystem>() : nullptr;
+
+    if (!JumanjiPlayerState || !Roster || !GetMesh())
+    {
+        return;
+    }
+
+    const FName CharacterId = JumanjiPlayerState->GetSelectedCharacterId();
+    if (CharacterId.IsNone() || CharacterId == LastAppliedCharacterId)
+    {
+        return;
+    }
+
+    FJumanjiCharacterDefinition Definition;
+    if (!Roster->GetCharacterDefinition(CharacterId, Definition))
+    {
+        return;
+    }
+
+    // Character meshes are soft references. Empty references intentionally
+    // preserve the engine's current/default mesh until art assets are imported.
+    if (!Definition.CharacterMesh.IsNull())
+    {
+        if (USkeletalMesh* LoadedMesh = Definition.CharacterMesh.LoadSynchronous())
+        {
+            GetMesh()->SetSkeletalMesh(LoadedMesh, true);
+        }
+    }
+
+    LastAppliedCharacterId = CharacterId;
 }
 
 void AJumanjiCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
