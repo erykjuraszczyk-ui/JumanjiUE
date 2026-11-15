@@ -41,6 +41,27 @@ void UJumanjiAttributeSet::PreAttributeChange(const FGameplayAttribute& Attribut
     }
 }
 
+void UJumanjiAttributeSet::PostAttributeChange(
+    const FGameplayAttribute& Attribute,
+    float OldValue,
+    float NewValue)
+{
+    Super::PostAttributeChange(Attribute, OldValue, NewValue);
+
+    if (Attribute == GetMaxHealthAttribute())
+    {
+        SetHealth(FMath::Clamp(GetHealth(), 0.0f, GetMaxHealth()));
+    }
+    else if (Attribute == GetMaxEnergyAttribute())
+    {
+        SetEnergy(FMath::Clamp(GetEnergy(), 0.0f, GetMaxEnergy()));
+    }
+    else if (Attribute == GetMaxResonanceAttribute())
+    {
+        SetResonance(FMath::Clamp(GetResonance(), 0.0f, GetMaxResonance()));
+    }
+}
+
 void UJumanjiAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data)
 {
     Super::PostGameplayEffectExecute(Data);
