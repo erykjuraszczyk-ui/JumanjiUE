@@ -109,7 +109,7 @@ Add a NavMeshBoundsVolume around the playable combat area, build navigation, and
 
 ## Gameplay Tags added
 - Input.Enemy.Attack — enemy AI attack request.
-- Data.Damage — SetByCaller damage magnitude tag.
+- Data.Damage — SetByCaller data name (FName), not a Gameplay Tag.
 - Event.Combat.Hit — event broadcast to the target ASC after a validated hit.
 - State.Boss.Phase.Two — boss phase two.
 - State.Boss.Phase.Three — boss phase three.
@@ -137,6 +137,7 @@ Add a NavMeshBoundsVolume around the playable combat area, build navigation, and
 | Enemy sight radius | 1400 cm |
 | Enemy lose-sight radius | 1700 cm |
 | Enemy attack range | 220 cm |
+| Enemy AI attack request interval | 1.0 s |
 | Boss phase 2 threshold | 66% Health |
 | Boss phase 3 threshold | 33% Health |
 
@@ -156,6 +157,9 @@ These are prototype values only. Test against character abilities, attack cadenc
 - [ ] Player pawn exposes its PlayerState ASC through IAbilitySystemInterface.
 - [ ] Enemy pawn exposes its own ASC through IAbilitySystemInterface.
 - [ ] A configured melee ability activates on the server only.
+- [ ] If no custom primary ability is configured, the native default primary ability is granted.
+- [ ] If no custom enemy ability is configured, the native default enemy ability is granted.
+- [ ] Default enemy and boss initialization Gameplay Effects populate their prototype attributes.
 - [ ] A forward trace detects an opposing PvE target once per activation.
 - [ ] Same-side player/player and enemy/enemy hit results are ignored.
 - [ ] GE_Damage_Base subtracts Health using the negative Data.Damage magnitude.
