@@ -6,6 +6,8 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "JumanjiAbilitySystemComponent.h"
+#include "JumanjiCharacterDefinition.h"
 #include "JumanjiCharacterRosterSubsystem.h"
 #include "JumanjiPlayerState.h"
 #include "Math/RotationMatrix.h"
@@ -43,6 +45,12 @@ void AJumanjiCharacter::BeginPlay()
     BindToPlayerCharacterSelection();
 }
 
+void AJumanjiCharacter::PossessedBy(AController* NewController)
+{
+    Super::PossessedBy(NewController);
+    BindToPlayerCharacterSelection();
+}
+
 void AJumanjiCharacter::OnRep_PlayerState()
 {
     Super::OnRep_PlayerState();
@@ -62,12 +70,26 @@ void AJumanjiCharacter::BindToPlayerCharacterSelection()
     JumanjiPlayerState->OnSelectedCharacterChanged.AddDynamic(
         this, &AJumanjiCharacter::HandleSelectedCharacterChanged);
 
+    InitializeAbilityActorInfo();
     ApplySelectedCharacterPresentation();
+}
+
+void AJumanjiCharacter::InitializeAbilityActorInfo()
+{
+    AJumanjiPlayerState* JumanjiPlayerState = GetPlayerState<AJumanjiPlayerState>();
+    UJumanjiAbilitySystemComponent* AbilitySystem =
+        JumanjiPlayerState ? JumanjiPlayerState->GetJumanjiAbilitySystemComponent() : nullptr;
+
+    if (AbilitySystem && AbilitySystem->GetAvatarActor() != this)
+    {
+        AbilitySystem->InitAbilityActorInfo(JumanjiPlayerState, this);
+    }
 }
 
 void AJumanjiCharacter::HandleSelectedCharacterChanged(FName CharacterId)
 {
-    if (CharacterId != LastAppliedCharacterId)
+    if (CharacterId != LastAppliedCharacterId
+        || CharacterId != LastGrantedAbilityLoadoutCharacterId)
     {
         ApplySelectedCharacterPresentation();
     }
@@ -86,7 +108,7 @@ void AJumanjiCharacter::ApplySelectedCharacterPresentation()
     }
 
     const FName CharacterId = JumanjiPlayerState->GetSelectedCharacterId();
-    if (CharacterId.IsNone() || CharacterId == LastAppliedCharacterId)
+    if (CharacterId.IsNone())
     {
         return;
     }
@@ -97,17 +119,55 @@ void AJumanjiCharacter::ApplySelectedCharacterPresentation()
         return;
     }
 
-    // Character meshes are soft references. Empty references intentionally
-    // preserve the engine's current/default mesh until art assets are imported.
-    if (!Definition.CharacterMesh.IsNull())
+    if (CharacterId != LastAppliedCharacterId)
     {
-        if (USkeletalMesh* LoadedMesh = Definition.CharacterMesh.LoadSynchronous())
+        // Soft references preserve the default mesh until art assets are imported.
+        if (!Definition.CharacterMesh.IsNull())
         {
-            GetMesh()->SetSkeletalMesh(LoadedMesh, true);
+            if (USkeletalMesh* LoadedMesh = Definition.CharacterMesh.LoadSynchronous())
+            {
+                GetMesh()->SetSkeletalMesh(LoadedMesh, true);
+            }
         }
+
+        LastAppliedCharacterId = CharacterId;
     }
 
-    LastAppliedCharacterId = CharacterId;
+    InitializeAbilityActorInfo();
+    ApplySelectedAbilityLoadout(CharacterId, Definition);
+}
+
+void AJumanjiCharacter::ApplySelectedAbilityLoadout(
+    FName CharacterId,
+    const FJumanjiCharacterDefinition& Definition)
+{
+    if (!HasAuthority() || CharacterId == LastGrantedAbilityLoadoutCharacterId)
+    {
+        return;
+    }
+
+    AJumanjiPlayerState* JumanjiPlayerState = GetPlayerState<AJumanjiPlayerState>();
+    UJumanjiAbilitySystemComponent* AbilitySystem =
+        JumanjiPlayerState ? JumanjiPlayerState->GetJumanjiAbilitySystemComponent() : nullptr;
+
+    if (!AbilitySystem)
+    {
+        return;
+    }
+
+    AbilitySystem->ClearGrantedAbilities(GrantedCharacterAbilityHandles);
+    GrantedCharacterAbilityHandles.Reset();
+    AbilitySystem->GrantCharacterAbilityLoadout(Definition, GrantedCharacterAbilityHandles);
+    LastGrantedAbilityLoadoutCharacterId = CharacterId;
+}
+
+bool AJumanjiCharacter::ActivateAbilityByInputTag(FGameplayTag InputTag)
+{
+    AJumanjiPlayerState* JumanjiPlayerState = GetPlayerState<AJumanjiPlayerState>();
+    UJumanjiAbilitySystemComponent* AbilitySystem =
+        JumanjiPlayerState ? JumanjiPlayerState->GetJumanjiAbilitySystemComponent() : nullptr;
+
+    return AbilitySystem && AbilitySystem->TryActivateAbilitiesByInputTag(InputTag);
 }
 
 void AJumanjiCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -123,6 +183,31 @@ void AJumanjiCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 
     PlayerInputComponent->BindAction(TEXT("Jump"), IE_Pressed, this, &ACharacter::Jump);
     PlayerInputComponent->BindAction(TEXT("Jump"), IE_Released, this, &ACharacter::StopJumping);
+
+    PlayerInputComponent->BindAction(TEXT("Ability.Primary"), IE_Pressed, this, &AJumanjiCharacter::Input_PrimaryAttack);
+    PlayerInputComponent->BindAction(TEXT("Ability.Active"), IE_Pressed, this, &AJumanjiCharacter::Input_ActiveAbility);
+    PlayerInputComponent->BindAction(TEXT("Ability.Ultimate"), IE_Pressed, this, &AJumanjiCharacter::Input_Ultimate);
+    PlayerInputComponent->BindAction(TEXT("Ability.Dodge"), IE_Pressed, this, &AJumanjiCharacter::Input_Dodge);
+}
+
+void AJumanjiCharacter::Input_PrimaryAttack()
+{
+    ActivateAbilityByInputTag(FGameplayTag::RequestGameplayTag(FName(TEXT("Input.Ability.Primary")), false));
+}
+
+void AJumanjiCharacter::Input_ActiveAbility()
+{
+    ActivateAbilityByInputTag(FGameplayTag::RequestGameplayTag(FName(TEXT("Input.Ability.Active")), false));
+}
+
+void AJumanjiCharacter::Input_Ultimate()
+{
+    ActivateAbilityByInputTag(FGameplayTag::RequestGameplayTag(FName(TEXT("Input.Ability.Ultimate")), false));
+}
+
+void AJumanjiCharacter::Input_Dodge()
+{
+    ActivateAbilityByInputTag(FGameplayTag::RequestGameplayTag(FName(TEXT("Input.Ability.Dodge")), false));
 }
 
 void AJumanjiCharacter::MoveForward(float Value)
