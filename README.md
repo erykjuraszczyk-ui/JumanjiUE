@@ -9,6 +9,9 @@ Open-world third-person adventure RPG prototype with a shared-world direction an
 - Stage 04 — Great Spirit Select UI: C++ UMG widget base, roster card data flow, preview/confirm/cancel behavior and controller open/close methods.
 - Stage 05 — Great Spirit Ability Core: PlayerState-owned GAS, replicated attributes, input-tag activation, five-slot loadouts and optional validated DataTable roster overrides.
 - Stage 06 — Great Spirit Combat System: server-authoritative melee hit detection, GAS damage effects, GAS-enabled enemies, perception-driven AI and three-phase boss state.
+- Stage 07 — Living Board Adventure Core: validated server-owned objective sets, replicated puzzle progress, and adventure completion gated by all objectives.
+- Stage 08 — Emerald Jungle Trial Actors: server-routed puzzle interactions, revision-checked submissions, replicated trial state and the first Root Rune sequence.
+- Stage 09 — Emerald Jungle Chapter Flow & Adventure UI: server-side chapter orchestration, replicated chapter phase, director-to-trial validation and a Blueprint-facing HUD base.
 
 ## The nine playable Great Spirits
 1. Great Spirit I — Duch Korzeni (Root / Guardian)
@@ -46,6 +49,11 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - Docs/STAGE_06_GREAT_SPIRIT_COMBAT_SYSTEM.md — combat runtime, asset setup, flow and acceptance tests.
 - Docs/Design/FirstCombatEncounter.md — first three-phase boss encounter design.
 - Content/Combat/README.md — damage effect, enemy, boss and AI setup.
+- Docs/STAGE_07_LIVING_BOARD_ADVENTURE_CORE.md — objective replication, server validation, nine elemental trial concepts and acceptance checklist.
+- Content/Adventure/README.md — adventure asset layout and Blueprint integration contract.
+- Docs/STAGE_08_EMERALD_JUNGLE_TRIAL_ACTORS.md — native trial runtime, Root Rune Sequence, multiplayer interaction and acceptance checklist.
+- Docs/STAGE_09_EMERALD_JUNGLE_CHAPTER_FLOW.md — chapter director, replicated chapter state, HUD integration and nine-trial authoring contract.
+- Content/Adventure/Trials/README.md — Blueprint trial and UMG authoring guide.
 - Content/UI/README.md — Widget Blueprint asset setup.
 - Docs/Art/GreatSpiritCharacterArtBrief.md — individual visual targets and character art requirements.
 - Content/Characters/README.md — Unreal character asset naming and import plan.
@@ -69,7 +77,17 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - hit Gameplay Event dispatch to target ASC;
 - GAS-enabled enemy base with damage/defeat callbacks;
 - perception-based enemy AI pursuit and attack ability requests;
-- three-phase boss health thresholds and replicated phase tags.
+- three-phase boss health thresholds and replicated phase tags;
+- replicated Living Board adventure objective snapshots with a monotonically increasing revision;
+- server-side validation for objective definitions, progress increments and completion gates;
+- adventure lifecycle API in UJumanjiBoardWorldSubsystem, including StartBoardAdventure, AdvanceBoardAdventureObjective and CompleteBoardAdventure;
+- abstract AJumanjiTrialActor with replicated state, step index and revision;
+- AJumanjiRootRuneTrial with a three-step Seed → Sprout → Tree example;
+- PlayerController-owned server RPC for trial requests, with server-side range, option and stale-revision validation;
+- server-side AJumanjiAdventureChapterDirector for chapter startup, trial actor preflight and completion orchestration;
+- replicated FJumanjiAdventureChapterState with Active/Completed phases and revision;
+- UJumanjiAdventureHUDWidget Blueprint base with objective/chapter event subscriptions and progress getters;
+- local PlayerController creation of the configured adventure HUD widget.
 
 ## Not yet included
 This is a source-code foundation, not a finished game or installable Android build. The repository still needs:
@@ -78,16 +96,19 @@ This is a source-code foundation, not a finished game or installable Android bui
 - rigs, animation blueprints and facial animation;
 - a touch-first HUD and final Enhanced Input assets;
 - actual UMG Widget Blueprint .uasset files and card layout;
+- the configured Emerald Jungle chapter director instance and nine placed trial actors;
 - 45 character-specific ability Blueprint assets and configured Gameplay Effects;
 - configured enemy/boss meshes, animations and initialization effects;
 - final boss attack patterns and encounter reward service;
+- Blueprint children, visuals and playable implementations for the eight remaining Great Spirit trials;
+- the Root Rune trial Blueprint, rune meshes, UI widget, map and presentation assets;
+- a persistent quest journal, save-game storage, inventory rewards and backend persistence;
 - asynchronous asset preloading and device profiling;
 - account persistence, unlock progression and backend services;
-- team/faction filtering before enabling PvP;
 - dedicated-server deployment;
 - a packaged and device-tested APK/AAB.
 
 The supplied reference image is used as an art direction source. The binary image itself and Unreal binary assets are not added by the text-file GitHub workflow; add them through Git LFS with provenance/license notes.
 
 ## Build verification
-The source has not yet been compiled in an Unreal Engine environment. The GitHub Actions pipeline is committed on the `ci/ue5-8-build-pipeline` branch, but it still needs a configured Windows self-hosted runner and a local UE 5.8 installation before it can execute. A successful C++ build will not, by itself, prove that the game is playable or produce an installable Android package.
+The source has not yet been compiled in an Unreal Engine 5.8 environment during these repository changes. The GitHub Actions workflow and `Scripts/Build-UE5.ps1` are included. The workflow requires a configured Windows self-hosted runner with a local UE 5.8 installation before it can execute. Complete the stage acceptance checklists locally before treating the project as build-verified. A successful C++ build alone does not prove that the game is playable or produce an installable Android package.
