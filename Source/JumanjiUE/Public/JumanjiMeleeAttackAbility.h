@@ -51,5 +51,5 @@ protected:
     TSubclassOf<UGameplayEffect> DamageEffectClass;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "JUMANJI|Combat")
-    FName DamageSetByCallerTagName = FName(TEXT("Data.Damage"));
+    FName DamageSetByCallerName = FName(TEXT("Data.Damage"));
 };
