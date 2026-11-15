@@ -65,6 +65,7 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - primary, active, ultimate and dodge input routing;
 - optional nine-row DataTable override for designer-assigned ability and character assets;
 - server-only melee sweep ability with Defense-aware damage calculation and Data.Damage SetByCaller effect;
+- native fallback damage, enemy/boss initialization and generic primary/AI attack classes;
 - hit Gameplay Event dispatch to target ASC;
 - GAS-enabled enemy base with damage/defeat callbacks;
 - perception-based enemy AI pursuit and attack ability requests;
@@ -78,7 +79,7 @@ This is a source-code foundation, not a finished game or installable Android bui
 - a touch-first HUD and final Enhanced Input assets;
 - actual UMG Widget Blueprint .uasset files and card layout;
 - 45 character-specific ability Blueprint assets and configured Gameplay Effects;
-- configured enemy/boss meshes, animations and initialization effects;
+- configured enemy/boss meshes, animations and custom encounter-specific effects;
 - final boss attack patterns and encounter reward service;
 - asynchronous asset preloading and device profiling;
 - account persistence, unlock progression and backend services;
