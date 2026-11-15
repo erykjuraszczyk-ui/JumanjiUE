@@ -13,6 +13,7 @@ Open-world third-person adventure RPG prototype with a shared-world direction an
 - Stage 08 — Emerald Jungle Trial Actors: server-routed puzzle interactions, revision-checked submissions, replicated trial state and the first Root Rune sequence.
 - Stage 09 — Emerald Jungle Chapter Flow & Adventure UI: server-side chapter orchestration, replicated chapter phase, director-to-trial validation and a Blueprint-facing HUD base.
 - Stage 10 — Great Spirit Trial Content Pack: eight additional native environmental trials, nine matching objective contracts and Blueprint presentation asset hooks.
+- Stage 11 — Emerald Jungle World Assembly: ten-region world atlas, server-authoritative discovery volumes and landmarks, per-player replicated exploration progress and a Blueprint map HUD base.
 
 ## The nine playable Great Spirits
 1. Great Spirit I — Duch Korzeni (Root / Guardian)
@@ -55,6 +56,8 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - Docs/STAGE_08_EMERALD_JUNGLE_TRIAL_ACTORS.md — native trial runtime, Root Rune Sequence, multiplayer interaction and acceptance checklist.
 - Docs/STAGE_09_EMERALD_JUNGLE_CHAPTER_FLOW.md — chapter director, replicated chapter state, HUD integration and nine-trial authoring contract.
 - Docs/STAGE_10_GREAT_SPIRIT_TRIAL_CONTENT_PACK.md — nine trial definitions, puzzle sequences, presentation hooks and Blueprint authoring workflow.
+- Docs/STAGE_11_EMERALD_JUNGLE_WORLD_ASSEMBLY.md — World Partition map layout, ten-region atlas, Data Layers, discovery/landmark setup and acceptance checklist.
+- Content/World/README.md — world atlas code and DataTable setup.
 - Content/Adventure/Trials/README.md — Blueprint trial and UMG authoring guide.
 - Content/UI/README.md — Widget Blueprint asset setup.
 - Docs/Art/GreatSpiritCharacterArtBrief.md — individual visual targets and character art requirements.
@@ -91,11 +94,15 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - server-side AJumanjiAdventureChapterDirector for chapter startup, trial actor preflight and completion orchestration;
 - replicated FJumanjiAdventureChapterState with Active/Completed phases and revision;
 - UJumanjiAdventureHUDWidget Blueprint base with objective/chapter event subscriptions and progress getters;
-- local PlayerController creation of the configured adventure HUD widget.
+- local PlayerController creation of the configured adventure HUD widget;
+- UJumanjiWorldAtlasSubsystem with a built-in 10-region/10-landmark catalog and validated DataTable overrides;
+- server-authoritative region volume and landmark discovery;
+- per-player replicated exploration snapshot on AJumanjiPlayerState;
+- UJumanjiWorldAtlasWidget base and PlayerController OpenWorldAtlas/CloseWorldAtlas API.
 
 ## Not yet included
 This is a source-code foundation, not a finished game or installable Android build. The repository still needs:
-- a saved Unreal map (.umap);
+- saved Unreal maps, including Content/Maps/L_EmeraldJungle_World.umap;
 - final portrait textures and 3D character models;
 - rigs, animation blueprints and facial animation;
 - a touch-first HUD and final Enhanced Input assets;
@@ -106,7 +113,7 @@ This is a source-code foundation, not a finished game or installable Android bui
 - final boss attack patterns and encounter reward service;
 - Blueprint children, visuals and playable implementations for all nine Great Spirit trials;
 - the Root Rune trial Blueprint, rune meshes, UI widget, map and presentation assets;
-- a persistent quest journal, save-game storage, inventory rewards and backend persistence;
+- persistent exploration/quest save data, inventory rewards and backend persistence;
 - asynchronous asset preloading and device profiling;
 - account persistence, unlock progression and backend services;
 - dedicated-server deployment;
