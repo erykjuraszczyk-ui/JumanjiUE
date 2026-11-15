@@ -7,7 +7,6 @@
 
 AJumanjiWorldRegionVolume::AJumanjiWorldRegionVolume()
 {
-    bGenerateOverlapEventsDuringLevelStreaming = true;
 }
 
 void AJumanjiWorldRegionVolume::BeginPlay()
