@@ -1,6 +1,7 @@
 #include "JumanjiAttributeSet.h"
 
 #include "Net/UnrealNetwork.h"
+#include "GameplayEffectExtension.h"
 
 UJumanjiAttributeSet::UJumanjiAttributeSet()
 {
