@@ -1,4 +1,5 @@
 #include "JumanjiBossCharacter.h"
+#include "JumanjiCombatDefaults.h"
 
 #include "AbilitySystemComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -8,6 +9,10 @@
 AJumanjiBossCharacter::AJumanjiBossCharacter()
 {
     GetCharacterMovement()->MaxWalkSpeed = 260.0f;
+
+    // The boss overrides the normal enemy prototype initialization.
+    InitializationEffectClass = UJumanjiBossInitializationGameplayEffect::StaticClass();
+    BasicAttackAbilityClass = UJumanjiDefaultEnemyMeleeAbility::StaticClass();
 }
 
 void AJumanjiBossCharacter::HandleCombatHealthChanged(const FOnAttributeChangeData& ChangeData)
@@ -55,20 +60,24 @@ void AJumanjiBossCharacter::SetBossPhase(uint8 NewPhase)
 
         if (PhaseTwoTag.IsValid())
         {
-            ASC->RemoveLooseGameplayTag(PhaseTwoTag);
+            ASC->RemoveLooseGameplayTag(
+                PhaseTwoTag, 1, EGameplayTagReplicationState::TagAndCountToAll);
         }
         if (PhaseThreeTag.IsValid())
         {
-            ASC->RemoveLooseGameplayTag(PhaseThreeTag);
+            ASC->RemoveLooseGameplayTag(
+                PhaseThreeTag, 1, EGameplayTagReplicationState::TagAndCountToAll);
         }
 
         if (BossPhase >= 2 && PhaseTwoTag.IsValid())
         {
-            ASC->AddLooseGameplayTag(PhaseTwoTag);
+            ASC->AddLooseGameplayTag(
+                PhaseTwoTag, 1, EGameplayTagReplicationState::TagAndCountToAll);
         }
         if (BossPhase >= 3 && PhaseThreeTag.IsValid())
         {
-            ASC->AddLooseGameplayTag(PhaseThreeTag);
+            ASC->AddLooseGameplayTag(
+                PhaseThreeTag, 1, EGameplayTagReplicationState::TagAndCountToAll);
         }
     }
 
