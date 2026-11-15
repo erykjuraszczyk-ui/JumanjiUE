@@ -4,9 +4,30 @@
 #include "Engine/GameInstance.h"
 #include "GameFramework/Pawn.h"
 #include "JumanjiCharacterRosterSubsystem.h"
+#include "JumanjiAdventureHUDWidget.h"
 #include "JumanjiGreatSpiritSelectionWidget.h"
 #include "JumanjiPlayerState.h"
 #include "JumanjiTrialActor.h"
+
+void AJumanjiPlayerController::BeginPlay()
+{
+    Super::BeginPlay();
+
+    if (!IsLocalController() || !AdventureHUDWidgetClass)
+    {
+        return;
+    }
+
+    ActiveAdventureHUDWidget = CreateWidget<UJumanjiAdventureHUDWidget>(
+        this,
+        AdventureHUDWidgetClass
+    );
+
+    if (IsValid(ActiveAdventureHUDWidget))
+    {
+        ActiveAdventureHUDWidget->AddToViewport(50);
+    }
+}
 
 void AJumanjiPlayerController::RequestSelectCharacter(FName CharacterId)
 {

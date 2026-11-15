@@ -61,11 +61,22 @@ bool AJumanjiTrialActor::ValidateStepDefinitions() const
     return true;
 }
 
+bool AJumanjiTrialActor::IsReadyToActivateForObjective(
+    FName ExpectedObjectiveId,
+    int32 RequiredProgress) const
+{
+    return TrialState == EJumanjiTrialState::Dormant
+        && !ExpectedObjectiveId.IsNone()
+        && ObjectiveId == ExpectedObjectiveId
+        && RequiredProgress > 0
+        && RequiredProgress == Steps.Num()
+        && ValidateStepDefinitions();
+}
+
 bool AJumanjiTrialActor::ActivateTrial()
 {
     if (!HasAuthority()
-        || TrialState != EJumanjiTrialState::Dormant
-        || !ValidateStepDefinitions())
+        || !IsReadyToActivateForObjective(ObjectiveId, Steps.Num()))
     {
         return false;
     }

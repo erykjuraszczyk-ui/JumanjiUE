@@ -55,3 +55,12 @@ Use String Tables for production localization. Keep the correct-option field out
 - Correct options advance progress once.
 - A replay with the old revision is rejected.
 - Completing the trial does not complete the chapter until all chapter objectives are complete.
+
+
+## Chapter director integration
+
+The Stage 09 chapter director expects a one-to-one mapping between objectives and trial actors. Set RequiredProgress to the exact number of steps in the matching actor. The Root Rune prototype uses TRIAL_ROOT_RUNES with RequiredProgress 3. The director performs a non-mutating preflight before it starts the chapter.
+
+## Player-facing feedback
+
+The trial actor remains the authority for puzzle state. Bind the prompt widget to OnTrialStateChanged and use the current prompt/options/revision getters. The chapter HUD is a separate Widget Blueprint derived from UJumanjiAdventureHUDWidget and reads the replicated chapter/objective snapshots. A widget must never increment objective progress directly.
