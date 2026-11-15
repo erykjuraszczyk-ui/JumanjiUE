@@ -100,7 +100,7 @@ void AJumanjiEnemyAIController::Tick(float DeltaSeconds)
     StopMovement();
 
     AttackRequestAccumulator += DeltaSeconds;
-    if (AttackRequestAccumulator >= 0.35f)
+    if (AttackRequestAccumulator >= AttackRequestInterval)
     {
         AttackRequestAccumulator = 0.0f;
 
