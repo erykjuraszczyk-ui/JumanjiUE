@@ -36,6 +36,10 @@ private:
     TObjectPtr<UAISenseConfig_Sight> SightConfig;
 
     TWeakObjectPtr<AActor> CurrentTarget;
+
+    UPROPERTY(EditDefaultsOnly, Category = "JUMANJI|AI", meta = (ClampMin = "0.25"))
+    float AttackRequestInterval = 1.0f;
+
     float RepathAccumulator = 0.0f;
     float AttackRequestAccumulator = 0.0f;
 };
