@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/Texture2D.h"
+#include "Engine/DataTable.h"
 #include "JumanjiCharacterDefinition.generated.h"
 
 class UGameplayAbility;
@@ -41,7 +42,7 @@ enum class EJumanjiCombatRole : uint8
  * forcing them to load whenever the roster subsystem initializes.
  */
 USTRUCT(BlueprintType)
-struct JUMANJIUE_API FJumanjiCharacterDefinition
+struct JUMANJIUE_API FJumanjiCharacterDefinition : public FTableRowBase
 {
     GENERATED_BODY()
 
