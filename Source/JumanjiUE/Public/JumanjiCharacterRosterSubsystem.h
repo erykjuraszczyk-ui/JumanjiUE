@@ -6,7 +6,7 @@
 #include "JumanjiCharacterRosterSubsystem.generated.h"
 
 /** Runtime catalog for the nine playable Great Spirits. */
-UCLASS()
+UCLASS(Config = Game)
 class JUMANJIUE_API UJumanjiCharacterRosterSubsystem : public UGameInstanceSubsystem
 {
     GENERATED_BODY()
@@ -35,6 +35,11 @@ public:
 
 private:
     void BuildDefaultRoster();
+    bool LoadConfiguredRosterData();
+
+    /** Optional DataTable override. Leave unset to use the built-in nine-spirit catalog. */
+    UPROPERTY(Config, EditDefaultsOnly, Category = "JUMANJI|Roster")
+    TSoftObjectPtr<UDataTable> ConfiguredRosterDataTable;
 
     UPROPERTY(Transient)
     TArray<FJumanjiCharacterDefinition> CharacterDefinitions;
