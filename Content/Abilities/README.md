@@ -12,7 +12,7 @@ Create Blueprint classes derived from UJumanjiGameplayAbility. Naming pattern fo
 
 For each asset set the matching AbilitySlot. Set InputTag for primary, active, ultimate and dodge. Passive abilities normally leave InputTag unset and set bActivateOnGranted only when their implementation is designed to remain active.
 
-Assign class references to the matching FJumanjiCharacterDefinition soft class fields after the classes exist.
+Assign class references to the matching FJumanjiCharacterDefinition soft class fields in the DT_GreatSpiritRoster DataTable. FJumanjiCharacterDefinition is a DataTable row type. Configure the optional subsystem override in DefaultGame.ini under [/Script/JumanjiUE.JumanjiCharacterRosterSubsystem] with ConfiguredRosterDataTable=/Game/Data/DT_GreatSpiritRoster.DT_GreatSpiritRoster. If the table is missing or invalid, the built-in nine-character fallback roster remains active.
 
 ## Gameplay Effects
 Create project effects in Content/Abilities/Effects:
