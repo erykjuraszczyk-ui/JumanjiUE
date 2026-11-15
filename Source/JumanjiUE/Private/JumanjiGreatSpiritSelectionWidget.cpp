@@ -4,6 +4,7 @@
 #include "JumanjiPlayerController.h"
 #include "JumanjiPlayerState.h"
 #include "Engine/GameInstance.h"
+#include "Engine/World.h"
 
 void UJumanjiGreatSpiritSelectionWidget::NativeConstruct()
 {
@@ -83,7 +84,7 @@ bool UJumanjiGreatSpiritSelectionWidget::PreviewCharacter(FName CharacterId)
     const UJumanjiCharacterRosterSubsystem* Roster =
         GameInstance ? GameInstance->GetSubsystem<UJumanjiCharacterRosterSubsystem>() : nullptr;
 
-    if (!Roster || !Roster->IsPlayableCharacter(CharacterId))
+    if (bAwaitingServerConfirmation || !Roster || !Roster->IsPlayableCharacter(CharacterId))
     {
         return false;
     }
@@ -101,7 +102,7 @@ bool UJumanjiGreatSpiritSelectionWidget::PreviewCharacter(FName CharacterId)
 
 bool UJumanjiGreatSpiritSelectionWidget::ConfirmSelection()
 {
-    if (PreviewCharacterId.IsNone())
+    if (PreviewCharacterId.IsNone() || bAwaitingServerConfirmation)
     {
         return false;
     }
@@ -118,16 +119,24 @@ bool UJumanjiGreatSpiritSelectionWidget::ConfirmSelection()
         return true;
     }
 
-    Controller->RequestSelectCharacter(PreviewCharacterId);
+    // Set pending before sending the request. On a listen server the
+    // PlayerState delegate may fire synchronously inside RequestSelectCharacter.
     bAwaitingServerConfirmation = true;
     BP_OnSelectionRequestSent(PreviewCharacterId);
+    Controller->RequestSelectCharacter(PreviewCharacterId);
     return true;
 }
 
 void UJumanjiGreatSpiritSelectionWidget::CancelSelection()
 {
+    // Once a server request has been sent, do not imply it can be cancelled
+    // locally. Wait for the replicated result before closing the screen.
+    if (bAwaitingServerConfirmation)
+    {
+        return;
+    }
+
     PreviewCharacterId = ConfirmedCharacterId;
-    bAwaitingServerConfirmation = false;
 
     BP_OnSelectionCancelled();
 
