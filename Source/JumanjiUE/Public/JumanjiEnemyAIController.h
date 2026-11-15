@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "AIController.h"
+#include "Perception/AIPerceptionTypes.h"
 #include "JumanjiEnemyAIController.generated.h"
 
 class UAIPerceptionComponent;
@@ -29,7 +30,7 @@ protected:
 
 private:
     UPROPERTY(VisibleAnywhere, Category = "JUMANJI|AI")
-    TObjectPtr<UAIPerceptionComponent> PerceptionComponent;
+    TObjectPtr<UAIPerceptionComponent> JumanjiPerceptionComponent;
 
     UPROPERTY()
     TObjectPtr<UAISenseConfig_Sight> SightConfig;
