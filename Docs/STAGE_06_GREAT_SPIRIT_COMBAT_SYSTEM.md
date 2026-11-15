@@ -22,7 +22,7 @@ This is a combat vertical-slice foundation. It is not a complete enemy roster, f
 - applies the spec to the target ASC;
 - sends Event.Combat.Hit with source, target, hit context and final damage magnitude.
 
-The damage effect must be assigned in the derived ability Blueprint. If the class has no DamageEffectClass, no damage is applied.
+A native fallback class, UJumanjiDefaultDamageGameplayEffect, is now assigned by default. It applies the negative Data.Damage SetByCaller data-name value to Health. A designer-authored Gameplay Effect can override it in a derived ability Blueprint.
 
 ### Player target integration
 AJumanjiCharacter now implements IAbilitySystemInterface and returns the ASC owned by its AJumanjiPlayerState. This allows incoming attacks to resolve a player pawn as a valid GAS target without moving ASC ownership from PlayerState.
@@ -53,7 +53,7 @@ The AI needs a baked Navigation Mesh in the test level. It is a lightweight prot
 - tracks replicated BossPhase values 1–3;
 - enters phase 2 when Health reaches the configured PhaseTwoHealthThreshold (default 66%);
 - enters phase 3 when Health reaches PhaseThreeHealthThreshold (default 33%);
-- maintains State.Boss.Phase.Two or State.Boss.Phase.Three on its ASC;
+- maintains replicated State.Boss.Phase.Two or State.Boss.Phase.Three loose tags on its ASC;
 - triggers BP_OnBossPhaseChanged so a Blueprint can change attack patterns, animation, VFX or arena behavior.
 
 The C++ class exposes phase events; the actual attack pattern changes must be authored in a boss Blueprint or behavior tree.
@@ -61,22 +61,22 @@ The C++ class exposes phase events; the actual attack pattern changes must be au
 ## Required Unreal Editor assets
 
 ### 1. Damage Gameplay Effect
-Create `GE_Damage_Base` in Content/Combat/Effects:
+A native fallback UJumanjiDefaultDamageGameplayEffect is included, configured as:
 - Duration Policy: Instant.
 - Modifier Attribute: Health.
 - Modifier Operation: Additive.
-- Modifier Magnitude: SetByCaller.
-- SetByCaller Data Tag: Data.Damage.
+- Modifier Magnitude: SetByCaller by data name.
+- SetByCaller Data Name: Data.Damage.
 - The C++ ability supplies a negative value, so the modifier subtracts Health.
 
-Do not add a second defense subtraction to the Gameplay Effect if using the current C++ calculation; defense is already factored into FinalDamage.
+A designer may create GE_Damage_Base in Content/Combat/Effects and assign it to a derived ability to replace the native fallback. Do not add a second defense subtraction to the Gameplay Effect; defense is already factored into FinalDamage.
 
 ### 2. Great Spirit primary attack class
 Create a Blueprint child of UJumanjiMeleeAttackAbility for each Spirit primary attack, for example GA_GS_I_Primary through GA_GS_IX_Primary.
 For each class:
 - set AbilitySlot to PrimaryAttack;
 - set InputTag to Input.Ability.Primary;
-- assign DamageEffectClass = GE_Damage_Base;
+- optionally assign a designer-authored DamageEffectClass to override the native UJumanjiDefaultDamageGameplayEffect fallback;
 - tune BaseDamage, TraceDistance and TraceRadius;
 - set a suitable Cooldown Gameplay Effect if the attack must be rate-limited;
 - add animation montage and Gameplay Cues when their assets exist.
@@ -84,23 +84,20 @@ For each class:
 Assign the class to PrimaryAttackAbilityClass in the corresponding DT_GreatSpiritRoster row.
 
 ### 3. Enemy attack ability
-Create GA_Enemy_Melee as a child of UJumanjiMeleeAttackAbility:
+A native UJumanjiDefaultEnemyMeleeAbility is assigned automatically when BasicAttackAbilityClass is unset. It uses Input.Enemy.Attack and the native default damage effect. A designer can replace it with GA_Enemy_Melee, a child of UJumanjiMeleeAttackAbility:
 - set InputTag to Input.Enemy.Attack;
-- assign GE_Damage_Base;
-- configure lower damage and a cooldown;
-- use a readable attack animation and wind-up cue.
+- optionally assign a custom damage Gameplay Effect;
+- configure damage and cooldown;
+- add a readable animation and wind-up cue.
 
-Create BP_JumanjiEnemy as a child of AJumanjiEnemyCharacter:
-- set BasicAttackAbilityClass = GA_Enemy_Melee;
-- set AttackRange;
-- assign an initialization Gameplay Effect with the enemy's Health, MaxHealth, AttackPower and Defense;
+A native UJumanjiEnemyInitializationGameplayEffect supplies prototype enemy attributes when InitializationEffectClass is unset. BP_JumanjiEnemy can override either native default.
 - assign skeletal mesh, animation blueprint and hit/death events.
 
 ### 4. Boss initialization
-Create GE_BossGuardian_Init as an Instant Gameplay Effect that sets the boss's initial MaxHealth, Health, AttackPower and Defense. For example, start with MaxHealth/Health 600, AttackPower 18 and Defense 12 as prototype values; balance these against the actual player damage and encounter duration.
+A native UJumanjiBossInitializationGameplayEffect supplies prototype boss attributes (MaxHealth/Health 600, AttackPower 18 and Defense 12). A designer may override it with GE_BossGuardian_Init as an Instant Gameplay Effect.
 
 Create BP_BoardGuardian as a child of AJumanjiBossCharacter:
-- assign GE_BossGuardian_Init;
+- optionally assign a custom initialization effect;
 - assign GA_Enemy_Melee or a boss-specific phase-aware attack class;
 - implement BP_OnDamaged for hit response;
 - implement BP_OnDefeated for the defeat sequence;
@@ -151,7 +148,7 @@ These are prototype values only. Test against character abilities, attack cadenc
 - Player defeat/respawn flow is not complete.
 - The enemy AI uses sight, pursuit and periodic attack requests, not a behavior tree or squad tactics.
 - Boss phase events are provided, but phase-specific attack assets and encounter scripting must be authored.
-- Gameplay Effect assets, ability Blueprint children, animation montages, Niagara effects, sounds, maps and Navigation Mesh are editor-authored assets.
+- Custom Gameplay Effect assets, unique ability Blueprint children, animation montages, Niagara effects, sounds, maps and Navigation Mesh are editor-authored assets. Native fallback damage, enemy attributes, boss attributes and basic attacks are included in C++.
 - No APK/AAB or Unreal Editor build is produced in this source-only repository operation.
 
 ## Acceptance checklist
