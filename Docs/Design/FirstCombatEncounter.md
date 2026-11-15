@@ -6,12 +6,13 @@
 **Region:** Szmaragdowa Knieja.
 **Role:** guardian of the first Living Board marker.
 **Base class:** AJumanjiBossCharacter.
+**Prototype defaults:** native boss attribute initialization and basic melee ability are assigned in C++; custom Blueprint assets may override them.
 
 ## Intended fight structure
 
 ### Phase 1 — Straż Pradawnych (100–66%)
-- Boss uses a slow frontal melee strike.
-- AI pursues the player and tries to attack when in range.
+- Boss uses a slow frontal, clearly signaled short-range strike (native prototype ability; replace with a custom phase-aware Blueprint ability for production).
+- AI pursues the player and requests its configured attack when in range, paced by a configurable 1.0-second prototype interval.
 - The attack has a visible wind-up and a cooldown.
 - Player learns to dodge and use one primary ability.
 
