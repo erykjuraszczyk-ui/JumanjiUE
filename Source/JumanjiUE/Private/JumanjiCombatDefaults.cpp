@@ -6,11 +6,11 @@
 namespace
 {
     void AddOverrideModifier(
-        UGameplayEffect* Effect,
+        TArray<FGameplayModifierInfo>& Modifiers,
         const FGameplayAttribute& Attribute,
         float Value)
     {
-        FGameplayModifierInfo& Modifier = Effect->Modifiers.AddDefaulted_GetRef();
+        FGameplayModifierInfo& Modifier = Modifiers.AddDefaulted_GetRef();
         Modifier.Attribute = Attribute;
         Modifier.ModifierOp = EGameplayModOp::Override;
         Modifier.ModifierMagnitude = FGameplayEffectModifierMagnitude(FScalableFloat(Value));
@@ -35,20 +35,20 @@ UJumanjiEnemyInitializationGameplayEffect::UJumanjiEnemyInitializationGameplayEf
     DurationPolicy = EGameplayEffectDurationType::Instant;
 
     // Keep MaxHealth before Health so the current value is clamped to the new maximum.
-    AddOverrideModifier(this, UJumanjiAttributeSet::GetMaxHealthAttribute(), 100.0f);
-    AddOverrideModifier(this, UJumanjiAttributeSet::GetHealthAttribute(), 100.0f);
-    AddOverrideModifier(this, UJumanjiAttributeSet::GetAttackPowerAttribute(), 8.0f);
-    AddOverrideModifier(this, UJumanjiAttributeSet::GetDefenseAttribute(), 2.0f);
+    AddOverrideModifier(Modifiers, UJumanjiAttributeSet::GetMaxHealthAttribute(), 100.0f);
+    AddOverrideModifier(Modifiers, UJumanjiAttributeSet::GetHealthAttribute(), 100.0f);
+    AddOverrideModifier(Modifiers, UJumanjiAttributeSet::GetAttackPowerAttribute(), 8.0f);
+    AddOverrideModifier(Modifiers, UJumanjiAttributeSet::GetDefenseAttribute(), 2.0f);
 }
 
 UJumanjiBossInitializationGameplayEffect::UJumanjiBossInitializationGameplayEffect()
 {
     DurationPolicy = EGameplayEffectDurationType::Instant;
 
-    AddOverrideModifier(this, UJumanjiAttributeSet::GetMaxHealthAttribute(), 600.0f);
-    AddOverrideModifier(this, UJumanjiAttributeSet::GetHealthAttribute(), 600.0f);
-    AddOverrideModifier(this, UJumanjiAttributeSet::GetAttackPowerAttribute(), 18.0f);
-    AddOverrideModifier(this, UJumanjiAttributeSet::GetDefenseAttribute(), 12.0f);
+    AddOverrideModifier(Modifiers, UJumanjiAttributeSet::GetMaxHealthAttribute(), 600.0f);
+    AddOverrideModifier(Modifiers, UJumanjiAttributeSet::GetHealthAttribute(), 600.0f);
+    AddOverrideModifier(Modifiers, UJumanjiAttributeSet::GetAttackPowerAttribute(), 18.0f);
+    AddOverrideModifier(Modifiers, UJumanjiAttributeSet::GetDefenseAttribute(), 12.0f);
 }
 
 UJumanjiDefaultPlayerMeleeAbility::UJumanjiDefaultPlayerMeleeAbility()
