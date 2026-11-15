@@ -62,6 +62,45 @@ void UJumanjiAbilitySystemComponent::GrantCharacterAbilityLoadout(
             return;
         }
 
+        FName ExpectedInputTagName = NAME_None;
+        switch (ExpectedSlot)
+        {
+        case EJumanjiAbilitySlot::PrimaryAttack:
+            ExpectedInputTagName = FName(TEXT("Input.Ability.Primary"));
+            break;
+        case EJumanjiAbilitySlot::Active:
+            ExpectedInputTagName = FName(TEXT("Input.Ability.Active"));
+            break;
+        case EJumanjiAbilitySlot::Ultimate:
+            ExpectedInputTagName = FName(TEXT("Input.Ability.Ultimate"));
+            break;
+        case EJumanjiAbilitySlot::Dodge:
+            ExpectedInputTagName = FName(TEXT("Input.Ability.Dodge"));
+            break;
+        case EJumanjiAbilitySlot::Passive:
+        default:
+            break;
+        }
+
+        if (ExpectedInputTagName.IsNone())
+        {
+            if (AbilityCDO->GetInputTag().IsValid())
+            {
+                return;
+            }
+        }
+        else
+        {
+            const FGameplayTag ExpectedInputTag =
+                FGameplayTag::RequestGameplayTag(ExpectedInputTagName, false);
+
+            if (!ExpectedInputTag.IsValid()
+                || !AbilityCDO->GetInputTag().MatchesTagExact(ExpectedInputTag))
+            {
+                return;
+            }
+        }
+
         const FGameplayAbilitySpec AbilitySpec(LoadedAbilityClass, 1, INDEX_NONE, GetOwner());
         const FGameplayAbilitySpecHandle Handle = GiveAbility(AbilitySpec);
         if (!Handle.IsValid())
