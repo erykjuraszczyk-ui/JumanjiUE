@@ -37,7 +37,7 @@ public:
     UFUNCTION(BlueprintPure, Category = "JUMANJI|Selection")
     bool IsAwaitingServerConfirmation() const { return bAwaitingServerConfirmation; }
 
-    UFUNCTION(BlueprintPure, Category = "JUMANJI|Selection")
+    UFUNCTION(BlueprintCallable, Category = "JUMANJI|Selection")
     void GetRosterEntries(TArray<FJumanjiCharacterDefinition>& OutEntries) const
     {
         OutEntries = RosterEntries;
