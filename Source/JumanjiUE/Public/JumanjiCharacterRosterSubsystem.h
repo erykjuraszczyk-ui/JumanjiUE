@@ -14,11 +14,15 @@ class JUMANJIUE_API UJumanjiCharacterRosterSubsystem : public UGameInstanceSubsy
 public:
     virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 
-    UFUNCTION(BlueprintPure, Category = "JUMANJI|Roster")
+    /** C++ accessor; the returned array is owned by this subsystem. */
     const TArray<FJumanjiCharacterDefinition>& GetRoster() const
     {
         return CharacterDefinitions;
     }
+
+    /** Blueprint-friendly copy of the catalog for a UMG selection screen. */
+    UFUNCTION(BlueprintCallable, Category = "JUMANJI|Roster")
+    void GetRosterForBlueprint(TArray<FJumanjiCharacterDefinition>& OutRoster) const;
 
     UFUNCTION(BlueprintCallable, Category = "JUMANJI|Roster")
     bool GetCharacterDefinition(FName CharacterId, FJumanjiCharacterDefinition& OutDefinition) const;
