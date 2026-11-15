@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Engine/StreamableManager.h"
 #include "JumanjiTrialActor.generated.h"
 
 UENUM(BlueprintType)
@@ -49,6 +50,10 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(
  * validates range, revision and the configured answer before advancing the
  * matching Living Board objective.
  */
+class UStaticMesh;
+class USoundBase;
+class UNiagaraSystem;
+
 UCLASS(Abstract, Blueprintable)
 class JUMANJIUE_API AJumanjiTrialActor : public AActor
 {
@@ -69,6 +74,12 @@ public:
 
     UFUNCTION(BlueprintPure, Category = "JUMANJI|Trial")
     FName GetObjectiveId() const { return ObjectiveId; }
+
+    UFUNCTION(BlueprintPure, Category = "JUMANJI|Trial|Presentation")
+    FText GetTrialDisplayName() const { return TrialDisplayName; }
+
+    UFUNCTION(BlueprintPure, Category = "JUMANJI|Trial|Presentation")
+    FText GetTrialDescription() const { return TrialDescription; }
 
     UFUNCTION(BlueprintPure, Category = "JUMANJI|Trial")
     EJumanjiTrialState GetTrialState() const { return TrialState; }
@@ -93,6 +104,27 @@ public:
     FJumanjiTrialStateChanged OnTrialStateChanged;
 
 protected:
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "JUMANJI|Trial|Presentation")
+    FText TrialDisplayName;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "JUMANJI|Trial|Presentation", meta = (MultiLine = "true"))
+    FText TrialDescription;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "JUMANJI|Trial|Presentation")
+    TSoftObjectPtr<UStaticMesh> TrialDisplayMesh;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "JUMANJI|Trial|Presentation")
+    TSoftObjectPtr<USoundBase> ActivationSound;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "JUMANJI|Trial|Presentation")
+    TSoftObjectPtr<USoundBase> StepAcceptedSound;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "JUMANJI|Trial|Presentation")
+    TSoftObjectPtr<USoundBase> CompletionSound;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "JUMANJI|Trial|Presentation")
+    TSoftObjectPtr<UNiagaraSystem> CompletionEffect;
+
     UPROPERTY(EditDefaultsOnly, Category = "JUMANJI|Trial")
     FName ObjectiveId = NAME_None;
 
