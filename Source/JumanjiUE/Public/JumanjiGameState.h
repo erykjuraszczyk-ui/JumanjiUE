@@ -34,10 +34,10 @@ protected:
     UPROPERTY(ReplicatedUsing = OnRep_BoardEventState, BlueprintReadOnly, Category = "JUMANJI|Board")
     FName ActiveBoardEventId = NAME_None;
 
-    UPROPERTY(ReplicatedUsing = OnRep_BoardEventState, BlueprintReadOnly, Category = "JUMANJI|Board")
+    UPROPERTY(Replicated, BlueprintReadOnly, Category = "JUMANJI|Board")
     bool bBoardEventActive = false;
 
-    UPROPERTY(ReplicatedUsing = OnRep_BoardEventState, BlueprintReadOnly, Category = "JUMANJI|Board")
+    UPROPERTY(Replicated, BlueprintReadOnly, Category = "JUMANJI|Board")
     int32 BoardEventRevision = 0;
 
     UFUNCTION()
