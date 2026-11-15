@@ -10,7 +10,7 @@ bool UJumanjiAbilitySystemComponent::TryActivateAbilitiesByInputTag(FGameplayTag
     }
 
     TArray<FGameplayAbilitySpecHandle> MatchingHandles;
-    for (const FGameplayAbilitySpec& Spec : GetActivatableAbilities().Items)
+    for (const FGameplayAbilitySpec& Spec : GetActivatableAbilities())
     {
         const UJumanjiGameplayAbility* JumanjiAbility = Cast<UJumanjiGameplayAbility>(Spec.Ability);
         if (JumanjiAbility && JumanjiAbility->GetInputTag().MatchesTagExact(InputTag))
