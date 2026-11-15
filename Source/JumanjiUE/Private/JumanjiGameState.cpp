@@ -44,6 +44,8 @@ bool AJumanjiGameState::BeginAdventureChapter(
         || BoardEventId.IsNone()
         || DisplayName.IsEmpty()
         || Description.IsEmpty()
+        || !bBoardEventActive
+        || ActiveBoardEventId != BoardEventId
         || AdventureChapterState.Phase == EJumanjiAdventureChapterPhase::Active)
     {
         return false;
@@ -68,7 +70,9 @@ bool AJumanjiGameState::CompleteAdventureChapter(FName ChapterId)
     if (!HasAuthority()
         || ChapterId.IsNone()
         || AdventureChapterState.ChapterId != ChapterId
-        || AdventureChapterState.Phase != EJumanjiAdventureChapterPhase::Active)
+        || AdventureChapterState.Phase != EJumanjiAdventureChapterPhase::Active
+        || bBoardEventActive
+        || !AreAdventureObjectivesComplete())
     {
         return false;
     }
