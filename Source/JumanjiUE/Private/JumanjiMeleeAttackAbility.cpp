@@ -1,6 +1,7 @@
 #include "JumanjiMeleeAttackAbility.h"
 
 #include "AbilitySystemBlueprintLibrary.h"
+#include "GameplayTagContainer.h"
 #include "AbilitySystemComponent.h"
 #include "GameplayEffect.h"
 #include "JumanjiAttributeSet.h"
@@ -93,7 +94,7 @@ void UJumanjiMeleeAttackAbility::ApplyMeleeDamage(
     const float SourceAttackPower =
         SourceASC->GetNumericAttribute(UJumanjiAttributeSet::GetAttackPowerAttribute());
 
-    TSet<TObjectPtr<AActor>> DamagedActors;
+    TSet<AActor*> DamagedActors;
 
     for (const FHitResult& Hit : HitResults)
     {
@@ -140,6 +141,20 @@ void UJumanjiMeleeAttackAbility::ApplyMeleeDamage(
         // Health modifiers in GE_Damage_Base use this negative SetByCaller value.
         SpecHandle.Data->SetSetByCallerMagnitude(DamageTag, -FinalDamage);
         TargetASC->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
+
+        const FGameplayTag HitEventTag = FGameplayTag::RequestGameplayTag(
+            FName(TEXT("Event.Combat.Hit")), false);
+
+        if (HitEventTag.IsValid())
+        {
+            FGameplayEventData HitEvent;
+            HitEvent.EventTag = HitEventTag;
+            HitEvent.Instigator = AvatarActor;
+            HitEvent.Target = TargetActor;
+            HitEvent.EventMagnitude = FinalDamage;
+            HitEvent.ContextHandle = EffectContext;
+            TargetASC->HandleGameplayEvent(HitEventTag, &HitEvent);
+        }
 
         DamagedActors.Add(TargetActor);
     }
