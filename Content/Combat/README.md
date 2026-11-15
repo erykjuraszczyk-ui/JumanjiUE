@@ -1,23 +1,26 @@
 # Combat Asset Setup — JUMANJI 2.111.1
 
-## GE_Damage_Base
-Create an Instant Gameplay Effect with one Health modifier:
+## Damage Gameplay Effect
+The native UJumanjiDefaultDamageGameplayEffect is assigned automatically. It is Instant, applies an Additive modifier to Health, and reads the negative SetByCaller data name Data.Damage.
+
+A designer may create GE_Damage_Base as a replacement:
+- Duration Policy: Instant.
 - Modifier operation: Additive.
 - Magnitude: SetByCaller.
-- Data tag: Data.Damage.
-The melee ability supplies a negative value (for example -16.25), which subtracts Health. Do not subtract Defense again inside this Gameplay Effect.
+- Data name: Data.Damage.
+The melee ability supplies a negative value (for example -16.25), which subtracts Health. Do not subtract Defense again inside the effect.
 
 ## Great Spirit primary attack
-Create Blueprint children GA_GS_I_Primary through GA_GS_IX_Primary from UJumanjiMeleeAttackAbility. Configure AbilitySlot=PrimaryAttack, InputTag=Input.Ability.Primary, DamageEffectClass=GE_Damage_Base, TraceDistance, TraceRadius and BaseDamage. Add a cooldown Gameplay Effect if the attack cadence requires one. Assign each class to PrimaryAttackAbilityClass in DT_GreatSpiritRoster.
+If a primary attack class is not assigned in DT_GreatSpiritRoster, the server grants UJumanjiDefaultPlayerMeleeAbility as a temporary fallback to all nine spirits. For unique attacks, create Blueprint children GA_GS_I_Primary through GA_GS_IX_Primary from UJumanjiMeleeAttackAbility. Configure AbilitySlot=PrimaryAttack, InputTag=Input.Ability.Primary, optional DamageEffectClass override, TraceDistance, TraceRadius and BaseDamage. Assign each class to PrimaryAttackAbilityClass in DT_GreatSpiritRoster.
 
 ## Enemy melee ability
-Create GA_Enemy_Melee from UJumanjiMeleeAttackAbility with InputTag=Input.Enemy.Attack and GE_Damage_Base. Add a cooldown, an attack wind-up montage and a clear Gameplay Cue. Assign it to BasicAttackAbilityClass in BP_JumanjiEnemy.
+UJumanjiDefaultEnemyMeleeAbility is assigned automatically when BasicAttackAbilityClass is unset. For a custom enemy move, create GA_Enemy_Melee from UJumanjiMeleeAttackAbility with InputTag=Input.Enemy.Attack, an optional custom damage effect, cooldown, attack wind-up and Gameplay Cue. Assign it to BasicAttackAbilityClass in BP_JumanjiEnemy.
 
 ## Enemy initialization effect
-Create an Instant effect that sets MaxHealth, Health, AttackPower and Defense. Assign it to InitializationEffectClass in BP_JumanjiEnemy. Example prototype values: Health/MaxHealth 100, AttackPower 8, Defense 2.
+UJumanjiEnemyInitializationGameplayEffect is assigned by default. It sets Health/MaxHealth 100, AttackPower 8 and Defense 2. Assign a custom Instant Gameplay Effect to InitializationEffectClass when a specific enemy needs different values.
 
 ## Boss initialization effect
-Create GE_BossGuardian_Init. Example prototype values: Health/MaxHealth 600, AttackPower 18, Defense 12. Assign it to BP_BoardGuardian (child of AJumanjiBossCharacter). These values require balance testing.
+UJumanjiBossInitializationGameplayEffect is assigned by default. It sets Health/MaxHealth 600, AttackPower 18 and Defense 12. A BP_BoardGuardian child may override InitializationEffectClass with GE_BossGuardian_Init. These values require balance testing.
 
 ## Blueprint events
 - BP_OnDamaged: play a hit reaction, material flash or sound.
