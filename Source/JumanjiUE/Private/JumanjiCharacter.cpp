@@ -39,6 +39,14 @@ AJumanjiCharacter::AJumanjiCharacter()
     FollowCamera->bUsePawnControlRotation = false;
 }
 
+UAbilitySystemComponent* AJumanjiCharacter::GetAbilitySystemComponent() const
+{
+    const AJumanjiPlayerState* JumanjiPlayerState = GetPlayerState<AJumanjiPlayerState>();
+    return JumanjiPlayerState
+        ? JumanjiPlayerState->GetJumanjiAbilitySystemComponent()
+        : nullptr;
+}
+
 void AJumanjiCharacter::BeginPlay()
 {
     Super::BeginPlay();
