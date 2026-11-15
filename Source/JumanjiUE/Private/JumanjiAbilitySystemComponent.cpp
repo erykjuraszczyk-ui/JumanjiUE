@@ -1,5 +1,6 @@
 #include "JumanjiAbilitySystemComponent.h"
 
+#include "JumanjiCombatDefaults.h"
 #include "JumanjiGameplayAbility.h"
 
 bool UJumanjiAbilitySystemComponent::TryActivateAbilitiesByInputTag(FGameplayTag InputTag)
@@ -41,14 +42,17 @@ void UJumanjiAbilitySystemComponent::GrantCharacterAbilityLoadout(
 
     const auto GrantAbility = [this, &OutGrantedHandles](
         const TSoftClassPtr<UGameplayAbility>& AbilityReference,
+        UClass* FallbackAbilityClass,
         EJumanjiAbilitySlot ExpectedSlot)
     {
-        if (AbilityReference.IsNull())
+        UClass* LoadedAbilityClass = AbilityReference.IsNull()
+            ? FallbackAbilityClass
+            : AbilityReference.LoadSynchronous();
+
+        if (!LoadedAbilityClass)
         {
             return;
         }
-
-        UClass* LoadedAbilityClass = AbilityReference.LoadSynchronous();
         if (!LoadedAbilityClass || !LoadedAbilityClass->IsChildOf(UJumanjiGameplayAbility::StaticClass()))
         {
             return;
@@ -116,11 +120,16 @@ void UJumanjiAbilitySystemComponent::GrantCharacterAbilityLoadout(
         }
     };
 
-    GrantAbility(CharacterDefinition.PrimaryAttackAbilityClass, EJumanjiAbilitySlot::PrimaryAttack);
-    GrantAbility(CharacterDefinition.SignatureAbilityClass, EJumanjiAbilitySlot::Active);
-    GrantAbility(CharacterDefinition.PassiveAbilityClass, EJumanjiAbilitySlot::Passive);
-    GrantAbility(CharacterDefinition.UltimateAbilityClass, EJumanjiAbilitySlot::Ultimate);
-    GrantAbility(CharacterDefinition.DodgeAbilityClass, EJumanjiAbilitySlot::Dodge);
+    // Generic melee is a temporary playable fallback. A roster DataTable class
+    // takes precedence as soon as a character-specific ability asset is assigned.
+    GrantAbility(
+        CharacterDefinition.PrimaryAttackAbilityClass,
+        UJumanjiDefaultPlayerMeleeAbility::StaticClass(),
+        EJumanjiAbilitySlot::PrimaryAttack);
+    GrantAbility(CharacterDefinition.SignatureAbilityClass, nullptr, EJumanjiAbilitySlot::Active);
+    GrantAbility(CharacterDefinition.PassiveAbilityClass, nullptr, EJumanjiAbilitySlot::Passive);
+    GrantAbility(CharacterDefinition.UltimateAbilityClass, nullptr, EJumanjiAbilitySlot::Ultimate);
+    GrantAbility(CharacterDefinition.DodgeAbilityClass, nullptr, EJumanjiAbilitySlot::Dodge);
 }
 
 void UJumanjiAbilitySystemComponent::ClearGrantedAbilities(

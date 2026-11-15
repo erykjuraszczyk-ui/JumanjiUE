@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "AbilitySystemInterface.h"
 #include "GameplayTagContainer.h"
 #include "GameplayAbilitySpec.h"
 #include "GameFramework/Character.h"
@@ -9,18 +10,21 @@
 class UCameraComponent;
 class USpringArmComponent;
 class UInputComponent;
+class UAbilitySystemComponent;
 
 /**
  * Base third-person character for JUMANJI.
  * The PlayerState owns the ASC; this pawn is its current GAS avatar.
  */
 UCLASS()
-class JUMANJIUE_API AJumanjiCharacter : public ACharacter
+class JUMANJIUE_API AJumanjiCharacter : public ACharacter, public IAbilitySystemInterface
 {
     GENERATED_BODY()
 
 public:
     AJumanjiCharacter();
+
+    virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 
     /** Entry point for both hardware input and future mobile touch buttons. */
     UFUNCTION(BlueprintCallable, Category = "JUMANJI|Abilities")
