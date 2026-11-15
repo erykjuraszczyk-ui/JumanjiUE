@@ -62,3 +62,17 @@ Keep the first room small and readable. Optimize the interaction loop before cre
 ## Asset status
 
 The repository includes the native C++ objective system and trial interaction runtime, plus the AJumanjiRootRuneTrial sequence defaults. It does not contain the actual Blueprint .uasset files, 3D art, sound, map or packaged game. Those assets must be authored in Unreal Editor and committed through Git LFS where appropriate.
+
+
+## Stage 09 — chapter director and HUD
+
+- Place one Blueprint child of AJumanjiAdventureChapterDirector in the chapter map.
+- Set ChapterTitle and ChapterDescription.
+- Configure one FJumanjiAdventureObjectiveState for every placed trial actor. The objective count must equal the number of TrialActors.
+- Each objective ID must equal its actor's ObjectiveId, and RequiredProgress must equal that actor's configured step count.
+- Add every placed trial actor exactly once to the director's TrialActors array.
+- Call StartChapter from authoritative server logic. Do not start the chapter from a client UI event.
+- The director validates all objective/actor pairs, starts the board event, activates the actors and completes the chapter after all objectives reach completion.
+- AJumanjiGameState exposes the replicated FJumanjiAdventureChapterState snapshot and OnAdventureChapterChanged event.
+
+See Docs/STAGE_09_EMERALD_JUNGLE_CHAPTER_FLOW.md for the complete configuration and acceptance checklist.
