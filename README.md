@@ -4,16 +4,24 @@ Open-world third-person adventure RPG prototype with a shared-world direction an
 
 ## Project status
 
-Stage 01 — UE5 Foundation is scaffolded on branch feature/ue5-foundation-2.111.1.
+- Stage 01 — UE5 Foundation: native C++ project, third-person character, GameMode/GameState and server-authoritative Living Board state.
+- Stage 02 — Great Spirit Roster: nine playable-character definitions, server-validated selection and visual production brief.
 
-This repository now contains:
-- a native Unreal Engine 5.8 C++ project;
-- GameMode and replicated GameState;
-- a third-person character with camera and starter movement input;
-- a server-authoritative Living Board event-state subsystem;
-- project configuration, repository hygiene and implementation notes.
+Stage 02 is on branch feature/great-spirit-roster-2.111.1, based on feature/ue5-foundation-2.111.1.
 
-This is a development foundation, not a finished game or installable Android build. The first Unreal map, art assets, animations, touch HUD, complete GAS abilities, backend services and packaged APK/AAB still need to be implemented and verified.
+## The nine playable Great Spirits
+
+1. Great Spirit I — Duch Korzeni (Root / Guardian)
+2. Great Spirit II — Duch Przypływu (Tide / Support)
+3. Great Spirit III — Duch Kamienia (Stone / Vanguard)
+4. Great Spirit IV — Duch Burzy (Storm / Controller)
+5. Great Spirit V — Duch Żaru (Ember / Striker)
+6. Great Spirit VI — Duch Świtu (Dawn / Ranger)
+7. Great Spirit VII — Duch Cienia (Shadow / Duelist)
+8. Great Spirit VIII — Duch Życia (Life / Healer)
+9. Great Spirit IX — Duch Mrozu (Frost / Sentinel)
+
+The names, roles, elements and ability concepts are original gameplay proposals based on the supplied visual reference. The image establishes the nine portrait identities and their visual direction; it does not specify gameplay statistics or abilities.
 
 ## Requirements
 
@@ -23,31 +31,43 @@ This is a development foundation, not a finished game or installable Android bui
 
 ## Open
 
-1. Clone this repository.
+1. Clone the repository and check out the desired stage branch.
 2. Open JumanjiUE.uproject with Unreal Engine 5.8.
 3. Generate project files and compile the project when prompted.
 4. Create Content/Maps/L_Jumanji_Prototype.umap and set it as the default map.
 5. Press Play to test the initial third-person character.
 
-See Docs/STAGE_01_FOUNDATION.md for the detailed setup and acceptance checklist.
+## Stage documentation
 
-## Controls in the initial prototype
+- Docs/STAGE_01_FOUNDATION.md — project setup and first prototype checklist.
+- Docs/STAGE_02_GREAT_SPIRIT_ROSTER.md — nine-character roster, selection flow and acceptance criteria.
+- Docs/Art/GreatSpiritCharacterArtBrief.md — individual visual targets and character art requirements.
+- Content/Characters/README.md — Unreal character asset naming and import plan.
 
-| Action | Keyboard | Gamepad |
-|---|---|---|
-| Move | WASD | Left stick |
-| Look | Mouse | Right stick |
-| Jump | Space | Bottom face button |
+## Current implementation
 
-The current input bindings are a bootstrap. Enhanced Input assets and the final Android touch layout are scheduled for the next stage.
+- native Unreal Engine 5.8 C++ project descriptor and targets;
+- third-person character with camera and starter movement input;
+- GameMode and replicated GameState;
+- server-authoritative Living Board event state;
+- nine Great Spirit character definitions available through UJumanjiCharacterRosterSubsystem;
+- player selection request validated by the server and replicated through AJumanjiPlayerState.
 
-## Architecture
+## Not yet included
 
-- Source/JumanjiUE — runtime C++ module.
-- Config — project and input configuration.
-- Content — Unreal assets; maps and art are not yet included.
-- Docs — implementation and production notes.
+This is a source-code foundation, not a finished game or installable Android build. The repository still needs:
+- a saved Unreal map (.umap);
+- final portrait textures and 3D character models;
+- rigs, animation blueprints and facial animation;
+- a touch-first HUD and final Enhanced Input assets;
+- complete GAS abilities and combat implementation;
+- character mesh switching and animation integration;
+- account persistence, unlock progression and backend services;
+- dedicated-server deployment;
+- a packaged and device-tested APK/AAB.
+
+The supplied reference image is used as an art direction source. The binary image itself and Unreal binary assets are not added by the text-file GitHub workflow; add them through Git LFS with provenance/license notes.
 
 ## Build verification
 
-The repository scaffold has not been compiled in an Unreal Editor environment during this update. Do not treat the project as build-verified until the acceptance checklist in the stage documentation has been completed locally.
+The code has not been compiled in an Unreal Editor environment during these repository changes. Complete both stage acceptance checklists locally before treating the project as build-verified.
