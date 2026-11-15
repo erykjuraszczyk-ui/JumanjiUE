@@ -8,6 +8,7 @@
 #include "JumanjiGreatSpiritSelectionWidget.h"
 #include "JumanjiPlayerState.h"
 #include "JumanjiTrialActor.h"
+#include "JumanjiWorldAtlasWidget.h"
 
 void AJumanjiPlayerController::BeginPlay()
 {
@@ -26,6 +27,58 @@ void AJumanjiPlayerController::BeginPlay()
     if (IsValid(ActiveAdventureHUDWidget))
     {
         ActiveAdventureHUDWidget->AddToViewport(50);
+    }
+}
+
+bool AJumanjiPlayerController::OpenWorldAtlas()
+{
+    if (!IsLocalController() || !WorldAtlasWidgetClass)
+    {
+        return false;
+    }
+
+    if (IsValid(ActiveWorldAtlasWidget))
+    {
+        if (!ActiveWorldAtlasWidget->IsInViewport())
+        {
+            ActiveWorldAtlasWidget->AddToViewport(90);
+        }
+        return true;
+    }
+
+    ActiveWorldAtlasWidget = CreateWidget<UJumanjiWorldAtlasWidget>(
+        this,
+        WorldAtlasWidgetClass
+    );
+
+    if (!IsValid(ActiveWorldAtlasWidget))
+    {
+        return false;
+    }
+
+    ActiveWorldAtlasWidget->AddToViewport(90);
+
+    FInputModeGameAndUI InputMode;
+    InputMode.SetWidgetToFocus(ActiveWorldAtlasWidget->TakeWidget());
+    InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+    SetInputMode(InputMode);
+    SetShowMouseCursor(false);
+    return true;
+}
+
+void AJumanjiPlayerController::CloseWorldAtlas()
+{
+    if (IsValid(ActiveWorldAtlasWidget))
+    {
+        ActiveWorldAtlasWidget->RemoveFromParent();
+        ActiveWorldAtlasWidget = nullptr;
+    }
+
+    if (IsLocalController())
+    {
+        FInputModeGameOnly InputMode;
+        SetInputMode(InputMode);
+        SetShowMouseCursor(false);
     }
 }
 
