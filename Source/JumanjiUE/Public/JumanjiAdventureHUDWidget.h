@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "JumanjiAdventureChapter.h"
+#include "JumanjiAdventureObjective.h"
 #include "JumanjiAdventureHUDWidget.generated.h"
 
 class AJumanjiGameState;
