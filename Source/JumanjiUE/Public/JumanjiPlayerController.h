@@ -5,6 +5,7 @@
 #include "JumanjiPlayerController.generated.h"
 
 class UJumanjiGreatSpiritSelectionWidget;
+class UJumanjiAdventureHUDWidget;
 class AJumanjiTrialActor;
 
 /** Validates character selection and routes world interactions through the server. */
@@ -14,6 +15,8 @@ class JUMANJIUE_API AJumanjiPlayerController : public APlayerController
     GENERATED_BODY()
 
 public:
+    virtual void BeginPlay() override;
+
     UFUNCTION(BlueprintCallable, Category = "JUMANJI|Character")
     void RequestSelectCharacter(FName CharacterId);
 
@@ -48,6 +51,9 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "JUMANJI|UI")
     TSubclassOf<UJumanjiGreatSpiritSelectionWidget> GreatSpiritSelectionWidgetClass;
 
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "JUMANJI|Adventure|UI")
+    TSubclassOf<UJumanjiAdventureHUDWidget> AdventureHUDWidgetClass;
+
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "JUMANJI|Adventure", meta = (ClampMin = "100.0", ClampMax = "1000.0"))
     float MaxTrialInteractionDistance = 350.0f;
 
@@ -62,4 +68,7 @@ private:
 
     UPROPERTY(Transient)
     TObjectPtr<UJumanjiGreatSpiritSelectionWidget> ActiveGreatSpiritSelectionWidget;
+
+    UPROPERTY(Transient)
+    TObjectPtr<UJumanjiAdventureHUDWidget> ActiveAdventureHUDWidget;
 };
