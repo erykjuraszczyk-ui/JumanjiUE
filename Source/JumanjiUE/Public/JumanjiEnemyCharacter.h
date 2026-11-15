@@ -8,6 +8,7 @@
 class UJumanjiAbilitySystemComponent;
 class UJumanjiAttributeSet;
 class UGameplayEffect;
+class UGameplayAbility;
 struct FOnAttributeChangeData;
 
 /** Common GAS-enabled enemy base for PvE encounters. */
@@ -36,6 +37,12 @@ public:
     UFUNCTION(BlueprintPure, Category = "JUMANJI|Enemy")
     bool IsDefeated() const { return bIsDefeated; }
 
+    UFUNCTION(BlueprintPure, Category = "JUMANJI|Enemy")
+    float GetEnemyAttackRange() const { return AttackRange; }
+
+    UFUNCTION(BlueprintPure, Category = "JUMANJI|Enemy")
+    FGameplayTag GetEnemyAttackInputTag() const;
+
 protected:
     virtual void BeginPlay() override;
     virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
@@ -57,6 +64,16 @@ protected:
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "JUMANJI|Enemy")
     TObjectPtr<UJumanjiAttributeSet> AttributeSet;
+
+    /** Optional server-granted GAS ability used by the prototype AI. */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "JUMANJI|Enemy")
+    TSubclassOf<UGameplayAbility> BasicAttackAbilityClass;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "JUMANJI|Enemy", meta = (ClampMin = "50.0"))
+    float AttackRange = 220.0f;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "JUMANJI|Enemy")
+    FName AttackInputTagName = FName(TEXT("Input.Enemy.Attack"));
 
     /** Optional server-applied GE for enemy/boss starting attributes. */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "JUMANJI|Enemy")
