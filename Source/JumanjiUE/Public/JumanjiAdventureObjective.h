@@ -37,14 +37,14 @@ struct FJumanjiAdventureObjectiveState
 };
 
 /** A single replicated property keeps objective data and its revision together. */
-USTRUCT()
+USTRUCT(BlueprintType)
 struct FJumanjiAdventureObjectiveSet
 {
     GENERATED_BODY()
 
-    UPROPERTY()
+    UPROPERTY(BlueprintReadOnly, Category = "JUMANJI|Adventure")
     TArray<FJumanjiAdventureObjectiveState> Objectives;
 
-    UPROPERTY()
+    UPROPERTY(BlueprintReadOnly, Category = "JUMANJI|Adventure")
     int32 Revision = 0;
 };
