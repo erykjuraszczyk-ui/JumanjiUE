@@ -1,6 +1,7 @@
 #include "JumanjiBossCharacter.h"
 
 #include "AbilitySystemComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "JumanjiAttributeSet.h"
 #include "Net/UnrealNetwork.h"
 
