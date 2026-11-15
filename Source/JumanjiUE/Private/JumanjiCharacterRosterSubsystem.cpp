@@ -34,6 +34,30 @@ void UJumanjiCharacterRosterSubsystem::BuildDefaultRoster()
         Definition.Role = Role;
         Definition.SignatureAbilityName = FText::FromString(Signature);
         Definition.PassiveAbilityName = FText::FromString(Passive);
+
+        static const TCHAR* PrimaryNames[9] = {
+            TEXT("Uderzenie Korzeni"), TEXT("Strumień Przypływu"), TEXT("Cios Granitu"),
+            TEXT("Iskra Burzy"), TEXT("Płomienny Impuls"), TEXT("Promień Świtu"),
+            TEXT("Cięcie Cienia"), TEXT("Dotyk Życia"), TEXT("Odłamek Mrozu")
+        };
+        static const TCHAR* UltimateNames[9] = {
+            TEXT("Serce Pradawnej Kniei"), TEXT("Wielki Przypływ"), TEXT("Góra Niezłomna"),
+            TEXT("Gniew Niebios"), TEXT("Feniks Odrodzenia"), TEXT("Korona Świtu"),
+            TEXT("Wieczna Noc"), TEXT("Ogród Wieczności"), TEXT("Zimowy Tron")
+        };
+        static const TCHAR* DodgeNames[9] = {
+            TEXT("Krok Pnącza"), TEXT("Fala Uniku"), TEXT("Kamienny Krok"),
+            TEXT("Błysk Burzy"), TEXT("Żarliwy Skok"), TEXT("Świetlisty Krok"),
+            TEXT("Cień Przemieszczenia"), TEXT("Zielony Zwrot"), TEXT("Lodowy Ślizg")
+        };
+
+        if (Number >= 1 && Number <= 9)
+        {
+            Definition.PrimaryAttackAbilityName = FText::FromString(PrimaryNames[Number - 1]);
+            Definition.UltimateAbilityName = FText::FromString(UltimateNames[Number - 1]);
+            Definition.DodgeAbilityName = FText::FromString(DodgeNames[Number - 1]);
+        }
+
         Definition.PrimaryColor = Primary;
         Definition.SecondaryColor = Secondary;
         CharacterDefinitions.Add(MoveTemp(Definition));
