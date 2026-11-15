@@ -27,9 +27,7 @@ protected:
         const FGameplayAbilityActivationInfo ActivationInfo,
         const FGameplayEventData* TriggerEventData) override;
 
-    void ApplyMeleeDamage(
-        const FGameplayAbilityActorInfo* ActorInfo,
-        const FGameplayAbilityActivationInfo ActivationInfo);
+    void ApplyMeleeDamage(const FGameplayAbilityActorInfo* ActorInfo);
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "JUMANJI|Combat", meta = (ClampMin = "25.0"))
     float TraceDistance = 220.0f;
