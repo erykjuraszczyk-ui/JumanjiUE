@@ -1,9 +1,68 @@
 #include "JumanjiCharacterRosterSubsystem.h"
 
+#include "Engine/DataTable.h"
+
 void UJumanjiCharacterRosterSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
     Super::Initialize(Collection);
     BuildDefaultRoster();
+    LoadConfiguredRosterData();
+}
+
+bool UJumanjiCharacterRosterSubsystem::LoadConfiguredRosterData()
+{
+    if (ConfiguredRosterDataTable.IsNull())
+    {
+        return false;
+    }
+
+    UDataTable* DataTable = ConfiguredRosterDataTable.LoadSynchronous();
+    if (!DataTable || DataTable->GetRowStruct() != FJumanjiCharacterDefinition::StaticStruct())
+    {
+        UE_LOG(LogTemp, Warning, TEXT("JUMANJI: configured Great Spirit DataTable is missing or has the wrong row struct."));
+        return false;
+    }
+
+    TArray<FJumanjiCharacterDefinition*> Rows;
+    DataTable->GetAllRows<FJumanjiCharacterDefinition>(TEXT("JUMANJI Great Spirit roster"), Rows);
+
+    if (Rows.Num() != 9)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("JUMANJI: configured roster must contain exactly nine rows; using built-in roster."));
+        return false;
+    }
+
+    TArray<FJumanjiCharacterDefinition> CandidateRows;
+    TSet<FName> SeenIds;
+    TSet<int32> SeenNumbers;
+    CandidateRows.Reserve(Rows.Num());
+
+    for (const FJumanjiCharacterDefinition* Row : Rows)
+    {
+        if (!Row
+            || Row->CharacterId.IsNone()
+            || Row->SpiritNumber < 1
+            || Row->SpiritNumber > 9
+            || SeenIds.Contains(Row->CharacterId)
+            || SeenNumbers.Contains(Row->SpiritNumber)
+            || Row->DisplayName.IsEmpty())
+        {
+            UE_LOG(LogTemp, Warning, TEXT("JUMANJI: configured roster contains invalid or duplicate data; using built-in roster."));
+            return false;
+        }
+
+        SeenIds.Add(Row->CharacterId);
+        SeenNumbers.Add(Row->SpiritNumber);
+        CandidateRows.Add(*Row);
+    }
+
+    CandidateRows.Sort([](const FJumanjiCharacterDefinition& A, const FJumanjiCharacterDefinition& B)
+    {
+        return A.SpiritNumber < B.SpiritNumber;
+    });
+
+    CharacterDefinitions = MoveTemp(CandidateRows);
+    return true;
 }
 
 void UJumanjiCharacterRosterSubsystem::BuildDefaultRoster()
