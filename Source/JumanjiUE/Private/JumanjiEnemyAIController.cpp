@@ -3,7 +3,7 @@
 #include "AbilitySystemBlueprintLibrary.h"
 #include "JumanjiAbilitySystemComponent.h"
 #include "JumanjiEnemyCharacter.h"
-#include "Perception/AIPerceptionComponent.h"
+#include "Perception/AIJumanjiPerceptionComponent.h"
 #include "Perception/AISenseConfig_Sight.h"
 #include "Perception/AISense_Sight.h"
 #include "GameFramework/Pawn.h"
@@ -13,7 +13,7 @@ AJumanjiEnemyAIController::AJumanjiEnemyAIController()
     PrimaryActorTick.bCanEverTick = true;
     SetActorTickInterval(0.1f);
 
-    PerceptionComponent = CreateDefaultSubobject<UAIPerceptionComponent>(TEXT("PerceptionComponent"));
+    JumanjiPerceptionComponent = CreateDefaultSubobject<UAIJumanjiPerceptionComponent>(TEXT("JumanjiPerceptionComponent"));
     SightConfig = CreateDefaultSubobject<UAISenseConfig_Sight>(TEXT("SightConfig"));
 
     SightConfig->SightRadius = 1400.0f;
@@ -24,9 +24,9 @@ AJumanjiEnemyAIController::AJumanjiEnemyAIController()
     SightConfig->DetectionByAffiliation.bDetectFriendlies = true;
     SightConfig->DetectionByAffiliation.bDetectNeutrals = true;
 
-    PerceptionComponent->ConfigureSense(*SightConfig);
-    PerceptionComponent->SetDominantSense(UAISense_Sight::StaticClass());
-    PerceptionComponent->OnTargetPerceptionUpdated.AddDynamic(
+    JumanjiPerceptionComponent->ConfigureSense(*SightConfig);
+    JumanjiPerceptionComponent->SetDominantSense(UAISense_Sight::StaticClass());
+    JumanjiPerceptionComponent->OnTargetPerceptionUpdated.AddDynamic(
         this, &AJumanjiEnemyAIController::HandleTargetPerceptionUpdated);
 }
 
