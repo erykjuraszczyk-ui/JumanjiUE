@@ -83,3 +83,10 @@ Each trial has three steps. Set the matching chapter objective RequiredProgress 
 The base AJumanjiTrialActor exposes soft-reference presentation fields for a display mesh, activation/step/completion sounds and Niagara completion effect. These references are not loaded or played automatically. Blueprint children must load them and trigger presentation only after observing authoritative replicated trial state.
 
 See Docs/STAGE_10_GREAT_SPIRIT_TRIAL_CONTENT_PACK.md for the complete puzzle sequence and editor setup.
+
+
+## Stage 11 — World placement
+
+The nine trial actors are placed in their matching atlas regions. Each region has a stable RegionId and RelatedObjectiveId. Place one AJumanjiWorldRegionVolume at the region boundary and one AJumanjiWorldLandmark for its point of interest. Set each actor ID pair to match the world atlas catalog.
+
+The world atlas widget reads the player's replicated discovery state; it does not submit puzzle answers or modify objective progress.
