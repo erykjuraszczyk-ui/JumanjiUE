@@ -3,7 +3,7 @@
 #include "AbilitySystemBlueprintLibrary.h"
 #include "JumanjiAbilitySystemComponent.h"
 #include "JumanjiEnemyCharacter.h"
-#include "Perception/AIJumanjiPerceptionComponent.h"
+#include "Perception/AIPerceptionComponent.h"
 #include "Perception/AISenseConfig_Sight.h"
 #include "Perception/AISense_Sight.h"
 #include "GameFramework/Pawn.h"
@@ -13,7 +13,7 @@ AJumanjiEnemyAIController::AJumanjiEnemyAIController()
     PrimaryActorTick.bCanEverTick = true;
     SetActorTickInterval(0.1f);
 
-    JumanjiPerceptionComponent = CreateDefaultSubobject<UAIJumanjiPerceptionComponent>(TEXT("JumanjiPerceptionComponent"));
+    JumanjiPerceptionComponent = CreateDefaultSubobject<UAIPerceptionComponent>(TEXT("JumanjiPerceptionComponent"));
     SightConfig = CreateDefaultSubobject<UAISenseConfig_Sight>(TEXT("SightConfig"));
 
     SightConfig->SightRadius = 1400.0f;
