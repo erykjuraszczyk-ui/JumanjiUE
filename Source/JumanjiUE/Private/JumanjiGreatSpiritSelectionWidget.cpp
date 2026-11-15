@@ -9,7 +9,8 @@ void UJumanjiGreatSpiritSelectionWidget::NativeConstruct()
 {
     Super::NativeConstruct();
 
-    const UGameInstance* GameInstance = GetGameInstance();
+    const UWorld* World = GetWorld();
+    const UGameInstance* GameInstance = World ? World->GetGameInstance() : nullptr;
     const UJumanjiCharacterRosterSubsystem* Roster =
         GameInstance ? GameInstance->GetSubsystem<UJumanjiCharacterRosterSubsystem>() : nullptr;
 
@@ -77,7 +78,8 @@ void UJumanjiGreatSpiritSelectionWidget::UnbindFromPlayerState()
 
 bool UJumanjiGreatSpiritSelectionWidget::PreviewCharacter(FName CharacterId)
 {
-    const UGameInstance* GameInstance = GetGameInstance();
+    const UWorld* World = GetWorld();
+    const UGameInstance* GameInstance = World ? World->GetGameInstance() : nullptr;
     const UJumanjiCharacterRosterSubsystem* Roster =
         GameInstance ? GameInstance->GetSubsystem<UJumanjiCharacterRosterSubsystem>() : nullptr;
 
@@ -148,7 +150,8 @@ void UJumanjiGreatSpiritSelectionWidget::HandlePlayerStateCharacterChanged(FName
 
     BP_OnCharacterSelectionCommitted(CharacterId);
 
-    const UGameInstance* GameInstance = GetGameInstance();
+    const UWorld* World = GetWorld();
+    const UGameInstance* GameInstance = World ? World->GetGameInstance() : nullptr;
     const UJumanjiCharacterRosterSubsystem* Roster =
         GameInstance ? GameInstance->GetSubsystem<UJumanjiCharacterRosterSubsystem>() : nullptr;
 
