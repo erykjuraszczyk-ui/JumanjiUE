@@ -16,7 +16,8 @@ public class JumanjiUE : ModuleRules
                 "EnhancedInput",
                 "GameplayAbilities",
                 "GameplayTags",
-                "GameplayTasks"
+                "GameplayTasks",
+                "UMG"
             }
         );
     }
