@@ -61,6 +61,9 @@ public:
     UFUNCTION(BlueprintCallable, Category = "JUMANJI|Trial")
     bool ActivateTrial();
 
+    /** Non-mutating preflight used by the chapter director before starting an adventure. */
+    bool IsReadyToActivateForObjective(FName ExpectedObjectiveId, int32 RequiredProgress) const;
+
     /** Server-only validation entry point; PlayerController routes client requests here. */
     bool SubmitOption(FName OptionId, int32 ExpectedRevision);
 
