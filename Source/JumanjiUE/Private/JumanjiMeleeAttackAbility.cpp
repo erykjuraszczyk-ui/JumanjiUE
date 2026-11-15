@@ -5,6 +5,7 @@
 #include "AbilitySystemComponent.h"
 #include "GameplayEffect.h"
 #include "JumanjiAttributeSet.h"
+#include "JumanjiEnemyCharacter.h"
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
 
@@ -99,6 +100,14 @@ void UJumanjiMeleeAttackAbility::ApplyMeleeDamage(
     {
         AActor* TargetActor = Hit.GetActor();
         if (!IsValid(TargetActor) || TargetActor == AvatarActor || DamagedActors.Contains(TargetActor))
+        {
+            continue;
+        }
+
+        // The first combat slice is PvE: player pawns hit enemies, and enemies hit player pawns.
+        const bool bSourceIsEnemy = AvatarActor->IsA(AJumanjiEnemyCharacter::StaticClass());
+        const bool bTargetIsEnemy = TargetActor->IsA(AJumanjiEnemyCharacter::StaticClass());
+        if (bSourceIsEnemy == bTargetIsEnemy)
         {
             continue;
         }
