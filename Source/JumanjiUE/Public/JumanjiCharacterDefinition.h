@@ -67,10 +67,19 @@ struct JUMANJIUE_API FJumanjiCharacterDefinition
     EJumanjiCombatRole Role = EJumanjiCombatRole::Guardian;
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Gameplay")
+    FText PrimaryAttackAbilityName;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Gameplay")
     FText SignatureAbilityName;
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Gameplay")
     FText PassiveAbilityName;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Gameplay")
+    FText UltimateAbilityName;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Gameplay")
+    FText DodgeAbilityName;
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Presentation")
     FLinearColor PrimaryColor = FLinearColor::White;
@@ -85,8 +94,18 @@ struct JUMANJIUE_API FJumanjiCharacterDefinition
     TSoftObjectPtr<USkeletalMesh> CharacterMesh;
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Abilities")
+    TSoftClassPtr<UGameplayAbility> PrimaryAttackAbilityClass;
+
+    /** Signature/active ability slot. */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Abilities")
     TSoftClassPtr<UGameplayAbility> SignatureAbilityClass;
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Abilities")
+    TSoftClassPtr<UGameplayAbility> PassiveAbilityClass;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Abilities")
     TSoftClassPtr<UGameplayAbility> UltimateAbilityClass;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Abilities")
+    TSoftClassPtr<UGameplayAbility> DodgeAbilityClass;
 };
