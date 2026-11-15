@@ -105,6 +105,11 @@ void UJumanjiCharacterRosterSubsystem::BuildDefaultRoster()
         FLinearColor(0.42f, 0.83f, 1.00f), FLinearColor(0.88f, 0.77f, 0.48f));
 }
 
+void UJumanjiCharacterRosterSubsystem::GetRosterForBlueprint(TArray<FJumanjiCharacterDefinition>& OutRoster) const
+{
+    OutRoster = CharacterDefinitions;
+}
+
 bool UJumanjiCharacterRosterSubsystem::GetCharacterDefinition(
     FName CharacterId,
     FJumanjiCharacterDefinition& OutDefinition) const
