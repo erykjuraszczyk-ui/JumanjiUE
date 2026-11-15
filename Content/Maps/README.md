@@ -1,9 +1,15 @@
 # Maps
 
-This directory is reserved for Unreal Engine map assets.
+## Prototype map
 
-Create and save the first test map as L_Jumanji_Prototype.umap. It should contain a compact jungle test area, a PlayerStart, a floor, traversal obstacles and a basic lighting setup.
+The initial prototype map may be saved as L_Jumanji_Prototype.umap.
 
-Set this map as the project's default game map in Project Settings → Maps & Modes.
+## Emerald Jungle world map
 
-Map assets are binary Unreal files and should be committed through Git LFS after Git LFS is enabled for this repository.
+Stage 11 target map: Content/Maps/L_EmeraldJungle_World.umap.
+
+Create it in Unreal Editor using the Open World map template. Verify World Partition and runtime streaming are enabled. Keep one persistent world map and organize the central hub and nine elemental regions using Editor Data Layers. Use Runtime Data Layers only for true runtime state changes.
+
+The map file is a binary Unreal asset. Save it in the project and commit it using Git LFS after the repository's LFS rules are configured.
+
+See Docs/STAGE_11_EMERALD_JUNGLE_WORLD_ASSEMBLY.md for the region layout, ten atlas landmarks, region volumes, World Partition setup and acceptance checklist.
