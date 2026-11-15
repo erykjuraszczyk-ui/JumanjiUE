@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameStateBase.h"
+#include "JumanjiAdventureObjective.h"
 #include "JumanjiGameState.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(
@@ -11,7 +12,12 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(
     int32, Revision
 );
 
-/** Replicated public session state. The server owns the board-event state. */
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(
+    FJumanjiAdventureObjectivesChanged,
+    int32, Revision
+);
+
+/** Replicated public session state. The server owns board events and adventure objectives. */
 UCLASS()
 class JUMANJIUE_API AJumanjiGameState : public AGameStateBase
 {
@@ -27,8 +33,29 @@ public:
     UFUNCTION(BlueprintPure, Category = "JUMANJI|Board")
     FName GetActiveBoardEventId() const { return ActiveBoardEventId; }
 
+    UFUNCTION(BlueprintCallable, Category = "JUMANJI|Adventure")
+    bool InitializeAdventureObjectives(const TArray<FJumanjiAdventureObjectiveState>& Objectives);
+
+    UFUNCTION(BlueprintCallable, Category = "JUMANJI|Adventure")
+    bool AddAdventureObjectiveProgress(FName ObjectiveId, int32 ProgressAmount = 1);
+
+    UFUNCTION(BlueprintPure, Category = "JUMANJI|Adventure")
+    TArray<FJumanjiAdventureObjectiveState> GetAdventureObjectives() const
+    {
+        return AdventureObjectiveSet.Objectives;
+    }
+
+    UFUNCTION(BlueprintPure, Category = "JUMANJI|Adventure")
+    bool AreAdventureObjectivesComplete() const;
+
+    UFUNCTION(BlueprintPure, Category = "JUMANJI|Adventure")
+    int32 GetAdventureObjectiveRevision() const { return AdventureObjectiveSet.Revision; }
+
     UPROPERTY(BlueprintAssignable, Category = "JUMANJI|Board")
     FJumanjiBoardEventStateChanged OnBoardEventStateChanged;
+
+    UPROPERTY(BlueprintAssignable, Category = "JUMANJI|Adventure")
+    FJumanjiAdventureObjectivesChanged OnAdventureObjectivesChanged;
 
 protected:
     UPROPERTY(ReplicatedUsing = OnRep_BoardEventState, BlueprintReadOnly, Category = "JUMANJI|Board")
@@ -40,8 +67,15 @@ protected:
     UPROPERTY(Replicated, BlueprintReadOnly, Category = "JUMANJI|Board")
     int32 BoardEventRevision = 0;
 
+    /** Objective data and revision are replicated together as one snapshot. */
+    UPROPERTY(ReplicatedUsing = OnRep_AdventureObjectiveSet, BlueprintReadOnly, Category = "JUMANJI|Adventure")
+    FJumanjiAdventureObjectiveSet AdventureObjectiveSet;
+
     UFUNCTION()
     void OnRep_BoardEventState();
+
+    UFUNCTION()
+    void OnRep_AdventureObjectiveSet();
 
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };
