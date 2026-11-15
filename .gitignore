@@ -1,0 +1,44 @@
+# Unreal Engine generated files
+Binaries/
+DerivedDataCache/
+Intermediate/
+Saved/
+.vs/
+.idea/
+.vscode/
+*.sln
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.opensdf
+*.sdf
+*.VC.db
+*.VC.VC.opendb
+
+# Build and packaging output
+Build/
+Releases/
+*.apk
+*.aab
+*.obb
+*.ipa
+*.dSYM/
+
+# Crash reports and logs
+crashreport/
+Crashes/
+*.log
+
+# Operating system
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Local secrets and signing material
+*.keystore
+*.jks
+*.p12
+*.pem
+.env
+.env.*
