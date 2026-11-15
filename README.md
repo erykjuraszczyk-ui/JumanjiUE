@@ -12,6 +12,7 @@ Open-world third-person adventure RPG prototype with a shared-world direction an
 - Stage 07 — Living Board Adventure Core: validated server-owned objective sets, replicated puzzle progress, and adventure completion gated by all objectives.
 - Stage 08 — Emerald Jungle Trial Actors: server-routed puzzle interactions, revision-checked submissions, replicated trial state and the first Root Rune sequence.
 - Stage 09 — Emerald Jungle Chapter Flow & Adventure UI: server-side chapter orchestration, replicated chapter phase, director-to-trial validation and a Blueprint-facing HUD base.
+- Stage 10 — Great Spirit Trial Content Pack: eight additional native environmental trials, nine matching objective contracts and Blueprint presentation asset hooks.
 
 ## The nine playable Great Spirits
 1. Great Spirit I — Duch Korzeni (Root / Guardian)
@@ -53,6 +54,7 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - Content/Adventure/README.md — adventure asset layout and Blueprint integration contract.
 - Docs/STAGE_08_EMERALD_JUNGLE_TRIAL_ACTORS.md — native trial runtime, Root Rune Sequence, multiplayer interaction and acceptance checklist.
 - Docs/STAGE_09_EMERALD_JUNGLE_CHAPTER_FLOW.md — chapter director, replicated chapter state, HUD integration and nine-trial authoring contract.
+- Docs/STAGE_10_GREAT_SPIRIT_TRIAL_CONTENT_PACK.md — nine trial definitions, puzzle sequences, presentation hooks and Blueprint authoring workflow.
 - Content/Adventure/Trials/README.md — Blueprint trial and UMG authoring guide.
 - Content/UI/README.md — Widget Blueprint asset setup.
 - Docs/Art/GreatSpiritCharacterArtBrief.md — individual visual targets and character art requirements.
@@ -82,6 +84,8 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - server-side validation for objective definitions, progress increments and completion gates;
 - adventure lifecycle API in UJumanjiBoardWorldSubsystem, including StartBoardAdventure, AdvanceBoardAdventureObjective and CompleteBoardAdventure;
 - abstract AJumanjiTrialActor with replicated state, step index and revision;
+- eight additional Great Spirit trial classes with three server-validated puzzle steps each;
+- Blueprint-readable soft-reference hooks for trial meshes, activation/step/completion audio and Niagara completion effects;
 - AJumanjiRootRuneTrial with a three-step Seed → Sprout → Tree example;
 - PlayerController-owned server RPC for trial requests, with server-side range, option and stale-revision validation;
 - server-side AJumanjiAdventureChapterDirector for chapter startup, trial actor preflight and completion orchestration;
@@ -100,7 +104,7 @@ This is a source-code foundation, not a finished game or installable Android bui
 - 45 character-specific ability Blueprint assets and configured Gameplay Effects;
 - configured enemy/boss meshes, animations and initialization effects;
 - final boss attack patterns and encounter reward service;
-- Blueprint children, visuals and playable implementations for the eight remaining Great Spirit trials;
+- Blueprint children, visuals and playable implementations for all nine Great Spirit trials;
 - the Root Rune trial Blueprint, rune meshes, UI widget, map and presentation assets;
 - a persistent quest journal, save-game storage, inventory rewards and backend persistence;
 - asynchronous asset preloading and device profiling;
