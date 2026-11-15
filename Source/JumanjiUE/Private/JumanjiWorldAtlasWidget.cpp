@@ -1,6 +1,7 @@
 #include "JumanjiWorldAtlasWidget.h"
 
 #include "Engine/World.h"
+#include "GameFramework/PlayerController.h"
 #include "JumanjiPlayerState.h"
 
 void UJumanjiWorldAtlasWidget::NativeConstruct()
