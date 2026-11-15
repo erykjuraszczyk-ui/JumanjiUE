@@ -9,6 +9,7 @@ Open-world third-person adventure RPG prototype with a shared-world direction an
 - Stage 04 — Great Spirit Select UI: C++ UMG widget base, roster card data flow, preview/confirm/cancel behavior and controller open/close methods.
 - Stage 05 — Great Spirit Ability Core: PlayerState-owned GAS, replicated attributes, input-tag activation, five-slot loadouts and optional validated DataTable roster overrides.
 - Stage 06 — Great Spirit Combat System: server-authoritative melee hit detection, GAS damage effects, GAS-enabled enemies, perception-driven AI and three-phase boss state.
+- Stage 07 — Living Board Adventure Core: validated server-owned objective sets, replicated puzzle progress, and adventure completion gated by all objectives.
 
 ## The nine playable Great Spirits
 1. Great Spirit I — Duch Korzeni (Root / Guardian)
@@ -46,6 +47,8 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - Docs/STAGE_06_GREAT_SPIRIT_COMBAT_SYSTEM.md — combat runtime, asset setup, flow and acceptance tests.
 - Docs/Design/FirstCombatEncounter.md — first three-phase boss encounter design.
 - Content/Combat/README.md — damage effect, enemy, boss and AI setup.
+- Docs/STAGE_07_LIVING_BOARD_ADVENTURE_CORE.md — objective replication, server validation, nine elemental trial concepts and acceptance checklist.
+- Content/Adventure/README.md — Blueprint trial authoring guide and server integration contract.
 - Content/UI/README.md — Widget Blueprint asset setup.
 - Docs/Art/GreatSpiritCharacterArtBrief.md — individual visual targets and character art requirements.
 - Content/Characters/README.md — Unreal character asset naming and import plan.
@@ -68,7 +71,10 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - hit Gameplay Event dispatch to target ASC;
 - GAS-enabled enemy base with damage/defeat callbacks;
 - perception-based enemy AI pursuit and attack ability requests;
-- three-phase boss health thresholds and replicated phase tags.
+- three-phase boss health thresholds and replicated phase tags;
+- replicated Living Board adventure objective snapshots with a monotonically increasing revision;
+- server-side validation for objective definitions, progress increments and completion gates;
+- adventure lifecycle API in UJumanjiBoardWorldSubsystem, including StartBoardAdventure, AdvanceBoardAdventureObjective and CompleteBoardAdventure.
 
 ## Not yet included
 This is a source-code foundation, not a finished game or installable Android build. The repository still needs:
@@ -80,6 +86,8 @@ This is a source-code foundation, not a finished game or installable Android bui
 - 45 character-specific ability Blueprint assets and configured Gameplay Effects;
 - configured enemy/boss meshes, animations and initialization effects;
 - final boss attack patterns and encounter reward service;
+- nine elemental trial Actor Blueprints, puzzle widgets and finished puzzle rooms;
+- a persistent quest journal, save-game storage, inventory rewards and backend persistence;
 - asynchronous asset preloading and device profiling;
 - account persistence, unlock progression and backend services;
 - team/faction filtering before enabling PvP;
