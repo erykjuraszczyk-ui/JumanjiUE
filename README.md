@@ -7,6 +7,7 @@ Open-world third-person adventure RPG prototype with a shared-world direction an
 - Stage 02 — Great Spirit Roster: nine playable-character definitions, server-validated selection and visual art brief.
 - Stage 03 — Great Spirit Presentation Core: binds replicated PlayerState selection to the pawn and applies the matching skeletal mesh when an asset is assigned.
 - Stage 04 — Great Spirit Select UI: C++ UMG widget base, roster card data flow, preview/confirm/cancel behavior and controller open/close methods.
+- Stage 05 — Great Spirit Ability Core: PlayerState-owned GAS, replicated attributes, input-tag activation, five-slot loadouts and optional validated DataTable roster overrides.
 
 ## The nine playable Great Spirits
 1. Great Spirit I — Duch Korzeni (Root / Guardian)
@@ -38,6 +39,9 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - Docs/STAGE_02_GREAT_SPIRIT_ROSTER.md — nine-character roster, selection flow and acceptance criteria.
 - Docs/STAGE_03_GREAT_SPIRIT_PRESENTATION.md — runtime mesh presentation and UMG integration contract.
 - Docs/STAGE_04_GREAT_SPIRIT_SELECT_UI.md — selection layout, Blueprint wiring and acceptance criteria.
+- Docs/STAGE_05_GREAT_SPIRIT_ABILITY_CORE.md — GAS architecture, slots, input tags and acceptance checklist.
+- Docs/Design/GreatSpiritAbilityDesign.md — proposed five-slot ability kits for each spirit.
+- Content/Abilities/README.md — Blueprint ability and Gameplay Effect asset authoring guide.
 - Content/UI/README.md — Widget Blueprint asset setup.
 - Docs/Art/GreatSpiritCharacterArtBrief.md — individual visual targets and character art requirements.
 - Content/Characters/README.md — Unreal character asset naming and import plan.
@@ -51,7 +55,11 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - server-validated player selection replicated through AJumanjiPlayerState;
 - pawn presentation binding that resolves the selected definition and applies its skeletal mesh when a soft asset reference is configured;
 - UJumanjiGreatSpiritSelectionWidget base with roster population, preview/confirm/cancel flow and PlayerState confirmation updates;
-- PlayerController methods to open and close the configured selection Widget Blueprint.
+- PlayerController methods to open and close the configured selection Widget Blueprint;
+- PlayerState-owned replicated GAS ASC and AttributeSet;
+- Great Spirit loadout grants validated by slot and input tag;
+- primary, active, ultimate and dodge input routing;
+- optional nine-row DataTable override for designer-assigned ability and character assets.
 
 ## Not yet included
 This is a source-code foundation, not a finished game or installable Android build. The repository still needs:
@@ -60,7 +68,7 @@ This is a source-code foundation, not a finished game or installable Android bui
 - rigs, animation blueprints and facial animation;
 - a touch-first HUD and final Enhanced Input assets;
 - actual UMG Widget Blueprint .uasset files and card layout;
-- complete GAS abilities and combat implementation;
+- 45 character-specific ability Blueprint assets and configured Gameplay Effects;
 - asynchronous asset preloading and device profiling;
 - account persistence, unlock progression and backend services;
 - dedicated-server deployment;

@@ -1,6 +1,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GameplayTagContainer.h"
+#include "GameplayAbilitySpec.h"
 #include "GameFramework/Character.h"
 #include "JumanjiCharacter.generated.h"
 
@@ -10,7 +12,7 @@ class UInputComponent;
 
 /**
  * Base third-person character for JUMANJI.
- * Character presentation is resolved from the replicated PlayerState selection.
+ * The PlayerState owns the ASC; this pawn is its current GAS avatar.
  */
 UCLASS()
 class JUMANJIUE_API AJumanjiCharacter : public ACharacter
@@ -20,8 +22,13 @@ class JUMANJIUE_API AJumanjiCharacter : public ACharacter
 public:
     AJumanjiCharacter();
 
+    /** Entry point for both hardware input and future mobile touch buttons. */
+    UFUNCTION(BlueprintCallable, Category = "JUMANJI|Abilities")
+    bool ActivateAbilityByInputTag(FGameplayTag InputTag);
+
 protected:
     virtual void BeginPlay() override;
+    virtual void PossessedBy(AController* NewController) override;
     virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
     virtual void OnRep_PlayerState() override;
 
@@ -30,11 +37,20 @@ protected:
     void Turn(float Value);
     void LookUp(float Value);
 
+    void Input_PrimaryAttack();
+    void Input_ActiveAbility();
+    void Input_Ultimate();
+    void Input_Dodge();
+
     UFUNCTION()
     void HandleSelectedCharacterChanged(FName CharacterId);
 
     void BindToPlayerCharacterSelection();
+    void InitializeAbilityActorInfo();
     void ApplySelectedCharacterPresentation();
+    void ApplySelectedAbilityLoadout(
+        FName CharacterId,
+        const struct FJumanjiCharacterDefinition& Definition);
 
 private:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera", meta = (AllowPrivateAccess = "true"))
@@ -45,4 +61,10 @@ private:
 
     UPROPERTY(Transient)
     FName LastAppliedCharacterId = NAME_None;
+
+    UPROPERTY(Transient)
+    FName LastGrantedAbilityLoadoutCharacterId = NAME_None;
+
+    UPROPERTY(Transient)
+    TArray<FGameplayAbilitySpecHandle> GrantedCharacterAbilityHandles;
 };
