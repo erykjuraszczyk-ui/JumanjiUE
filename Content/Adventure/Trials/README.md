@@ -64,3 +64,22 @@ The Stage 09 chapter director expects a one-to-one mapping between objectives an
 ## Player-facing feedback
 
 The trial actor remains the authority for puzzle state. Bind the prompt widget to OnTrialStateChanged and use the current prompt/options/revision getters. The chapter HUD is a separate Widget Blueprint derived from UJumanjiAdventureHUDWidget and reads the replicated chapter/objective snapshots. A widget must never increment objective progress directly.
+
+
+## Stage 10 — Great Spirit Trial Content Pack
+
+The native C++ trial set now contains all nine Great Spirit trials. The eight additions are:
+- AJumanjiTideChannelTrial — TRIAL_TIDE_CHANNELS
+- AJumanjiStoneBalanceTrial — TRIAL_STONE_BALANCE
+- AJumanjiStormWindTrial — TRIAL_STORM_WINDS
+- AJumanjiEmberSequenceTrial — TRIAL_EMBER_SEQUENCE
+- AJumanjiDawnMirrorTrial — TRIAL_DAWN_MIRRORS
+- AJumanjiShadowPatternTrial — TRIAL_SHADOW_PATTERN
+- AJumanjiLifeGardenTrial — TRIAL_LIFE_GARDEN
+- AJumanjiFrostGateTrial — TRIAL_FROST_GATES
+
+Each trial has three steps. Set the matching chapter objective RequiredProgress to 3. The existing AJumanjiRootRuneTrial remains the Root trial.
+
+The base AJumanjiTrialActor exposes soft-reference presentation fields for a display mesh, activation/step/completion sounds and Niagara completion effect. These references are not loaded or played automatically. Blueprint children must load them and trigger presentation only after observing authoritative replicated trial state.
+
+See Docs/STAGE_10_GREAT_SPIRIT_TRIAL_CONTENT_PACK.md for the complete puzzle sequence and editor setup.
