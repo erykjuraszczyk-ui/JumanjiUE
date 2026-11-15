@@ -7,6 +7,7 @@
 class UJumanjiGreatSpiritSelectionWidget;
 class UJumanjiAdventureHUDWidget;
 class AJumanjiTrialActor;
+class UJumanjiWorldAtlasWidget;
 
 /** Validates character selection and routes world interactions through the server. */
 UCLASS()
@@ -25,6 +26,12 @@ public:
 
     UFUNCTION(BlueprintCallable, Category = "JUMANJI|UI")
     void CloseGreatSpiritSelection();
+
+    UFUNCTION(BlueprintCallable, Category = "JUMANJI|World")
+    bool OpenWorldAtlas();
+
+    UFUNCTION(BlueprintCallable, Category = "JUMANJI|World")
+    void CloseWorldAtlas();
 
     /**
      * Sends a puzzle option to the server. A true return on a client means the
@@ -54,6 +61,9 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "JUMANJI|Adventure|UI")
     TSubclassOf<UJumanjiAdventureHUDWidget> AdventureHUDWidgetClass;
 
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "JUMANJI|World|UI")
+    TSubclassOf<UJumanjiWorldAtlasWidget> WorldAtlasWidgetClass;
+
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "JUMANJI|Adventure", meta = (ClampMin = "100.0", ClampMax = "1000.0"))
     float MaxTrialInteractionDistance = 350.0f;
 
@@ -71,4 +81,7 @@ private:
 
     UPROPERTY(Transient)
     TObjectPtr<UJumanjiAdventureHUDWidget> ActiveAdventureHUDWidget;
+
+    UPROPERTY(Transient)
+    TObjectPtr<UJumanjiWorldAtlasWidget> ActiveWorldAtlasWidget;
 };
