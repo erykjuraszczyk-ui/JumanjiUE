@@ -13,6 +13,7 @@ This is a combat vertical-slice foundation. It is not a complete enemy roster, f
 - calls CommitAbility before resolving the attack;
 - performs a forward sphere sweep on ECC_Pawn;
 - ignores the source actor and duplicate targets;
+- applies a simple PvE side filter: player pawns can damage enemies, enemy pawns can damage player pawns; same-side hits are ignored;
 - resolves the target ASC through IAbilitySystemInterface;
 - reads source AttackPower and target Defense;
 - calculates damage as `max(1, BaseDamage + AttackPower * AttackPowerCoefficient - Defense * DefenseCoefficient)`;
@@ -146,7 +147,7 @@ These are prototype values only. Test against character abilities, attack cadenc
 
 ## Known scope limits
 - The current melee attack is a forward sphere sweep, not a full combo or weapon-hitbox system.
-- No team/faction filter is implemented yet; the first prototype is PvE. Do not enable PvP with this hit selection logic.
+- The first PvE side filter distinguishes AJumanjiEnemyCharacter from non-enemy pawns. A general faction/team matrix, neutral factions and PvP rules are not implemented.
 - Player defeat/respawn flow is not complete.
 - The enemy AI uses sight, pursuit and periodic attack requests, not a behavior tree or squad tactics.
 - Boss phase events are provided, but phase-specific attack assets and encounter scripting must be authored.
@@ -158,7 +159,8 @@ These are prototype values only. Test against character abilities, attack cadenc
 - [ ] Player pawn exposes its PlayerState ASC through IAbilitySystemInterface.
 - [ ] Enemy pawn exposes its own ASC through IAbilitySystemInterface.
 - [ ] A configured melee ability activates on the server only.
-- [ ] A forward trace detects a valid enemy target once per activation.
+- [ ] A forward trace detects an opposing PvE target once per activation.
+- [ ] Same-side player/player and enemy/enemy hit results are ignored.
 - [ ] GE_Damage_Base subtracts Health using the negative Data.Damage magnitude.
 - [ ] Defense affects the calculated damage exactly once.
 - [ ] Event.Combat.Hit reaches the target ASC.
