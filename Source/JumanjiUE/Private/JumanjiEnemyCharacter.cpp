@@ -1,4 +1,5 @@
 #include "JumanjiEnemyCharacter.h"
+#include "JumanjiCombatDefaults.h"
 
 #include "Abilities/GameplayAbility.h"
 #include "GameplayTagContainer.h"
@@ -30,6 +31,10 @@ AJumanjiEnemyCharacter::AJumanjiEnemyCharacter()
 
     AIControllerClass = AJumanjiEnemyAIController::StaticClass();
     AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
+
+    // Native defaults make the first combat slice testable before BP assets exist.
+    InitializationEffectClass = UJumanjiEnemyInitializationGameplayEffect::StaticClass();
+    BasicAttackAbilityClass = UJumanjiDefaultEnemyMeleeAbility::StaticClass();
 
     GetCharacterMovement()->bOrientRotationToMovement = true;
     GetCharacterMovement()->RotationRate = FRotator(0.0f, 360.0f, 0.0f);
