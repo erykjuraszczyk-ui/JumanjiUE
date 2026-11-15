@@ -54,12 +54,22 @@ Implements IAbilitySystemInterface and owns UJumanjiAbilitySystemComponent, UJum
 | Ultimate | Input.Ability.Ultimate | major team or area action | Resonance |
 | Dodge | Input.Ability.Dodge | evasive movement | cooldown or Energy |
 
-The roster contains display names and soft class references for these slots. Class references remain empty until the corresponding Blueprint or C++ ability assets are authored and assigned.
+The roster contains display names and soft class references for these slots. Class references remain empty in the built-in fallback catalog until ability assets are authored. FJumanjiCharacterDefinition now derives from FTableRowBase, so the full roster and its ability class references can be authored in a DataTable.
 
 ## Input mappings
 Keyboard: Primary = Left Mouse Button; Active = E; Ultimate = R; Dodge = Left Shift.
 Gamepad: Primary = Right Shoulder; Active = Face Button Left; Ultimate = Face Button Top; Dodge = Face Button Right.
 Mobile UI should call AJumanjiCharacter::ActivateAbilityByInputTag or UJumanjiAbilitySystemComponent::TryActivateAbilitiesByInputTag. Touch buttons must not write attributes directly.
+
+## Data-driven roster and ability assignment
+The roster subsystem supports an optional ConfiguredRosterDataTable setting. It first builds the built-in nine-spirit fallback, then attempts to load the configured DataTable. The override is accepted only if its row struct is FJumanjiCharacterDefinition, contains exactly nine rows, has unique CharacterId values and SpiritNumber values 1–9, and has non-empty display names. If validation fails, the built-in roster remains active.
+
+After creating DT_GreatSpiritRoster in Unreal Editor, set this in DefaultGame.ini:
+
+[/Script/JumanjiUE.JumanjiCharacterRosterSubsystem]
+ConfiguredRosterDataTable=/Game/Data/DT_GreatSpiritRoster.DT_GreatSpiritRoster
+
+Each DataTable row can assign portrait, mesh and the five soft ability class fields. Use Roman-numeral row keys such as GREAT_SPIRIT_I, while CharacterId remains the stable runtime identity. This lets designers assign Blueprint ability classes without editing the C++ roster builder.
 
 ## Per-character loadout design
 All nine proposed ability kits are documented in Docs/Design/GreatSpiritAbilityDesign.md. They are concepts until ability classes, Gameplay Effects, animations, cues and targeting logic are implemented.
@@ -99,6 +109,7 @@ Use Gameplay Effects for attribute changes and cooldowns. Do not modify Health, 
 - [ ] Character initializes actor info on client PlayerState replication.
 - [ ] Attributes replicate and remain clamped.
 - [ ] Input tags exist and match input mapping names.
+- [ ] A configured DataTable overrides the fallback roster only when all nine rows pass validation.
 - [ ] A test UJumanjiGameplayAbility class can be granted by the server.
 - [ ] A matching input tag activates the corresponding granted ability.
 - [ ] A class with the wrong ability slot is rejected.
