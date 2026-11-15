@@ -4,8 +4,6 @@
 #include "Blueprint/UserWidget.h"
 #include "JumanjiWorldAtlas.h"
 #include "JumanjiWorldExploration.h"
-
-class AJumanjiPlayerState;
 #include "JumanjiWorldAtlasWidget.generated.h"
 
 class AJumanjiPlayerState;
