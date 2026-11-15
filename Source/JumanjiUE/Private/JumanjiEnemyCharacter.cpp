@@ -1,5 +1,10 @@
 #include "JumanjiEnemyCharacter.h"
 
+#include "Abilities/GameplayAbility.h"
+#include "GameplayTagContainer.h"
+#include "JumanjiEnemyAIController.h"
+#include "JumanjiGameplayAbility.h"
+
 #include "AbilitySystemComponent.h"
 #include "AIController.h"
 #include "Components/CapsuleComponent.h"
@@ -23,7 +28,7 @@ AJumanjiEnemyCharacter::AJumanjiEnemyCharacter()
 
     AttributeSet = CreateDefaultSubobject<UJumanjiAttributeSet>(TEXT("AttributeSet"));
 
-    AIControllerClass = AAIController::StaticClass();
+    AIControllerClass = AJumanjiEnemyAIController::StaticClass();
     AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 
     GetCharacterMovement()->bOrientRotationToMovement = true;
@@ -56,6 +61,13 @@ void AJumanjiEnemyCharacter::BeginPlay()
         }
     }
 
+    if (HasAuthority() && BasicAttackAbilityClass
+        && BasicAttackAbilityClass->IsChildOf(UJumanjiGameplayAbility::StaticClass()))
+    {
+        const FGameplayAbilitySpec AttackSpec(BasicAttackAbilityClass, 1, INDEX_NONE, this);
+        AbilitySystemComponent->GiveAbility(AttackSpec);
+    }
+
     HealthChangedDelegateHandle =
         AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(
             UJumanjiAttributeSet::GetHealthAttribute())
@@ -73,6 +85,11 @@ void AJumanjiEnemyCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
     }
 
     Super::EndPlay(EndPlayReason);
+}
+
+FGameplayTag AJumanjiEnemyCharacter::GetEnemyAttackInputTag() const
+{
+    return FGameplayTag::RequestGameplayTag(AttackInputTagName, false);
 }
 
 UAbilitySystemComponent* AJumanjiEnemyCharacter::GetAbilitySystemComponent() const
