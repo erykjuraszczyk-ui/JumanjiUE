@@ -11,6 +11,9 @@ AJumanjiCharacter::AJumanjiCharacter()
 {
     PrimaryActorTick.bCanEverTick = false;
 
+    bReplicates = true;
+    SetReplicateMovement(true);
+
     bUseControllerRotationPitch = false;
     bUseControllerRotationYaw = false;
     bUseControllerRotationRoll = false;
