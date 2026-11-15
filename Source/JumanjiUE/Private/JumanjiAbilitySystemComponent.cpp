@@ -40,7 +40,8 @@ void UJumanjiAbilitySystemComponent::GrantCharacterAbilityLoadout(
     }
 
     const auto GrantAbility = [this, &OutGrantedHandles](
-        const TSoftClassPtr<UGameplayAbility>& AbilityReference)
+        const TSoftClassPtr<UGameplayAbility>& AbilityReference,
+        EJumanjiAbilitySlot ExpectedSlot)
     {
         if (AbilityReference.IsNull())
         {
@@ -48,7 +49,15 @@ void UJumanjiAbilitySystemComponent::GrantCharacterAbilityLoadout(
         }
 
         UClass* LoadedAbilityClass = AbilityReference.LoadSynchronous();
-        if (!LoadedAbilityClass || !LoadedAbilityClass->IsChildOf(UGameplayAbility::StaticClass()))
+        if (!LoadedAbilityClass || !LoadedAbilityClass->IsChildOf(UJumanjiGameplayAbility::StaticClass()))
+        {
+            return;
+        }
+
+        const UJumanjiGameplayAbility* AbilityCDO =
+            Cast<UJumanjiGameplayAbility>(LoadedAbilityClass->GetDefaultObject());
+
+        if (!AbilityCDO || AbilityCDO->GetAbilitySlot() != ExpectedSlot)
         {
             return;
         }
@@ -62,20 +71,17 @@ void UJumanjiAbilitySystemComponent::GrantCharacterAbilityLoadout(
 
         OutGrantedHandles.Add(Handle);
 
-        const UJumanjiGameplayAbility* AbilityCDO =
-            Cast<UJumanjiGameplayAbility>(LoadedAbilityClass->GetDefaultObject());
-
-        if (AbilityCDO && AbilityCDO->ShouldActivateOnGranted())
+        if (AbilityCDO->ShouldActivateOnGranted())
         {
             TryActivateAbility(Handle);
         }
     };
 
-    GrantAbility(CharacterDefinition.PrimaryAttackAbilityClass);
-    GrantAbility(CharacterDefinition.SignatureAbilityClass);
-    GrantAbility(CharacterDefinition.PassiveAbilityClass);
-    GrantAbility(CharacterDefinition.UltimateAbilityClass);
-    GrantAbility(CharacterDefinition.DodgeAbilityClass);
+    GrantAbility(CharacterDefinition.PrimaryAttackAbilityClass, EJumanjiAbilitySlot::PrimaryAttack);
+    GrantAbility(CharacterDefinition.SignatureAbilityClass, EJumanjiAbilitySlot::Active);
+    GrantAbility(CharacterDefinition.PassiveAbilityClass, EJumanjiAbilitySlot::Passive);
+    GrantAbility(CharacterDefinition.UltimateAbilityClass, EJumanjiAbilitySlot::Ultimate);
+    GrantAbility(CharacterDefinition.DodgeAbilityClass, EJumanjiAbilitySlot::Dodge);
 }
 
 void UJumanjiAbilitySystemComponent::ClearGrantedAbilities(
