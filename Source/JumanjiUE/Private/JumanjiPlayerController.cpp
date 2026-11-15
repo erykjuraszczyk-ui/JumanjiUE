@@ -1,8 +1,10 @@
 #include "JumanjiPlayerController.h"
 
-#include "JumanjiCharacterRosterSubsystem.h"
-#include "JumanjiPlayerState.h"
+#include "Blueprint/UserWidget.h"
 #include "Engine/GameInstance.h"
+#include "JumanjiCharacterRosterSubsystem.h"
+#include "JumanjiGreatSpiritSelectionWidget.h"
+#include "JumanjiPlayerState.h"
 
 void AJumanjiPlayerController::RequestSelectCharacter(FName CharacterId)
 {
@@ -27,6 +29,56 @@ void AJumanjiPlayerController::RequestSelectCharacter(FName CharacterId)
     else
     {
         ServerSelectCharacter(CharacterId);
+    }
+}
+
+bool AJumanjiPlayerController::OpenGreatSpiritSelection()
+{
+    if (!IsLocalController() || !GreatSpiritSelectionWidgetClass)
+    {
+        return false;
+    }
+
+    if (IsValid(ActiveGreatSpiritSelectionWidget))
+    {
+        if (!ActiveGreatSpiritSelectionWidget->IsInViewport())
+        {
+            ActiveGreatSpiritSelectionWidget->AddToViewport(100);
+        }
+        return true;
+    }
+
+    ActiveGreatSpiritSelectionWidget =
+        CreateWidget<UJumanjiGreatSpiritSelectionWidget>(this, GreatSpiritSelectionWidgetClass);
+
+    if (!ActiveGreatSpiritSelectionWidget)
+    {
+        return false;
+    }
+
+    ActiveGreatSpiritSelectionWidget->AddToViewport(100);
+
+    FInputModeGameAndUI InputMode;
+    InputMode.SetWidgetToFocus(ActiveGreatSpiritSelectionWidget->TakeWidget());
+    InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+    SetInputMode(InputMode);
+    SetShowMouseCursor(false);
+    return true;
+}
+
+void AJumanjiPlayerController::CloseGreatSpiritSelection()
+{
+    if (IsValid(ActiveGreatSpiritSelectionWidget))
+    {
+        ActiveGreatSpiritSelectionWidget->RemoveFromParent();
+        ActiveGreatSpiritSelectionWidget = nullptr;
+    }
+
+    if (IsLocalController())
+    {
+        FInputModeGameOnly InputMode;
+        SetInputMode(InputMode);
+        SetShowMouseCursor(false);
     }
 }
 
