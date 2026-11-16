@@ -12,4 +12,7 @@ class JUMANJIUE_API AJumanjiGameMode : public AGameModeBase
 
 public:
     AJumanjiGameMode();
+
+    virtual void PostLogin(APlayerController* NewPlayer) override;
+    virtual void Logout(AController* Exiting) override;
 };
