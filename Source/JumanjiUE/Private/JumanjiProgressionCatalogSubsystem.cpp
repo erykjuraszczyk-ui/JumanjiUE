@@ -52,13 +52,11 @@ void UJumanjiProgressionCatalogSubsystem::BuildDefaultCatalog()
     AddMaterial(TEXT("MAT_FROST_CRYSTAL"), TEXT("Kryształ Mrozu"));
     AddMaterial(TEXT("MAT_SPIRIT_MEMORY"), TEXT("Pamięć Ducha"));
 
-    AbilitySlotIds = {
-        FName(TEXT("SLOT_PRIMARY")),
-        FName(TEXT("SLOT_ACTIVE")),
-        FName(TEXT("SLOT_PASSIVE")),
-        FName(TEXT("SLOT_ULTIMATE")),
-        FName(TEXT("SLOT_DODGE"))
-    };
+    AbilitySlotIds.Add(FName(TEXT("SLOT_PRIMARY")));
+    AbilitySlotIds.Add(FName(TEXT("SLOT_ACTIVE")));
+    AbilitySlotIds.Add(FName(TEXT("SLOT_PASSIVE")));
+    AbilitySlotIds.Add(FName(TEXT("SLOT_ULTIMATE")));
+    AbilitySlotIds.Add(FName(TEXT("SLOT_DODGE")));
 }
 
 bool UJumanjiProgressionCatalogSubsystem::GetCurrencyDefinition(
