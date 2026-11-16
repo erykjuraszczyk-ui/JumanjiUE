@@ -8,6 +8,7 @@ class UJumanjiGreatSpiritSelectionWidget;
 class UJumanjiAdventureHUDWidget;
 class AJumanjiTrialActor;
 class UJumanjiWorldAtlasWidget;
+class UJumanjiWorldNavigationComponent;
 
 /** Validates character selection and routes world interactions through the server. */
 UCLASS()
@@ -16,7 +17,15 @@ class JUMANJIUE_API AJumanjiPlayerController : public APlayerController
     GENERATED_BODY()
 
 public:
+    AJumanjiPlayerController();
+
     virtual void BeginPlay() override;
+
+    UFUNCTION(BlueprintPure, Category = "JUMANJI|Navigation")
+    UJumanjiWorldNavigationComponent* GetWorldNavigationComponent() const
+    {
+        return WorldNavigationComponent;
+    }
 
     UFUNCTION(BlueprintCallable, Category = "JUMANJI|Character")
     void RequestSelectCharacter(FName CharacterId);
@@ -84,4 +93,7 @@ private:
 
     UPROPERTY(Transient)
     TObjectPtr<UJumanjiWorldAtlasWidget> ActiveWorldAtlasWidget;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "JUMANJI|Navigation", meta = (AllowPrivateAccess = "true"))
+    TObjectPtr<UJumanjiWorldNavigationComponent> WorldNavigationComponent;
 };

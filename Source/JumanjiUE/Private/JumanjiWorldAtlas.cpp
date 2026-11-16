@@ -16,6 +16,13 @@ namespace
             && Coordinate.X >= 0.0f && Coordinate.X <= 1.0f
             && Coordinate.Y >= 0.0f && Coordinate.Y <= 1.0f;
     }
+
+    bool IsValidWorldLocation(const FVector& Location)
+    {
+        return FMath::IsFinite(Location.X)
+            && FMath::IsFinite(Location.Y)
+            && FMath::IsFinite(Location.Z);
+    }
 }
 
 void UJumanjiWorldAtlasSubsystem::Initialize(FSubsystemCollectionBase& Collection)
@@ -180,6 +187,7 @@ bool UJumanjiWorldAtlasSubsystem::LoadConfiguredAtlas()
     {
         if (!Row || Row->RegionId.IsNone() || Row->DisplayName.IsEmpty()
             || !IsValidMapCoordinate(Row->MapCoordinate)
+            || (Row->bHasNavigationAnchor && !IsValidWorldLocation(Row->NavigationAnchor))
             || RegionIds.Contains(Row->RegionId))
         {
             UE_LOG(LogTemp, Warning, TEXT("JUMANJI: invalid or duplicate region row; using built-in atlas."));
@@ -193,7 +201,8 @@ bool UJumanjiWorldAtlasSubsystem::LoadConfiguredAtlas()
     {
         if (!Row || Row->LandmarkId.IsNone() || Row->RegionId.IsNone()
             || Row->DisplayName.IsEmpty() || LandmarkIds.Contains(Row->LandmarkId)
-            || !RegionIds.Contains(Row->RegionId))
+            || !RegionIds.Contains(Row->RegionId)
+            || (Row->bHasWorldLocation && !IsValidWorldLocation(Row->WorldLocation)))
         {
             UE_LOG(LogTemp, Warning, TEXT("JUMANJI: invalid or duplicate landmark row; using built-in atlas."));
             return false;
