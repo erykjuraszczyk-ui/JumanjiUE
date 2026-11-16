@@ -78,17 +78,27 @@ void AJumanjiGameMode::PostLogin(APlayerController* NewPlayer)
     {
         if (!JumanjiPlayerState->ApplyProfileSnapshot(Snapshot))
         {
-            UE_LOG(LogTemp, Warning,
-                TEXT("JUMANJI profile: loaded profile '%s' could not be applied; initializing safe defaults."),
+            UE_LOG(LogTemp, Error,
+                TEXT("JUMANJI profile: loaded profile '%s' could not be applied; preserving the existing slot."),
                 *ProfileId);
+            JumanjiPlayerState->DisableProfilePersistenceForSession();
             JumanjiPlayerState->InitializeNewProfileProgression();
-            JumanjiPlayerState->RequestProfileSave();
         }
+    }
+    else if (ProfileSubsystem->HasProfile(ProfileId))
+    {
+        // A slot exists but is unreadable/unsupported. Do not overwrite it
+        // with a new-player snapshot; keep it available for recovery.
+        UE_LOG(LogTemp, Error,
+            TEXT("JUMANJI profile: existing profile '%s' is invalid; persistence is disabled for this session."),
+            *ProfileId);
+        JumanjiPlayerState->DisableProfilePersistenceForSession();
+        JumanjiPlayerState->InitializeNewProfileProgression();
     }
     else
     {
         UE_LOG(LogTemp, Log,
-            TEXT("JUMANJI profile: no valid previous save for profile '%s'; starting with defaults."),
+            TEXT("JUMANJI profile: no previous save for profile '%s'; creating starter progression."),
             *ProfileId);
         JumanjiPlayerState->InitializeNewProfileProgression();
         JumanjiPlayerState->RequestProfileSave();
