@@ -2,6 +2,7 @@
 
 #include "JumanjiPlayerState.h"
 #include "JumanjiCharacterRosterSubsystem.h"
+#include "JumanjiProgressionCatalogSubsystem.h"
 #include "Engine/DataTable.h"
 #include "Engine/GameInstance.h"
 #include "Misc/SecureHash.h"
@@ -286,7 +287,8 @@ bool UJumanjiProgressionRewardSubsystem::GrantChapterCompletionReward(
     if (!IsValid(PlayerState)
         || !PlayerState->HasAuthority()
         || PlayerState->GetPersistentProfileId().IsEmpty()
-        || ChapterId.IsNone())
+        || ChapterId.IsNone()
+        || !PlayerState->HasCompletedAdventureChapter(ChapterId))
     {
         return false;
     }
@@ -324,6 +326,12 @@ void UJumanjiProgressionRewardSubsystem::GrantMissingCompletedChapterRewards(
 
     for (const FName ChapterId : PlayerState->GetCompletedAdventureChapterIds())
     {
+        // Only chapters present in the configured reward catalog have a package to retry.
+        if (!ChapterRewards.Contains(ChapterId))
+        {
+            continue;
+        }
+
         if (!PlayerState->HasProcessedProfileTransaction(BuildChapterTransactionId(*PlayerState, ChapterId)))
         {
             if (!GrantChapterCompletionReward(PlayerState, ChapterId))
@@ -354,7 +362,11 @@ bool UJumanjiProgressionRewardSubsystem::TryUpgradeGreatSpirit(
     const UJumanjiCharacterRosterSubsystem* Roster = GameInstance
         ? GameInstance->GetSubsystem<UJumanjiCharacterRosterSubsystem>()
         : nullptr;
-    if (!Roster || !Roster->IsPlayableCharacter(CharacterId))
+    const UJumanjiProgressionCatalogSubsystem* ProgressionCatalog = GameInstance
+        ? GameInstance->GetSubsystem<UJumanjiProgressionCatalogSubsystem>()
+        : nullptr;
+    if (!Roster || !ProgressionCatalog || !Roster->IsPlayableCharacter(CharacterId)
+        || PlayerState->GetGreatSpiritLevel(CharacterId) >= ProgressionCatalog->GetMaxCharacterLevel())
     {
         return false;
     }
