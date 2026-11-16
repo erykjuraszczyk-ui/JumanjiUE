@@ -21,6 +21,7 @@ Open-world third-person adventure RPG prototype with a shared-world direction an
 - Stage 16 — Saved Ability Loadout Runtime: allowlisted AbilityId-to-GAS class catalog, profile slot restoration, server-validated equipment RPC and ASC loadout replacement without duplicate grants.
 - Stage 17 — Great Spirit Ability Content Pack: server-authoritative configured ability execution, target/effect modes, montage and Gameplay Cue hooks, plus a 45-slot production matrix.
 - Stage 18 — Ability HUD & Input Feedback: mobile slot controls, GAS cooldown/resource indicators, activation feedback and local target-focus presentation.
+- Stage 19 — Ability Presentation Asset Pack: 45-slot icon manifest, nine Great Spirit palettes, radial cooldown material specification, UI audio feedback and Gameplay Cue/VFX authoring contract.
 
 ## The nine playable Great Spirits
 1. Great Spirit I — Duch Korzeni (Root / Guardian)
@@ -58,6 +59,9 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - Docs/STAGE_16_SAVED_ABILITY_LOADOUT_RUNTIME.md — allowlisted ability resolver, profile restoration, server equipment RPC, ASC grant lifecycle and acceptance checklist.
 - Docs/STAGE_17_GREAT_SPIRIT_ABILITY_CONTENT_PACK.md — configured ability runtime, costs/cooldowns, Blueprint/Gameplay Effect authoring and acceptance checklist.
 - Docs/STAGE_18_ABILITY_HUD_INPUT_FEEDBACK.md — mobile ability HUD, slot input, Energy/Resonance indicators, cooldown feedback and local target focus.
+- Docs/STAGE_19_ABILITY_PRESENTATION_ASSET_PACK.md — 45 ability icon definitions, palettes, cooldown material, feedback audio/VFX contract and Unreal Editor acceptance checklist.
+- Content/UI/AbilityPresentation/README.md — asset import, naming and per-ability assignment workflow.
+- Content/UI/AbilityPresentation/AbilityPresentationManifest.csv — 45 stable ability presentation records.
 - Docs/Design/GreatSpiritAbilityProductionMatrix.md — production specification for all 45 Great Spirit ability slots.
 - Docs/STAGE_06_GREAT_SPIRIT_COMBAT_SYSTEM.md — combat runtime, asset setup, flow and acceptance tests.
 - Docs/Design/FirstCombatEncounter.md — first three-phase boss encounter design.
