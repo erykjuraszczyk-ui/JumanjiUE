@@ -541,6 +541,7 @@ bool AJumanjiPlayerState::ApplyProfileTransaction(
     const FJumanjiProfileTransaction& Transaction)
 {
     if (!HasAuthority()
+        || !bProfilePersistenceEnabled
         || PersistentProfileId.IsEmpty()
         || Transaction.TransactionId.IsNone()
         || Transaction.TransactionId.ToString().Len() > 96
@@ -795,7 +796,7 @@ bool AJumanjiPlayerState::SetEquippedAbilitySlot(
     FName SlotId,
     FName AbilityId)
 {
-    if (!HasAuthority() || PersistentProfileId.IsEmpty()
+    if (!HasAuthority() || !bProfilePersistenceEnabled || PersistentProfileId.IsEmpty()
         || CharacterId.IsNone() || AbilityId.IsNone())
     {
         return false;
