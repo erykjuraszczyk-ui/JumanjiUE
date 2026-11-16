@@ -1,0 +1,403 @@
+#include "JumanjiAbilityHUDWidget.h"
+
+#include "AbilitySystemInterface.h"
+#include "JumanjiAbilitySystemComponent.h"
+#include "JumanjiAttributeSet.h"
+#include "JumanjiCharacter.h"
+#include "JumanjiPlayerState.h"
+#include "GameFramework/PlayerController.h"
+
+namespace
+{
+    const EJumanjiAbilitySlot AbilitySlotOrder[] =
+    {
+        EJumanjiAbilitySlot::PrimaryAttack,
+        EJumanjiAbilitySlot::Active,
+        EJumanjiAbilitySlot::Passive,
+        EJumanjiAbilitySlot::Ultimate,
+        EJumanjiAbilitySlot::Dodge
+    };
+
+    FText GetDefaultSlotName(EJumanjiAbilitySlot Slot)
+    {
+        switch (Slot)
+        {
+        case EJumanjiAbilitySlot::PrimaryAttack:
+            return FText::FromString(TEXT("Podstawowa"));
+        case EJumanjiAbilitySlot::Active:
+            return FText::FromString(TEXT("Aktywna"));
+        case EJumanjiAbilitySlot::Passive:
+            return FText::FromString(TEXT("Pasywna"));
+        case EJumanjiAbilitySlot::Ultimate:
+            return FText::FromString(TEXT("Najwyższa"));
+        case EJumanjiAbilitySlot::Dodge:
+            return FText::FromString(TEXT("Unik"));
+        default:
+            return FText::FromString(TEXT("Zdolność"));
+        }
+    }
+}
+
+void UJumanjiAbilityHUDWidget::NativeConstruct()
+{
+    Super::NativeConstruct();
+    TryBindAbilitySystem();
+    RefreshAbilityHUD();
+}
+
+void UJumanjiAbilityHUDWidget::NativeDestruct()
+{
+    UnbindAbilitySystem();
+    TargetFocus.Reset();
+    Super::NativeDestruct();
+}
+
+void UJumanjiAbilityHUDWidget::NativeTick(
+    const FGeometry& MyGeometry,
+    float InDeltaTime)
+{
+    Super::NativeTick(MyGeometry, InDeltaTime);
+
+    if (!IsValid(CachedAbilitySystem))
+    {
+        TryBindAbilitySystem();
+    }
+
+    RefreshAccumulator += InDeltaTime;
+    const float SafeInterval = FMath::Clamp(RefreshInterval, 0.05f, 1.0f);
+    if (RefreshAccumulator >= SafeInterval)
+    {
+        RefreshAccumulator = 0.0f;
+        RefreshAbilityHUD();
+    }
+
+    if (TargetFocus.IsValid())
+    {
+        const APlayerController* PlayerController = GetOwningPlayer();
+        const APawn* OwnerPawn = PlayerController ? PlayerController->GetPawn() : nullptr;
+        if (!OwnerPawn
+            || FVector::DistSquared(OwnerPawn->GetActorLocation(), TargetFocus->GetActorLocation())
+                > FMath::Square(MaxTargetFocusDistance))
+        {
+            ClearTargetFocus();
+        }
+    }
+}
+
+void UJumanjiAbilityHUDWidget::TryBindAbilitySystem()
+{
+    APlayerController* PlayerController = GetOwningPlayer();
+    AJumanjiPlayerState* JumanjiPlayerState = PlayerController
+        ? PlayerController->GetPlayerState<AJumanjiPlayerState>()
+        : nullptr;
+
+    UJumanjiAbilitySystemComponent* NewAbilitySystem = JumanjiPlayerState
+        ? JumanjiPlayerState->GetJumanjiAbilitySystemComponent()
+        : nullptr;
+
+    if (!NewAbilitySystem || CachedAbilitySystem == NewAbilitySystem)
+    {
+        return;
+    }
+
+    UnbindAbilitySystem();
+    CachedAbilitySystem = NewAbilitySystem;
+
+    EnergyChangedHandle = CachedAbilitySystem
+        ->GetGameplayAttributeValueChangeDelegate(UJumanjiAttributeSet::GetEnergyAttribute())
+        .AddUObject(this, &UJumanjiAbilityHUDWidget::HandleEnergyChanged);
+
+    ResonanceChangedHandle = CachedAbilitySystem
+        ->GetGameplayAttributeValueChangeDelegate(UJumanjiAttributeSet::GetResonanceAttribute())
+        .AddUObject(this, &UJumanjiAbilityHUDWidget::HandleResonanceChanged);
+}
+
+void UJumanjiAbilityHUDWidget::UnbindAbilitySystem()
+{
+    if (IsValid(CachedAbilitySystem))
+    {
+        if (EnergyChangedHandle.IsValid())
+        {
+            CachedAbilitySystem
+                ->GetGameplayAttributeValueChangeDelegate(UJumanjiAttributeSet::GetEnergyAttribute())
+                .Remove(EnergyChangedHandle);
+        }
+
+        if (ResonanceChangedHandle.IsValid())
+        {
+            CachedAbilitySystem
+                ->GetGameplayAttributeValueChangeDelegate(UJumanjiAttributeSet::GetResonanceAttribute())
+                .Remove(ResonanceChangedHandle);
+        }
+    }
+
+    EnergyChangedHandle.Reset();
+    ResonanceChangedHandle.Reset();
+    CachedAbilitySystem = nullptr;
+}
+
+TArray<FJumanjiAbilityHUDSlotState> UJumanjiAbilityHUDWidget::GetAbilitySlotStates() const
+{
+    TArray<FJumanjiAbilityHUDSlotState> Result;
+    Result.Reserve(UE_ARRAY_COUNT(AbilitySlotOrder));
+
+    for (const EJumanjiAbilitySlot Slot : AbilitySlotOrder)
+    {
+        FJumanjiAbilityHUDSlotState State;
+        State.Slot = Slot;
+        State.DisplayName = GetDefaultSlotName(Slot);
+        State.bIsPassive = Slot == EJumanjiAbilitySlot::Passive;
+        Result.Add(State);
+    }
+
+    if (!IsValid(CachedAbilitySystem))
+    {
+        return Result;
+    }
+
+    const FGameplayAbilityActorInfo* ActorInfo = CachedAbilitySystem->AbilityActorInfo.Get();
+    const FJumanjiAbilityHUDResourceState Resources = GetResourceState();
+
+    for (const FGameplayAbilitySpec& Spec : CachedAbilitySystem->GetActivatableAbilities())
+    {
+        const UJumanjiGameplayAbility* Ability = Cast<UJumanjiGameplayAbility>(Spec.Ability);
+        if (!Ability)
+        {
+            continue;
+        }
+
+        FJumanjiAbilityHUDSlotState* State = Result.FindByPredicate(
+            [Ability](const FJumanjiAbilityHUDSlotState& Candidate)
+            {
+                return Candidate.Slot == Ability->GetAbilitySlot();
+            });
+
+        if (!State)
+        {
+            continue;
+        }
+
+        State->bIsGranted = true;
+        State->DisplayName = Ability->GetHUDDisplayName().IsEmpty()
+            ? GetDefaultSlotName(State->Slot)
+            : Ability->GetHUDDisplayName();
+        State->Description = Ability->GetHUDDescription();
+        State->InputTag = Ability->GetInputTag();
+        State->Icon = Ability->GetHUDIcon();
+        State->ResourceType = Ability->GetHUDResourceType();
+        State->RequiredResource = FMath::Max(0.0f, Ability->GetHUDResourceCost());
+
+        switch (State->ResourceType)
+        {
+        case EJumanjiAbilityHUDResource::Energy:
+            State->CurrentResource = Resources.Energy;
+            break;
+        case EJumanjiAbilityHUDResource::Resonance:
+            State->CurrentResource = Resources.Resonance;
+            break;
+        case EJumanjiAbilityHUDResource::None:
+        default:
+            State->CurrentResource = 0.0f;
+            break;
+        }
+
+        State->bHasRequiredResource = State->ResourceType == EJumanjiAbilityHUDResource::None
+            || State->CurrentResource >= State->RequiredResource;
+
+        if (ActorInfo)
+        {
+            Ability->GetCooldownTimeRemainingAndDuration(
+                Spec.Handle,
+                ActorInfo,
+                State->CooldownRemaining,
+                State->CooldownDuration
+            );
+
+            FGameplayTagContainer FailureTags;
+            State->bCanActivate = Ability->CanActivateAbility(
+                Spec.Handle,
+                ActorInfo,
+                nullptr,
+                nullptr,
+                &FailureTags
+            );
+        }
+
+        State->CooldownRemaining = FMath::Max(0.0f, State->CooldownRemaining);
+        State->CooldownDuration = FMath::Max(0.0f, State->CooldownDuration);
+        State->CooldownPercent = State->CooldownDuration > 0.0f
+            ? FMath::Clamp(State->CooldownRemaining / State->CooldownDuration, 0.0f, 1.0f)
+            : 0.0f;
+        State->bIsOnCooldown = State->CooldownRemaining > 0.01f;
+
+        // A passive is informative only; manual activation is not exposed.
+        if (State->bIsPassive)
+        {
+            State->bCanActivate = false;
+        }
+    }
+
+    return Result;
+}
+
+FJumanjiAbilityHUDResourceState UJumanjiAbilityHUDWidget::GetResourceState() const
+{
+    FJumanjiAbilityHUDResourceState State;
+    if (!IsValid(CachedAbilitySystem))
+    {
+        return State;
+    }
+
+    State.Energy = CachedAbilitySystem->GetNumericAttribute(UJumanjiAttributeSet::GetEnergyAttribute());
+    State.MaxEnergy = CachedAbilitySystem->GetNumericAttribute(UJumanjiAttributeSet::GetMaxEnergyAttribute());
+    State.Resonance = CachedAbilitySystem->GetNumericAttribute(UJumanjiAttributeSet::GetResonanceAttribute());
+    State.MaxResonance = CachedAbilitySystem->GetNumericAttribute(UJumanjiAttributeSet::GetMaxResonanceAttribute());
+
+    State.Energy = FMath::Max(0.0f, State.Energy);
+    State.MaxEnergy = FMath::Max(0.0f, State.MaxEnergy);
+    State.Resonance = FMath::Max(0.0f, State.Resonance);
+    State.MaxResonance = FMath::Max(0.0f, State.MaxResonance);
+
+    State.EnergyPercent = State.MaxEnergy > 0.0f
+        ? FMath::Clamp(State.Energy / State.MaxEnergy, 0.0f, 1.0f)
+        : 0.0f;
+    State.ResonancePercent = State.MaxResonance > 0.0f
+        ? FMath::Clamp(State.Resonance / State.MaxResonance, 0.0f, 1.0f)
+        : 0.0f;
+
+    return State;
+}
+
+bool UJumanjiAbilityHUDWidget::ActivateAbilitySlot(EJumanjiAbilitySlot Slot)
+{
+    if (Slot == EJumanjiAbilitySlot::Passive || !IsValid(CachedAbilitySystem))
+    {
+        OnAbilityInputFeedback(
+            EJumanjiAbilityHUDFeedback::Unavailable,
+            FText::FromString(TEXT("Ten slot nie ma ręcznego przycisku."))
+        );
+        return false;
+    }
+
+    const TArray<FJumanjiAbilityHUDSlotState> SlotStates = GetAbilitySlotStates();
+    const FJumanjiAbilityHUDSlotState* State = SlotStates.FindByPredicate(
+        [Slot](const FJumanjiAbilityHUDSlotState& Candidate)
+        {
+            return Candidate.Slot == Slot;
+        });
+
+    if (!State || !State->bIsGranted || !State->InputTag.IsValid())
+    {
+        OnAbilityInputFeedback(
+            EJumanjiAbilityHUDFeedback::Unavailable,
+            FText::FromString(TEXT("Ten slot nie jest skonfigurowany."))
+        );
+        return false;
+    }
+
+    const APlayerController* PlayerController = GetOwningPlayer();
+    const AJumanjiCharacter* Character = PlayerController
+        ? Cast<AJumanjiCharacter>(PlayerController->GetPawn())
+        : nullptr;
+
+    if (!Character)
+    {
+        OnAbilityInputFeedback(
+            EJumanjiAbilityHUDFeedback::Unavailable,
+            FText::FromString(TEXT("Postać nie jest jeszcze gotowa."))
+        );
+        return false;
+    }
+
+    const bool bActivated = const_cast<AJumanjiCharacter*>(Character)
+        ->ActivateAbilityByInputTag(State->InputTag);
+
+    if (bActivated)
+    {
+        OnAbilityInputFeedback(
+            EJumanjiAbilityHUDFeedback::Activated,
+            FText::FromString(TEXT("Aktywowano zdolność."))
+        );
+        return true;
+    }
+
+    if (State->bIsOnCooldown)
+    {
+        OnAbilityInputFeedback(
+            EJumanjiAbilityHUDFeedback::Cooldown,
+            FText::FromString(TEXT("Zdolność jest w trakcie odnowienia."))
+        );
+    }
+    else if (!State->bHasRequiredResource)
+    {
+        OnAbilityInputFeedback(
+            EJumanjiAbilityHUDFeedback::InsufficientResource,
+            State->ResourceType == EJumanjiAbilityHUDResource::Resonance
+                ? FText::FromString(TEXT("Za mało rezonansu."))
+                : FText::FromString(TEXT("Za mało energii."))
+        );
+    }
+    else
+    {
+        OnAbilityInputFeedback(
+            EJumanjiAbilityHUDFeedback::Unavailable,
+            FText::FromString(TEXT("Zdolność nie może być teraz aktywowana."))
+        );
+    }
+
+    return false;
+}
+
+bool UJumanjiAbilityHUDWidget::SetTargetFocus(AActor* Candidate)
+{
+    const APlayerController* PlayerController = GetOwningPlayer();
+    const APawn* OwnerPawn = PlayerController ? PlayerController->GetPawn() : nullptr;
+
+    if (!IsValid(Candidate)
+        || !OwnerPawn
+        || Candidate == OwnerPawn
+        || !FMath::IsFinite(MaxTargetFocusDistance)
+        || MaxTargetFocusDistance <= 0.0f
+        || FVector::DistSquared(OwnerPawn->GetActorLocation(), Candidate->GetActorLocation())
+            > FMath::Square(MaxTargetFocusDistance))
+    {
+        return false;
+    }
+
+    const IAbilitySystemInterface* TargetAbilityInterface =
+        Cast<IAbilitySystemInterface>(Candidate);
+    if (!TargetAbilityInterface || !TargetAbilityInterface->GetAbilitySystemComponent())
+    {
+        return false;
+    }
+
+    TargetFocus = Candidate;
+    OnAbilityTargetFocusChanged(Candidate);
+    return true;
+}
+
+void UJumanjiAbilityHUDWidget::ClearTargetFocus()
+{
+    if (!TargetFocus.IsValid())
+    {
+        return;
+    }
+
+    TargetFocus.Reset();
+    OnAbilityTargetFocusChanged(nullptr);
+}
+
+void UJumanjiAbilityHUDWidget::HandleEnergyChanged(const FOnAttributeChangeData& ChangeData)
+{
+    RefreshAbilityHUD();
+}
+
+void UJumanjiAbilityHUDWidget::HandleResonanceChanged(const FOnAttributeChangeData& ChangeData)
+{
+    RefreshAbilityHUD();
+}
+
+void UJumanjiAbilityHUDWidget::RefreshAbilityHUD()
+{
+    OnAbilityHUDStateChanged(GetAbilitySlotStates(), GetResourceState());
+}
