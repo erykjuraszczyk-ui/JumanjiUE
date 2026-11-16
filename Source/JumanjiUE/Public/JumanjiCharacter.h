@@ -3,7 +3,7 @@
 #include "CoreMinimal.h"
 #include "AbilitySystemInterface.h"
 #include "GameplayTagContainer.h"
-#include "GameplayAbilitySpec.h"
+#include "JumanjiProgressionTypes.h"
 #include "GameFramework/Character.h"
 #include "JumanjiCharacter.generated.h"
 
@@ -49,6 +49,9 @@ protected:
     UFUNCTION()
     void HandleSelectedCharacterChanged(FName CharacterId);
 
+    UFUNCTION()
+    void HandleProgressionChanged(const FJumanjiPlayerProgressionState& NewProgressionState);
+
     void BindToPlayerCharacterSelection();
     void InitializeAbilityActorInfo();
     void ApplySelectedCharacterPresentation();
@@ -66,9 +69,5 @@ private:
     UPROPERTY(Transient)
     FName LastAppliedCharacterId = NAME_None;
 
-    UPROPERTY(Transient)
-    FName LastGrantedAbilityLoadoutCharacterId = NAME_None;
 
-    UPROPERTY(Transient)
-    TArray<FGameplayAbilitySpecHandle> GrantedCharacterAbilityHandles;
 };
