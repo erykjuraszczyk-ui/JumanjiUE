@@ -54,6 +54,7 @@ void UJumanjiProgressionRewardSubsystem::BuildDefaultTables()
 
     const auto AddUpgradeRecipe = [this](
         const TCHAR* RecipeId,
+        const TCHAR* CharacterId,
         const TCHAR* MaterialId,
         int32 MaterialAmount,
         int64 CoinCost,
@@ -61,6 +62,7 @@ void UJumanjiProgressionRewardSubsystem::BuildDefaultTables()
     {
         FJumanjiSpiritUpgradeRecipe Recipe;
         Recipe.RecipeId = FName(RecipeId);
+        Recipe.CharacterId = FName(CharacterId);
         Recipe.CharacterExperienceReward = CharacterExperience;
 
         FJumanjiCurrencyCost CurrencyCost;
@@ -79,15 +81,15 @@ void UJumanjiProgressionRewardSubsystem::BuildDefaultTables()
         }
     };
 
-    AddUpgradeRecipe(TEXT("UPGRADE_ROOT_SPIRIT_01"), TEXT("MAT_ROOT_RESIN"), 2, 100, 120);
-    AddUpgradeRecipe(TEXT("UPGRADE_TIDE_SPIRIT_01"), TEXT("MAT_TIDE_PEARL"), 2, 100, 120);
-    AddUpgradeRecipe(TEXT("UPGRADE_STONE_SPIRIT_01"), TEXT("MAT_STONE_CORE"), 2, 100, 120);
-    AddUpgradeRecipe(TEXT("UPGRADE_STORM_SPIRIT_01"), TEXT("MAT_STORM_ESSENCE"), 2, 100, 120);
-    AddUpgradeRecipe(TEXT("UPGRADE_EMBER_SPIRIT_01"), TEXT("MAT_EMBER_ASH"), 2, 100, 120);
-    AddUpgradeRecipe(TEXT("UPGRADE_DAWN_SPIRIT_01"), TEXT("MAT_DAWN_SHARD"), 2, 100, 120);
-    AddUpgradeRecipe(TEXT("UPGRADE_SHADOW_SPIRIT_01"), TEXT("MAT_SHADOW_SILK"), 2, 100, 120);
-    AddUpgradeRecipe(TEXT("UPGRADE_LIFE_SPIRIT_01"), TEXT("MAT_LIFE_BLOOM"), 2, 100, 120);
-    AddUpgradeRecipe(TEXT("UPGRADE_FROST_SPIRIT_01"), TEXT("MAT_FROST_CRYSTAL"), 2, 100, 120);
+    AddUpgradeRecipe(TEXT("UPGRADE_ROOT_SPIRIT_01"), TEXT("GREAT_SPIRIT_I"), TEXT("MAT_ROOT_RESIN"), 2, 100, 120);
+    AddUpgradeRecipe(TEXT("UPGRADE_TIDE_SPIRIT_01"), TEXT("GREAT_SPIRIT_II"), TEXT("MAT_TIDE_PEARL"), 2, 100, 120);
+    AddUpgradeRecipe(TEXT("UPGRADE_STONE_SPIRIT_01"), TEXT("GREAT_SPIRIT_III"), TEXT("MAT_STONE_CORE"), 2, 100, 120);
+    AddUpgradeRecipe(TEXT("UPGRADE_STORM_SPIRIT_01"), TEXT("GREAT_SPIRIT_IV"), TEXT("MAT_STORM_ESSENCE"), 2, 100, 120);
+    AddUpgradeRecipe(TEXT("UPGRADE_EMBER_SPIRIT_01"), TEXT("GREAT_SPIRIT_V"), TEXT("MAT_EMBER_ASH"), 2, 100, 120);
+    AddUpgradeRecipe(TEXT("UPGRADE_DAWN_SPIRIT_01"), TEXT("GREAT_SPIRIT_VI"), TEXT("MAT_DAWN_SHARD"), 2, 100, 120);
+    AddUpgradeRecipe(TEXT("UPGRADE_SHADOW_SPIRIT_01"), TEXT("GREAT_SPIRIT_VII"), TEXT("MAT_SHADOW_SILK"), 2, 100, 120);
+    AddUpgradeRecipe(TEXT("UPGRADE_LIFE_SPIRIT_01"), TEXT("GREAT_SPIRIT_VIII"), TEXT("MAT_LIFE_BLOOM"), 2, 100, 120);
+    AddUpgradeRecipe(TEXT("UPGRADE_FROST_SPIRIT_01"), TEXT("GREAT_SPIRIT_IX"), TEXT("MAT_FROST_CRYSTAL"), 2, 100, 120);
 }
 
 void UJumanjiProgressionRewardSubsystem::LoadOptionalDataTableOverrides()
@@ -184,6 +186,7 @@ bool UJumanjiProgressionRewardSubsystem::IsValidUpgradeRecipe(
     const FJumanjiSpiritUpgradeRecipe& Recipe) const
 {
     if (Recipe.RecipeId.IsNone()
+        || Recipe.CharacterId.IsNone()
         || Recipe.CharacterExperienceReward < 1
         || Recipe.CharacterExperienceReward > JumanjiRewards::MaxExperienceReward
         || Recipe.CurrencyCosts.Num() > JumanjiRewards::MaxCurrencyRows
@@ -357,7 +360,8 @@ bool UJumanjiProgressionRewardSubsystem::TryUpgradeGreatSpirit(
     }
 
     FJumanjiSpiritUpgradeRecipe Recipe;
-    if (!GetSpiritUpgradeRecipe(RecipeId, Recipe))
+    if (!GetSpiritUpgradeRecipe(RecipeId, Recipe)
+        || Recipe.CharacterId != CharacterId)
     {
         return false;
     }
