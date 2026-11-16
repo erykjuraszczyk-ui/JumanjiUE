@@ -5,6 +5,7 @@
 #include "JumanjiCharacterRosterSubsystem.h"
 #include "JumanjiPlayerProfileSubsystem.h"
 #include "JumanjiProgressionCatalogSubsystem.h"
+#include "JumanjiProgressionRewardSubsystem.h"
 #include "JumanjiWorldAtlas.h"
 #include "Engine/GameInstance.h"
 #include "Engine/World.h"
@@ -49,6 +50,7 @@ void AJumanjiPlayerState::SetSelectedCharacterId(FName CharacterId)
 
     SelectedCharacterId = CharacterId;
     OnSelectedCharacterChanged.Broadcast(SelectedCharacterId);
+    RefreshCombatAttributesFromProgression();
     ForceNetUpdate();
     PersistProfileSnapshot();
 }
@@ -152,6 +154,7 @@ void AJumanjiPlayerState::InitializeNewProfileProgression()
     ProgressionState = MoveTemp(NewProgression);
     ProcessedTransactionIds.Reset();
     OnProgressionChanged.Broadcast(ProgressionState);
+    RefreshCombatAttributesFromProgression();
     ForceNetUpdate();
 }
 
@@ -415,9 +418,17 @@ bool AJumanjiPlayerState::ApplyProfileSnapshot(
     OnWorldExplorationChanged.Broadcast(WorldExplorationState);
     OnCompletedAdventureChaptersChanged.Broadcast(CompletedAdventureChapterIds);
     OnProgressionChanged.Broadcast(ProgressionState);
+    RefreshCombatAttributesFromProgression();
     ForceNetUpdate();
 
-    // Re-save normalized state. This also persists schema-v1 migrations as v2.
+    // Retry deterministic, idempotent chapter rewards after a profile restore.
+    if (UJumanjiProgressionRewardSubsystem* RewardSubsystem =
+        GameInstance->GetSubsystem<UJumanjiProgressionRewardSubsystem>())
+    {
+        RewardSubsystem->GrantMissingCompletedChapterRewards(this);
+    }
+
+    // Re-save normalized state. This also persists schema migrations and repaired fields.
     PersistProfileSnapshot();
     return true;
 }
@@ -466,6 +477,64 @@ int32 AJumanjiPlayerState::GetGreatSpiritLevel(FName CharacterId) const
         });
 
     return Found ? Found->Level : 1;
+}
+
+bool AJumanjiPlayerState::HasProcessedProfileTransaction(FName TransactionId) const
+{
+    return !TransactionId.IsNone() && ProcessedTransactionIds.Contains(TransactionId);
+}
+
+bool AJumanjiPlayerState::RefreshCombatAttributesFromProgression()
+{
+    if (!HasAuthority() || !AbilitySystemComponent || !AttributeSet || SelectedCharacterId.IsNone())
+    {
+        return false;
+    }
+
+    const UGameInstance* GameInstance = GetGameInstance();
+    const UJumanjiProgressionCatalogSubsystem* Catalog = GameInstance
+        ? GameInstance->GetSubsystem<UJumanjiProgressionCatalogSubsystem>()
+        : nullptr;
+    if (!Catalog)
+    {
+        return false;
+    }
+
+    FJumanjiCombatProgressionValues Values;
+    Catalog->GetCombatProgressionValues(GetGreatSpiritLevel(SelectedCharacterId), Values);
+
+    const float OldMaxHealth = AttributeSet->GetMaxHealth();
+    const float OldMaxEnergy = AttributeSet->GetMaxEnergy();
+    const float OldMaxResonance = AttributeSet->GetMaxResonance();
+
+    const float HealthRatio = OldMaxHealth > KINDA_SMALL_NUMBER
+        ? FMath::Clamp(AttributeSet->GetHealth() / OldMaxHealth, 0.0f, 1.0f)
+        : 1.0f;
+    const float EnergyRatio = OldMaxEnergy > KINDA_SMALL_NUMBER
+        ? FMath::Clamp(AttributeSet->GetEnergy() / OldMaxEnergy, 0.0f, 1.0f)
+        : 1.0f;
+    const float ResonanceRatio = OldMaxResonance > KINDA_SMALL_NUMBER
+        ? FMath::Clamp(AttributeSet->GetResonance() / OldMaxResonance, 0.0f, 1.0f)
+        : 0.0f;
+
+    AbilitySystemComponent->SetNumericAttributeBase(
+        UJumanjiAttributeSet::GetMaxHealthAttribute(), Values.MaxHealth);
+    AbilitySystemComponent->SetNumericAttributeBase(
+        UJumanjiAttributeSet::GetHealthAttribute(), Values.MaxHealth * HealthRatio);
+    AbilitySystemComponent->SetNumericAttributeBase(
+        UJumanjiAttributeSet::GetMaxEnergyAttribute(), Values.MaxEnergy);
+    AbilitySystemComponent->SetNumericAttributeBase(
+        UJumanjiAttributeSet::GetEnergyAttribute(), Values.MaxEnergy * EnergyRatio);
+    AbilitySystemComponent->SetNumericAttributeBase(
+        UJumanjiAttributeSet::GetMaxResonanceAttribute(), Values.MaxResonance);
+    AbilitySystemComponent->SetNumericAttributeBase(
+        UJumanjiAttributeSet::GetResonanceAttribute(), Values.MaxResonance * ResonanceRatio);
+    AbilitySystemComponent->SetNumericAttributeBase(
+        UJumanjiAttributeSet::GetAttackPowerAttribute(), Values.AttackPower);
+    AbilitySystemComponent->SetNumericAttributeBase(
+        UJumanjiAttributeSet::GetDefenseAttribute(), Values.Defense);
+
+    return true;
 }
 
 bool AJumanjiPlayerState::ApplyProfileTransaction(
@@ -709,6 +778,11 @@ bool AJumanjiPlayerState::ApplyProfileTransaction(
 
     ProgressionState = MoveTemp(Candidate);
     ProcessedTransactionIds.Add(Transaction.TransactionId);
+
+    if (bHasCharacterExperience && Transaction.CharacterId == SelectedCharacterId)
+    {
+        RefreshCombatAttributesFromProgression();
+    }
 
     OnProgressionChanged.Broadcast(ProgressionState);
     ForceNetUpdate();
