@@ -6,6 +6,7 @@
 
 class UAnimMontage;
 class UGameplayEffect;
+class UAbilitySystemComponent;
 
 UENUM(BlueprintType)
 enum class EJumanjiAbilityTargetingMode : uint8
