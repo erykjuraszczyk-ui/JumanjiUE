@@ -7,7 +7,7 @@
 #include "JumanjiPlayerProfileSubsystem.h"
 #include "JumanjiPlayerState.h"
 #include "Engine/GameInstance.h"
-#include "OnlineReplStructs.h"
+#include "GameFramework/OnlineReplStructs.h"
 
 AJumanjiGameMode::AJumanjiGameMode()
 {
