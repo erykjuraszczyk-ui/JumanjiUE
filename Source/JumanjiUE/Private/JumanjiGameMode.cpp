@@ -79,8 +79,10 @@ void AJumanjiGameMode::PostLogin(APlayerController* NewPlayer)
         if (!JumanjiPlayerState->ApplyProfileSnapshot(Snapshot))
         {
             UE_LOG(LogTemp, Warning,
-                TEXT("JUMANJI profile: loaded profile '%s' could not be applied; keeping safe defaults."),
+                TEXT("JUMANJI profile: loaded profile '%s' could not be applied; initializing safe defaults."),
                 *ProfileId);
+            JumanjiPlayerState->InitializeNewProfileProgression();
+            JumanjiPlayerState->RequestProfileSave();
         }
     }
     else
@@ -88,6 +90,8 @@ void AJumanjiGameMode::PostLogin(APlayerController* NewPlayer)
         UE_LOG(LogTemp, Log,
             TEXT("JUMANJI profile: no valid previous save for profile '%s'; starting with defaults."),
             *ProfileId);
+        JumanjiPlayerState->InitializeNewProfileProgression();
+        JumanjiPlayerState->RequestProfileSave();
     }
 }
 
