@@ -5,6 +5,7 @@
 #include "GameFramework/PlayerState.h"
 #include "JumanjiWorldExploration.h"
 #include "JumanjiPlayerProfileSaveGame.h"
+#include "JumanjiProgressionTypes.h"
 #include "JumanjiPlayerState.generated.h"
 
 class UJumanjiAbilitySystemComponent;
@@ -25,10 +26,14 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(
     const TArray<FName>&, CompletedChapterIds
 );
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(
+    FJumanjiProgressionChanged,
+    const FJumanjiPlayerProgressionState&, ProgressionState
+);
+
 /**
  * Player-owned GAS, exploration and profile-progress owner.
- * The possessed Character is the ASC avatar; this keeps ability state attached
- * to PlayerState rather than to a pawn that may be replaced.
+ * Persistent profile and progression mutations are server-authoritative.
  */
 UCLASS()
 class JUMANJIUE_API AJumanjiPlayerState : public APlayerState, public IAbilitySystemInterface
@@ -55,7 +60,7 @@ public:
     UFUNCTION(BlueprintPure, Category = "JUMANJI|Character")
     FName GetSelectedCharacterId() const { return SelectedCharacterId; }
 
-    /** Must only be called by the server after roster validation. */
+    /** Server-only: call after validating the selected ID against the roster. */
     void SetSelectedCharacterId(FName CharacterId);
 
     /** Server-only identity binding established by GameMode after login. */
@@ -63,8 +68,34 @@ public:
     const FString& GetPersistentProfileId() const { return PersistentProfileId; }
     void RequestProfileSave();
 
-    /** Applies a validated server-loaded profile to the replicated PlayerState. */
+    /** Initialize starter balances and level-one progression for a new profile. */
+    void InitializeNewProfileProgression();
+
+    /** Applies a schema-v2 snapshot that has already passed profile-subsystem validation. */
     bool ApplyProfileSnapshot(const FJumanjiPlayerProfileSnapshot& Snapshot);
+
+    UFUNCTION(BlueprintPure, Category = "JUMANJI|Progression")
+    FJumanjiPlayerProgressionState GetProgressionState() const { return ProgressionState; }
+
+    UFUNCTION(BlueprintPure, Category = "JUMANJI|Economy")
+    int64 GetCurrencyBalance(FName CurrencyId) const;
+
+    UFUNCTION(BlueprintPure, Category = "JUMANJI|Inventory")
+    int32 GetItemQuantity(FName ItemId) const;
+
+    UFUNCTION(BlueprintPure, Category = "JUMANJI|Progression")
+    int32 GetGreatSpiritLevel(FName CharacterId) const;
+
+    /**
+     * Server-only, all-or-nothing transaction. Call only from trusted server
+     * gameplay/reward code. A duplicate TransactionId is rejected.
+     */
+    UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "JUMANJI|Economy")
+    bool ApplyProfileTransaction(const FJumanjiProfileTransaction& Transaction);
+
+    /** Saves a logical ability-slot selection; does not load arbitrary client classes. */
+    UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "JUMANJI|Loadout")
+    bool SetEquippedAbilitySlot(FName CharacterId, FName SlotId, FName AbilityId);
 
     UFUNCTION(BlueprintCallable, Category = "JUMANJI|Adventure")
     bool MarkAdventureChapterCompleted(FName ChapterId);
@@ -105,6 +136,9 @@ public:
     UPROPERTY(BlueprintAssignable, Category = "JUMANJI|Adventure")
     FJumanjiCompletedAdventureChaptersChanged OnCompletedAdventureChaptersChanged;
 
+    UPROPERTY(BlueprintAssignable, Category = "JUMANJI|Progression")
+    FJumanjiProgressionChanged OnProgressionChanged;
+
 protected:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "JUMANJI|Abilities", meta = (AllowPrivateAccess = "true"))
     TObjectPtr<UJumanjiAbilitySystemComponent> AbilitySystemComponent;
@@ -121,6 +155,9 @@ protected:
     UPROPERTY(ReplicatedUsing = OnRep_CompletedAdventureChapterIds, BlueprintReadOnly, Category = "JUMANJI|Adventure")
     TArray<FName> CompletedAdventureChapterIds;
 
+    UPROPERTY(ReplicatedUsing = OnRep_ProgressionState, BlueprintReadOnly, Category = "JUMANJI|Progression")
+    FJumanjiPlayerProgressionState ProgressionState;
+
     UFUNCTION()
     void OnRep_SelectedCharacterId();
 
@@ -130,6 +167,9 @@ protected:
     UFUNCTION()
     void OnRep_CompletedAdventureChapterIds();
 
+    UFUNCTION()
+    void OnRep_ProgressionState();
+
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 private:
@@ -138,4 +178,7 @@ private:
 
     /** Server-only key; never accepted directly from a client RPC. */
     FString PersistentProfileId;
+
+    /** Server-only idempotency ledger; saved with the progression snapshot, not replicated. */
+    TArray<FName> ProcessedTransactionIds;
 };
