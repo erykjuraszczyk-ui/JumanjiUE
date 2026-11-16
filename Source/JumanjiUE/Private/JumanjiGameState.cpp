@@ -1,5 +1,6 @@
 #include "JumanjiGameState.h"
 
+#include "JumanjiPlayerState.h"
 #include "Net/UnrealNetwork.h"
 
 namespace
@@ -81,6 +82,17 @@ bool AJumanjiGameState::CompleteAdventureChapter(FName ChapterId)
     ++AdventureChapterState.Revision;
 
     OnAdventureChapterChanged.Broadcast(AdventureChapterState);
+
+    // The chapter is a shared session objective. Record completion on every
+    // currently connected profile so it survives the next login.
+    for (APlayerState* BasePlayerState : PlayerArray)
+    {
+        if (AJumanjiPlayerState* JumanjiPlayerState = Cast<AJumanjiPlayerState>(BasePlayerState))
+        {
+            JumanjiPlayerState->MarkAdventureChapterCompleted(ChapterId);
+        }
+    }
+
     ForceNetUpdate();
     return true;
 }

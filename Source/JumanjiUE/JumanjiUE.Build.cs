@@ -10,6 +10,7 @@ public class JumanjiUE : ModuleRules
             new string[]
             {
                 "Core",
+                "CoreOnline",
                 "CoreUObject",
                 "Engine",
                 "InputCore",

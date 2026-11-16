@@ -15,6 +15,7 @@ Open-world third-person adventure RPG prototype with a shared-world direction an
 - Stage 10 — Great Spirit Trial Content Pack: eight additional native environmental trials, nine matching objective contracts and Blueprint presentation asset hooks.
 - Stage 11 — Emerald Jungle World Assembly: ten-region world atlas, server-authoritative discovery volumes and landmarks, per-player replicated exploration progress and a Blueprint map HUD base.
 - Stage 12 — Emerald Jungle Traversal & Navigation: local route selection for discovered regions/landmarks, NavMesh path queries, world-space destination anchors and mobile navigation UI integration hooks.
+- Stage 13 — Player Profile & Exploration Persistence: versioned profile snapshot, server-bound profile identity, async local SaveGame and persistence of Great Spirit choice, exploration and completed chapters.
 
 ## The nine playable Great Spirits
 1. Great Spirit I — Duch Korzeni (Root / Guardian)
@@ -58,12 +59,13 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - Docs/STAGE_09_EMERALD_JUNGLE_CHAPTER_FLOW.md — chapter director, replicated chapter state, HUD integration and nine-trial authoring contract.
 - Docs/STAGE_10_GREAT_SPIRIT_TRIAL_CONTENT_PACK.md — nine trial definitions, puzzle sequences, presentation hooks and Blueprint authoring workflow.
 - Docs/STAGE_11_EMERALD_JUNGLE_WORLD_ASSEMBLY.md — World Partition map layout, ten-region atlas, Data Layers, discovery/landmark setup and acceptance checklist.
-- Content/World/README.md — world atlas code and DataTable setup.
+- Content/World/README.md — world atlas, navigation and profile-persistence setup.
 - Content/Adventure/Trials/README.md — Blueprint trial and UMG authoring guide.
 - Content/UI/README.md — Widget Blueprint asset setup.
 - Docs/Art/GreatSpiritCharacterArtBrief.md — individual visual targets and character art requirements.
 - Content/Characters/README.md — Unreal character asset naming and import plan.
 - Docs/STAGE_12_EMERALD_JUNGLE_TRAVERSAL_NAVIGATION.md — NavMesh, World Partition navigation, route guidance, POI targeting and mobile map integration.
+- Docs/STAGE_13_PLAYER_PROFILE_EXPLORATION_PERSISTENCE.md — profile schema v1, trusted identity binding, exploration/chapter persistence and acceptance tests.
 - [Docs/UE5_BUILD_PIPELINE.md](Docs/UE5_BUILD_PIPELINE.md) — GitHub Actions workflow, Windows self-hosted runner and Android toolchain setup.
 
 ## Current implementation
@@ -102,6 +104,9 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - per-player replicated exploration snapshot on AJumanjiPlayerState;
 - UJumanjiWorldAtlasWidget base and PlayerController OpenWorldAtlas/CloseWorldAtlas API;
 - UJumanjiWorldNavigationComponent on the local PlayerController, with discovery-validated region/landmark targets and local NavMesh route data.
+- UJumanjiPlayerProfileSubsystem with versioned asynchronous SaveGame profile slots for the current single-server prototype.
+- profile restore on PostLogin using server-bound platform identity where available.
+- persistence of selected Great Spirit, discovered regions, visited landmarks and completed chapters.
 
 ## Not yet included
 This is a source-code foundation, not a finished game or installable Android build. The repository still needs:
@@ -116,7 +121,8 @@ This is a source-code foundation, not a finished game or installable Android bui
 - final boss attack patterns and encounter reward service;
 - Blueprint children, visuals and playable implementations for all nine Great Spirit trials;
 - the Root Rune trial Blueprint, rune meshes, UI widget, map and presentation assets;
-- persistent exploration/quest save data, inventory rewards and backend persistence;
+- persistence for inventory, currency, levels, equipped loadouts and in-progress objectives;
+- a production profile backend, account authentication, cross-shard synchronization and profile conflict handling;
 - authored NavMesh data, world-space DataTable anchors and traversal link actors/animations;
 - asynchronous asset preloading and device profiling;
 - account persistence, unlock progression and backend services;
