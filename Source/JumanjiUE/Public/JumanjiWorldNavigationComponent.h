@@ -6,7 +6,7 @@
 
 class APlayerController;
 
-/** The type of world-atlas destination currently selected by the local player. */
+/** The type of atlas destination selected by the local player. */
 UENUM(BlueprintType)
 enum class EJumanjiNavigationTargetType : uint8
 {
@@ -15,7 +15,7 @@ enum class EJumanjiNavigationTargetType : uint8
     Landmark
 };
 
-/** Local, presentation-only route data. It is not replicated to other players. */
+/** Local-only route data for HUD and map presentation. This struct is not replicated. */
 USTRUCT(BlueprintType)
 struct FJumanjiNavigationRoute
 {
@@ -60,12 +60,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(
     const FJumanjiNavigationRoute&, Route
 );
 
-/**
- * Per-local-player route guidance for the World Atlas.
- *
- * Route calculation is client-side UI work. Discovery remains server-authoritative
- * through AJumanjiPlayerState and the existing world-atlas actors.
- */
+/** Local-player route guidance. It never moves the character or replicates paths. */
 UCLASS(ClassGroup = (JUMANJI), meta = (BlueprintSpawnableComponent))
 class JUMANJIUE_API UJumanjiWorldNavigationComponent : public UActorComponent
 {
@@ -82,18 +77,15 @@ public:
         FActorComponentTickFunction* ThisTickFunction
     ) override;
 
-    /** Selects a discovered region as the local navigation destination. */
     UFUNCTION(BlueprintCallable, Category = "JUMANJI|Navigation")
     bool SetRegionTarget(FName RegionId);
 
-    /** Selects a landmark in a region already discovered by this player. */
     UFUNCTION(BlueprintCallable, Category = "JUMANJI|Navigation")
     bool SetLandmarkTarget(FName LandmarkId);
 
     UFUNCTION(BlueprintCallable, Category = "JUMANJI|Navigation")
     void ClearNavigationTarget();
 
-    /** Rebuilds the path against the currently loaded navigation data. */
     UFUNCTION(BlueprintCallable, Category = "JUMANJI|Navigation")
     bool RefreshNavigationRoute();
 
@@ -124,6 +116,8 @@ private:
     );
 
     APlayerController* GetOwningPlayerController() const;
+    bool IsFiniteLocation(const FVector& Location) const;
+    void ClearPathIfNeeded();
 
     UPROPERTY(Transient)
     FJumanjiNavigationRoute ActiveRoute;

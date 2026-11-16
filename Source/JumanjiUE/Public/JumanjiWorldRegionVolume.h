@@ -19,6 +19,9 @@ public:
     virtual void BeginPlay() override;
     virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
+    UFUNCTION(BlueprintPure, Category = "JUMANJI|World")
+    FName GetRegionId() const { return RegionId; }
+
 protected:
     UPROPERTY(EditInstanceOnly, BlueprintReadOnly, Category = "JUMANJI|World")
     FName RegionId = NAME_None;

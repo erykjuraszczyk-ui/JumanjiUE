@@ -9,6 +9,12 @@
 #include "JumanjiPlayerState.h"
 #include "JumanjiTrialActor.h"
 #include "JumanjiWorldAtlasWidget.h"
+#include "JumanjiWorldNavigationComponent.h"
+
+AJumanjiPlayerController::AJumanjiPlayerController()
+{
+    WorldNavigationComponent = CreateDefaultSubobject<UJumanjiWorldNavigationComponent>(TEXT("WorldNavigationComponent"));
+}
 
 void AJumanjiPlayerController::BeginPlay()
 {

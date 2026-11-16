@@ -21,7 +21,6 @@ UJumanjiWorldNavigationComponent::UJumanjiWorldNavigationComponent()
 void UJumanjiWorldNavigationComponent::BeginPlay()
 {
     Super::BeginPlay();
-
     SetComponentTickInterval(FMath::Clamp(RefreshIntervalSeconds, 0.5f, 10.0f));
     SetComponentTickEnabled(false);
 }
@@ -30,7 +29,6 @@ void UJumanjiWorldNavigationComponent::EndPlay(const EEndPlayReason::Type EndPla
 {
     SetComponentTickEnabled(false);
     OnNavigationRouteChanged.Clear();
-
     Super::EndPlay(EndPlayReason);
 }
 
@@ -41,13 +39,10 @@ void UJumanjiWorldNavigationComponent::TickComponent(
 {
     Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-    const APlayerController* PlayerController = GetOwningPlayerController();
-    if (!PlayerController || !PlayerController->IsLocalController() || !ActiveRoute.bHasTarget)
+    if (ActiveRoute.bHasTarget)
     {
-        return;
+        RefreshNavigationRoute();
     }
-
-    RefreshNavigationRoute();
 }
 
 bool UJumanjiWorldNavigationComponent::SetRegionTarget(FName RegionId)
@@ -56,7 +51,6 @@ bool UJumanjiWorldNavigationComponent::SetRegionTarget(FName RegionId)
     AJumanjiPlayerState* PlayerState = PlayerController
         ? PlayerController->GetPlayerState<AJumanjiPlayerState>()
         : nullptr;
-
     UWorld* World = GetWorld();
     const UJumanjiWorldAtlasSubsystem* Atlas = World
         ? World->GetSubsystem<UJumanjiWorldAtlasSubsystem>()
@@ -74,21 +68,20 @@ bool UJumanjiWorldNavigationComponent::SetRegionTarget(FName RegionId)
     FVector TargetLocation = FVector::ZeroVector;
     bool bFoundLocation = false;
 
-    if (Region.bHasNavigationAnchor && !Region.NavigationAnchor.ContainsNaN())
+    if (Region.bHasNavigationAnchor && IsFiniteLocation(Region.NavigationAnchor))
     {
         TargetLocation = Region.NavigationAnchor;
         bFoundLocation = true;
     }
     else if (World)
     {
-        // Fallback for a region volume that is currently loaded by World Partition.
         for (TActorIterator<AJumanjiWorldRegionVolume> It(World); It; ++It)
         {
             if (It->GetRegionId() == RegionId)
             {
                 FVector BoundsExtent = FVector::ZeroVector;
                 It->GetActorBounds(false, TargetLocation, BoundsExtent);
-                bFoundLocation = !TargetLocation.ContainsNaN();
+                bFoundLocation = IsFiniteLocation(TargetLocation);
                 break;
             }
         }
@@ -97,7 +90,7 @@ bool UJumanjiWorldNavigationComponent::SetRegionTarget(FName RegionId)
     if (!bFoundLocation)
     {
         UE_LOG(LogTemp, Verbose,
-            TEXT("JUMANJI navigation: no world anchor is configured for region %s."),
+            TEXT("JUMANJI navigation: region %s has no configured or loaded destination."),
             *RegionId.ToString());
         return false;
     }
@@ -116,7 +109,6 @@ bool UJumanjiWorldNavigationComponent::SetLandmarkTarget(FName LandmarkId)
     AJumanjiPlayerState* PlayerState = PlayerController
         ? PlayerController->GetPlayerState<AJumanjiPlayerState>()
         : nullptr;
-
     UWorld* World = GetWorld();
     const UJumanjiWorldAtlasSubsystem* Atlas = World
         ? World->GetSubsystem<UJumanjiWorldAtlasSubsystem>()
@@ -134,20 +126,19 @@ bool UJumanjiWorldNavigationComponent::SetLandmarkTarget(FName LandmarkId)
     FVector TargetLocation = FVector::ZeroVector;
     bool bFoundLocation = false;
 
-    if (Landmark.bHasWorldLocation && !Landmark.WorldLocation.ContainsNaN())
+    if (Landmark.bHasWorldLocation && IsFiniteLocation(Landmark.WorldLocation))
     {
         TargetLocation = Landmark.WorldLocation;
         bFoundLocation = true;
     }
     else if (World)
     {
-        // If the POI is not in a DataTable yet, use its loaded actor transform.
         for (TActorIterator<AJumanjiWorldLandmark> It(World); It; ++It)
         {
             if (It->GetLandmarkId() == LandmarkId && It->GetRegionId() == Landmark.RegionId)
             {
                 TargetLocation = It->GetActorLocation();
-                bFoundLocation = !TargetLocation.ContainsNaN();
+                bFoundLocation = IsFiniteLocation(TargetLocation);
                 break;
             }
         }
@@ -156,7 +147,7 @@ bool UJumanjiWorldNavigationComponent::SetLandmarkTarget(FName LandmarkId)
     if (!bFoundLocation)
     {
         UE_LOG(LogTemp, Verbose,
-            TEXT("JUMANJI navigation: no world location is configured for landmark %s."),
+            TEXT("JUMANJI navigation: landmark %s has no configured or loaded destination."),
             *LandmarkId.ToString());
         return false;
     }
@@ -178,7 +169,7 @@ bool UJumanjiWorldNavigationComponent::SetResolvedTarget(
     APlayerController* PlayerController = GetOwningPlayerController();
     if (!PlayerController || !PlayerController->IsLocalController()
         || TargetType == EJumanjiNavigationTargetType::None
-        || TargetId.IsNone() || WorldLocation.ContainsNaN())
+        || TargetId.IsNone() || !IsFiniteLocation(WorldLocation))
     {
         return false;
     }
@@ -198,8 +189,6 @@ bool UJumanjiWorldNavigationComponent::SetResolvedTarget(
 
     if (!RefreshNavigationRoute())
     {
-        // The destination is selected even when its navmesh tile is not loaded yet.
-        // The component retries on its next interval.
         ++ActiveRoute.Revision;
         OnNavigationRouteChanged.Broadcast(ActiveRoute);
     }
@@ -243,16 +232,7 @@ bool UJumanjiWorldNavigationComponent::RefreshNavigationRoute()
 
     if (!NavigationSystem)
     {
-        const bool bHadPath = ActiveRoute.bHasPath || !ActiveRoute.PathPoints.IsEmpty();
-        ActiveRoute.bHasPath = false;
-        ActiveRoute.bPartialPath = false;
-        ActiveRoute.PathPoints.Reset();
-        ActiveRoute.PathLengthMeters = 0.0f;
-        if (bHadPath)
-        {
-            ++ActiveRoute.Revision;
-            OnNavigationRouteChanged.Broadcast(ActiveRoute);
-        }
+        ClearPathIfNeeded();
         return false;
     }
 
@@ -262,16 +242,7 @@ bool UJumanjiWorldNavigationComponent::RefreshNavigationRoute()
         ProjectedTarget,
         NavigationProjectionExtent))
     {
-        const bool bHadPath = ActiveRoute.bHasPath || !ActiveRoute.PathPoints.IsEmpty();
-        ActiveRoute.bHasPath = false;
-        ActiveRoute.bPartialPath = false;
-        ActiveRoute.PathPoints.Reset();
-        ActiveRoute.PathLengthMeters = 0.0f;
-        if (bHadPath)
-        {
-            ++ActiveRoute.Revision;
-            OnNavigationRouteChanged.Broadcast(ActiveRoute);
-        }
+        ClearPathIfNeeded();
         return false;
     }
 
@@ -282,18 +253,10 @@ bool UJumanjiWorldNavigationComponent::RefreshNavigationRoute()
         Pawn
     );
 
-    if (!NavigationPath || !NavigationPath->IsValid() || NavigationPath->PathPoints.Num() < 2)
+    if (!IsValid(NavigationPath) || !NavigationPath->IsValid()
+        || NavigationPath->PathPoints.Num() < 2)
     {
-        const bool bHadPath = ActiveRoute.bHasPath || !ActiveRoute.PathPoints.IsEmpty();
-        ActiveRoute.bHasPath = false;
-        ActiveRoute.bPartialPath = false;
-        ActiveRoute.PathPoints.Reset();
-        ActiveRoute.PathLengthMeters = 0.0f;
-        if (bHadPath)
-        {
-            ++ActiveRoute.Revision;
-            OnNavigationRouteChanged.Broadcast(ActiveRoute);
-        }
+        ClearPathIfNeeded();
         return false;
     }
 
@@ -314,7 +277,29 @@ bool UJumanjiWorldNavigationComponent::RefreshNavigationRoute()
     return true;
 }
 
+void UJumanjiWorldNavigationComponent::ClearPathIfNeeded()
+{
+    if (!ActiveRoute.bHasPath && ActiveRoute.PathPoints.IsEmpty())
+    {
+        return;
+    }
+
+    ActiveRoute.bHasPath = false;
+    ActiveRoute.bPartialPath = false;
+    ActiveRoute.PathPoints.Reset();
+    ActiveRoute.PathLengthMeters = 0.0f;
+    ++ActiveRoute.Revision;
+    OnNavigationRouteChanged.Broadcast(ActiveRoute);
+}
+
 APlayerController* UJumanjiWorldNavigationComponent::GetOwningPlayerController() const
 {
     return Cast<APlayerController>(GetOwner());
+}
+
+bool UJumanjiWorldNavigationComponent::IsFiniteLocation(const FVector& Location) const
+{
+    return FMath::IsFinite(Location.X)
+        && FMath::IsFinite(Location.Y)
+        && FMath::IsFinite(Location.Z);
 }

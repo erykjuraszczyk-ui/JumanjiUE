@@ -42,6 +42,13 @@ struct FJumanjiWorldRegionDefinition : public FTableRowBase
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "JUMANJI|World")
     bool bSafeHub = false;
 
+    /** Optional destination for route guidance when the region actor is not loaded. Unreal units are centimeters. */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "JUMANJI|World")
+    bool bHasNavigationAnchor = false;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "JUMANJI|World", meta = (EditCondition = "bHasNavigationAnchor"))
+    FVector NavigationAnchor = FVector::ZeroVector;
+
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "JUMANJI|World")
     TSoftObjectPtr<UTexture2D> MapIcon;
 };
@@ -69,6 +76,13 @@ struct FJumanjiWorldLandmarkDefinition : public FTableRowBase
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "JUMANJI|World")
     TSoftObjectPtr<UStaticMesh> LandmarkMesh;
+
+    /** Optional world-space POI destination when its World Partition actor is not loaded. Unreal units are centimeters. */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "JUMANJI|World")
+    bool bHasWorldLocation = false;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "JUMANJI|World", meta = (EditCondition = "bHasWorldLocation"))
+    FVector WorldLocation = FVector::ZeroVector;
 };
 
 /**
