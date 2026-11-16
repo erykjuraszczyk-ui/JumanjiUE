@@ -46,8 +46,7 @@ private:
     FName BuildUpgradeTransactionId(
         const AJumanjiPlayerState& PlayerState,
         FName CharacterId,
-        FName RecipeId,
-        int32 ProgressionRevision) const;
+        FName RecipeId) const;
 
     UPROPERTY(Transient)
     TMap<FName, FJumanjiChapterRewardDefinition> ChapterRewards;
