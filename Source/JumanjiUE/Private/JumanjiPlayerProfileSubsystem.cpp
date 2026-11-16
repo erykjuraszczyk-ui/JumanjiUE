@@ -161,9 +161,21 @@ void UJumanjiPlayerProfileSubsystem::HandleSaveCompleted(
             TEXT("JUMANJI profile: asynchronous save failed for slot '%s' (user index %d)."),
             *SlotName,
             UserIndex);
-        // The PlayerState still owns the current in-memory snapshot. A later
-        // milestone or logout call will submit a fresh write.
-        QueuedSnapshots.Remove(SlotName);
+        // If a newer complete snapshot arrived during the failed write, retry
+        // that snapshot once. A second failure has no queued retry, preventing
+        // an unbounded retry loop.
+        if (FJumanjiPlayerProfileSnapshot* QueuedSnapshot = QueuedSnapshots.Find(SlotName))
+        {
+            const FJumanjiPlayerProfileSnapshot LatestSnapshot = *QueuedSnapshot;
+            QueuedSnapshots.Remove(SlotName);
+
+            if (!StartAsyncSave(SlotName, LatestSnapshot))
+            {
+                UE_LOG(LogTemp, Error,
+                    TEXT("JUMANJI profile: failed to start one retry for slot '%s'."),
+                    *SlotName);
+            }
+        }
         return;
     }
 
