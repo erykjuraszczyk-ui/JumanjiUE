@@ -18,6 +18,7 @@ Open-world third-person adventure RPG prototype with a shared-world direction an
 - Stage 13 — Player Profile & Exploration Persistence: versioned profile snapshot, server-bound profile identity, async local SaveGame and persistence of Great Spirit choice, exploration and completed chapters.
 - Stage 14 — Profile Progression & Inventory Persistence: schema v2 with v1 migration, account and Great Spirit levels, currencies, upgrade materials, logical ability-slot persistence and idempotent all-or-nothing profile transactions.
 - Stage 15 — Progression Gameplay Integration & Reward Tables: Great Spirit level-derived GAS base attributes, idempotent chapter completion rewards, server-validated material/currency upgrade recipes and optional reward/recipe DataTable overrides.
+- Stage 16 — Saved Ability Loadout Runtime: allowlisted AbilityId-to-GAS class catalog, profile slot restoration, server-validated equipment RPC and ASC loadout replacement without duplicate grants.
 
 ## The nine playable Great Spirits
 1. Great Spirit I — Duch Korzeni (Root / Guardian)
@@ -51,7 +52,8 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - Docs/STAGE_04_GREAT_SPIRIT_SELECT_UI.md — selection layout, Blueprint wiring and acceptance criteria.
 - Docs/STAGE_05_GREAT_SPIRIT_ABILITY_CORE.md — GAS architecture, slots, input tags and acceptance checklist.
 - Docs/Design/GreatSpiritAbilityDesign.md — proposed five-slot ability kits for each spirit.
-- Content/Abilities/README.md — Blueprint ability and Gameplay Effect asset authoring guide.
+- Content/Abilities/README.md — Blueprint ability and Gameplay Effect asset authoring guide, including the Stage 16 AbilityId catalog and saved-loadout integration.
+- Docs/STAGE_16_SAVED_ABILITY_LOADOUT_RUNTIME.md — allowlisted ability resolver, profile restoration, server equipment RPC, ASC grant lifecycle and acceptance checklist.
 - Docs/STAGE_06_GREAT_SPIRIT_COMBAT_SYSTEM.md — combat runtime, asset setup, flow and acceptance tests.
 - Docs/Design/FirstCombatEncounter.md — first three-phase boss encounter design.
 - Content/Combat/README.md — damage effect, enemy, boss and AI setup.
@@ -123,7 +125,13 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - UJumanjiProgressionRewardSubsystem with validated chapter reward definitions and nine spirit-specific upgrade recipes;
 - optional DT_ChapterRewards and DT_SpiritUpgradeRecipes DataTable overrides with native starter catalog fallback;
 - idempotent chapter completion reward transactions and retry of configured missing rewards after profile restoration;
-- server-routed Great Spirit upgrade RPC using all-or-nothing currency/material/XP profile transactions.
+- server-routed Great Spirit upgrade RPC using all-or-nothing currency/material/XP profile transactions;
+- UJumanjiAbilityCatalogSubsystem with 45 stable Great Spirit/slot identifiers and optional validated DT_GreatSpiritAbilityCatalog override;
+- server-side validation of saved AbilityId values against CharacterId, SlotId, UJumanjiGameplayAbility class, AbilitySlot and InputTag;
+- restore-time filtering of unknown or incompatible saved ability slots;
+- server RPC to equip catalog-approved abilities into profile schema v2;
+- runtime resolution of saved ability IDs into approved soft Gameplay Ability classes;
+- PlayerState-owned ASC replacement of the Great Spirit loadout, tracking and clearing only the previous granted ability handles, and avoiding duplicate grants when the same loadout is reapplied.
 
 ## Not yet included
 This is a source-code foundation, not a finished game or installable Android build. The repository still needs:
@@ -138,7 +146,6 @@ This is a source-code foundation, not a finished game or installable Android bui
 - final boss attack patterns and encounter reward service;
 - Blueprint children, visuals and playable implementations for all nine Great Spirit trials;
 - the Root Rune trial Blueprint, rune meshes, UI widget, map and presentation assets;
-- runtime resolution of saved AbilityId values to approved Gameplay Ability classes;
 - trial-specific reward rows and automatic reward orchestration for all nine trial actors;
 - persistent in-progress objective state;
 - a production profile backend, account authentication, cross-shard synchronization and profile conflict handling;

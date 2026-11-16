@@ -12,7 +12,39 @@ Create Blueprint classes derived from UJumanjiGameplayAbility. Naming pattern fo
 
 For each asset set the matching AbilitySlot. Set InputTag for primary, active, ultimate and dodge. Passive abilities normally leave InputTag unset and set bActivateOnGranted only when their implementation is designed to remain active.
 
-Assign class references to the matching FJumanjiCharacterDefinition soft class fields in the DT_GreatSpiritRoster DataTable. FJumanjiCharacterDefinition is a DataTable row type. Configure the optional subsystem override in DefaultGame.ini under [/Script/JumanjiUE.JumanjiCharacterRosterSubsystem] with ConfiguredRosterDataTable=/Game/Data/DT_GreatSpiritRoster.DT_GreatSpiritRoster. If the table is missing or invalid, the built-in nine-character fallback roster remains active.
+## Saved AbilityId catalog (Stage 16)
+
+The logical ability IDs stored in profile schema v2 are resolved at runtime by UJumanjiAbilityCatalogSubsystem. Do not store Blueprint class paths in the player profile and do not accept client-supplied class references.
+
+Create a DataTable:
+- folder: /Game/Abilities/Data;
+- name: DT_GreatSpiritAbilityCatalog;
+- row structure: FJumanjiAbilityCatalogEntry;
+- optional config in DefaultGame.ini:
+
+```ini
+[/Script/JumanjiUE.JumanjiAbilityCatalogSubsystem]
+ConfiguredAbilityDataTable=/Game/Abilities/Data/DT_GreatSpiritAbilityCatalog.DT_GreatSpiritAbilityCatalog
+```
+
+Each row requires AbilityId, CharacterId, SlotId, AbilitySlot, InputTag, DisplayName, AbilityClass and bEnabled. The class must derive from UJumanjiGameplayAbility. AbilitySlot and InputTag must match the slot contract. Invalid rows are ignored.
+
+Stable slot IDs:
+- SLOT_PRIMARY → PrimaryAttack / Input.Ability.Primary
+- SLOT_ACTIVE → Active / Input.Ability.Active
+- SLOT_PASSIVE → Passive / no input tag
+- SLOT_ULTIMATE → Ultimate / Input.Ability.Ultimate
+- SLOT_DODGE → Dodge / Input.Ability.Dodge
+
+Stable default IDs use the pattern ABILITY_GS_[ROMAN]_[SLOT], for example ABILITY_GS_I_PRIMARY and ABILITY_GS_IX_DODGE. Additional variants may use their own unique AbilityId while retaining the same CharacterId and SlotId.
+
+The built-in fallback catalog provides a shared native primary melee ability for all nine spirits. Active, Passive, Ultimate and Dodge remain unavailable until their real Blueprint classes are assigned. A roster entry or catalog row with no real class is not treated as a playable ability.
+
+## Runtime equipment
+
+The selection/loadout UI reads valid options with GetAbilityChoices(CharacterId, SlotId), then requests a change through AJumanjiPlayerController::RequestEquipAbilitySlot. The server repeats catalog validation and stores only the stable ID through AJumanjiPlayerState. The pawn reacts to the replicated progression update and the ASC grants only allowlisted classes.
+
+Do not call GiveAbility from a Widget Blueprint. Do not directly set ASC attributes from UI. The server-owned ASC tracks the handles it granted and removes only the old character loadout when replacing it.
 
 ## Gameplay Effects
 Create project effects in Content/Abilities/Effects:
@@ -30,7 +62,7 @@ Create project effects in Content/Abilities/Effects:
 Configure attribute modifiers and durations in the editor. Use server-authoritative Gameplay Effects and suitable prediction policies. Do not change attributes directly from UI code.
 
 ## Animation and effects
-Ability assets may use Animation Montages, Ability Tasks, Gameplay Events, Gameplay Cues, Niagara systems, audio and server-validated targeting. These binary content assets are not part of the text-only Stage 05 commit.
+Ability assets may use Animation Montages, Ability Tasks, Gameplay Events, Gameplay Cues, Niagara systems, audio and server-validated targeting. These binary content assets are authored in Unreal Editor.
 
 ## Mobile considerations
 - Use short, readable ability effects.
@@ -38,3 +70,7 @@ Ability assets may use Animation Montages, Ability Tasks, Gameplay Events, Gamep
 - Avoid large full-screen flashes.
 - Use the same Gameplay Tags on touch buttons and keyboard/gamepad input.
 - Profile every effect on the target Android devices.
+
+## Scope reminder
+
+Stage 16 provides the allowlisted runtime resolver and saved-slot activation path; it does not create the 45 Blueprint ability classes or their Gameplay Effects, animation assets, Niagara systems or final HUD icons. The source build and Android device validation remain required.

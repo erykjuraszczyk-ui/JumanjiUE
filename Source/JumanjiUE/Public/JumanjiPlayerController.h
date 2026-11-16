@@ -34,6 +34,10 @@ public:
     UFUNCTION(BlueprintCallable, Category = "JUMANJI|Progression")
     bool RequestGreatSpiritUpgrade(FName CharacterId, FName RecipeId);
 
+    /** Queues a catalog-validated ability-slot change; server result replicates through PlayerState. */
+    UFUNCTION(BlueprintCallable, Category = "JUMANJI|Loadout")
+    bool RequestEquipAbilitySlot(FName CharacterId, FName SlotId, FName AbilityId);
+
     UFUNCTION(BlueprintCallable, Category = "JUMANJI|UI")
     bool OpenGreatSpiritSelection();
 
@@ -65,6 +69,9 @@ protected:
     void ServerRequestGreatSpiritUpgrade(FName CharacterId, FName RecipeId);
 
     UFUNCTION(Server, Reliable)
+    void ServerRequestEquipAbilitySlot(FName CharacterId, FName SlotId, FName AbilityId);
+
+    UFUNCTION(Server, Reliable)
     void ServerRequestTrialInteraction(
         AJumanjiTrialActor* TrialActor,
         FName OptionId,
@@ -86,6 +93,7 @@ protected:
 private:
     void ApplyCharacterSelectionOnServer(FName CharacterId);
     bool ProcessGreatSpiritUpgradeOnServer(FName CharacterId, FName RecipeId);
+    bool ProcessEquipAbilitySlotOnServer(FName CharacterId, FName SlotId, FName AbilityId);
 
     bool ProcessTrialInteractionOnServer(
         AJumanjiTrialActor* TrialActor,
