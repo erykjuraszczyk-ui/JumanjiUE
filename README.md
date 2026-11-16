@@ -19,6 +19,7 @@ Open-world third-person adventure RPG prototype with a shared-world direction an
 - Stage 14 — Profile Progression & Inventory Persistence: schema v2 with v1 migration, account and Great Spirit levels, currencies, upgrade materials, logical ability-slot persistence and idempotent all-or-nothing profile transactions.
 - Stage 15 — Progression Gameplay Integration & Reward Tables: Great Spirit level-derived GAS base attributes, idempotent chapter completion rewards, server-validated material/currency upgrade recipes and optional reward/recipe DataTable overrides.
 - Stage 16 — Saved Ability Loadout Runtime: allowlisted AbilityId-to-GAS class catalog, profile slot restoration, server-validated equipment RPC and ASC loadout replacement without duplicate grants.
+- Stage 17 — Great Spirit Ability Content Pack: server-authoritative configured ability execution, target/effect modes, montage and Gameplay Cue hooks, plus a 45-slot production matrix.
 
 ## The nine playable Great Spirits
 1. Great Spirit I — Duch Korzeni (Root / Guardian)
@@ -54,6 +55,8 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - Docs/Design/GreatSpiritAbilityDesign.md — proposed five-slot ability kits for each spirit.
 - Content/Abilities/README.md — Blueprint ability and Gameplay Effect asset authoring guide, including the Stage 16 AbilityId catalog and saved-loadout integration.
 - Docs/STAGE_16_SAVED_ABILITY_LOADOUT_RUNTIME.md — allowlisted ability resolver, profile restoration, server equipment RPC, ASC grant lifecycle and acceptance checklist.
+- Docs/STAGE_17_GREAT_SPIRIT_ABILITY_CONTENT_PACK.md — configured ability runtime, costs/cooldowns, Blueprint/Gameplay Effect authoring and acceptance checklist.
+- Docs/Design/GreatSpiritAbilityProductionMatrix.md — production specification for all 45 Great Spirit ability slots.
 - Docs/STAGE_06_GREAT_SPIRIT_COMBAT_SYSTEM.md — combat runtime, asset setup, flow and acceptance tests.
 - Docs/Design/FirstCombatEncounter.md — first three-phase boss encounter design.
 - Content/Combat/README.md — damage effect, enemy, boss and AI setup.
@@ -131,6 +134,7 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - restore-time filtering of unknown or incompatible saved ability slots;
 - server RPC to equip catalog-approved abilities into profile schema v2;
 - runtime resolution of saved ability IDs into approved soft Gameplay Ability classes;
+- UJumanjiConfiguredEffectAbility base with server-only Self/ForwardSweep/RadialPulse/Dash execution, PvE target filtering, SetByCaller target/self Gameplay Effects, AttackPower scaling and Gameplay Cue/Animation Montage hooks;
 - PlayerState-owned ASC replacement of the Great Spirit loadout, tracking and clearing only the previous granted ability handles, and avoiding duplicate grants when the same loadout is reapplied.
 
 ## Not yet included
