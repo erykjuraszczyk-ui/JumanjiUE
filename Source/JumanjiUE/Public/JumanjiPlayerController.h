@@ -6,6 +6,7 @@
 
 class UJumanjiGreatSpiritSelectionWidget;
 class UJumanjiAdventureHUDWidget;
+class UJumanjiAbilityHUDWidget;
 class AJumanjiTrialActor;
 class UJumanjiWorldAtlasWidget;
 class UJumanjiWorldNavigationComponent;
@@ -84,6 +85,9 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "JUMANJI|Adventure|UI")
     TSubclassOf<UJumanjiAdventureHUDWidget> AdventureHUDWidgetClass;
 
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "JUMANJI|Abilities|UI")
+    TSubclassOf<UJumanjiAbilityHUDWidget> AbilityHUDWidgetClass;
+
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "JUMANJI|World|UI")
     TSubclassOf<UJumanjiWorldAtlasWidget> WorldAtlasWidgetClass;
 
@@ -106,6 +110,9 @@ private:
 
     UPROPERTY(Transient)
     TObjectPtr<UJumanjiAdventureHUDWidget> ActiveAdventureHUDWidget;
+
+    UPROPERTY(Transient)
+    TObjectPtr<UJumanjiAbilityHUDWidget> ActiveAbilityHUDWidget;
 
     UPROPERTY(Transient)
     TObjectPtr<UJumanjiWorldAtlasWidget> ActiveWorldAtlasWidget;

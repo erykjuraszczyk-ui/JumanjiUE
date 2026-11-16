@@ -20,6 +20,7 @@ Open-world third-person adventure RPG prototype with a shared-world direction an
 - Stage 15 — Progression Gameplay Integration & Reward Tables: Great Spirit level-derived GAS base attributes, idempotent chapter completion rewards, server-validated material/currency upgrade recipes and optional reward/recipe DataTable overrides.
 - Stage 16 — Saved Ability Loadout Runtime: allowlisted AbilityId-to-GAS class catalog, profile slot restoration, server-validated equipment RPC and ASC loadout replacement without duplicate grants.
 - Stage 17 — Great Spirit Ability Content Pack: server-authoritative configured ability execution, target/effect modes, montage and Gameplay Cue hooks, plus a 45-slot production matrix.
+- Stage 18 — Ability HUD & Input Feedback: mobile slot controls, GAS cooldown/resource indicators, activation feedback and local target-focus presentation.
 
 ## The nine playable Great Spirits
 1. Great Spirit I — Duch Korzeni (Root / Guardian)
@@ -56,6 +57,7 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - Content/Abilities/README.md — Blueprint ability and Gameplay Effect asset authoring guide, including the Stage 16 AbilityId catalog and saved-loadout integration.
 - Docs/STAGE_16_SAVED_ABILITY_LOADOUT_RUNTIME.md — allowlisted ability resolver, profile restoration, server equipment RPC, ASC grant lifecycle and acceptance checklist.
 - Docs/STAGE_17_GREAT_SPIRIT_ABILITY_CONTENT_PACK.md — configured ability runtime, costs/cooldowns, Blueprint/Gameplay Effect authoring and acceptance checklist.
+- Docs/STAGE_18_ABILITY_HUD_INPUT_FEEDBACK.md — mobile ability HUD, slot input, Energy/Resonance indicators, cooldown feedback and local target focus.
 - Docs/Design/GreatSpiritAbilityProductionMatrix.md — production specification for all 45 Great Spirit ability slots.
 - Docs/STAGE_06_GREAT_SPIRIT_COMBAT_SYSTEM.md — combat runtime, asset setup, flow and acceptance tests.
 - Docs/Design/FirstCombatEncounter.md — first three-phase boss encounter design.
@@ -135,14 +137,17 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - server RPC to equip catalog-approved abilities into profile schema v2;
 - runtime resolution of saved ability IDs into approved soft Gameplay Ability classes;
 - UJumanjiConfiguredEffectAbility base with server-only Self/ForwardSweep/RadialPulse/Dash execution, PvE target filtering, SetByCaller target/self Gameplay Effects, AttackPower scaling and Gameplay Cue/Animation Montage hooks;
-- PlayerState-owned ASC replacement of the Great Spirit loadout, tracking and clearing only the previous granted ability handles, and avoiding duplicate grants when the same loadout is reapplied.
+- PlayerState-owned ASC replacement of the Great Spirit loadout, tracking and clearing only the previous granted ability handles, and avoiding duplicate grants when the same loadout is reapplied;
+- UJumanjiAbilityHUDWidget with five-slot snapshots, GAS cooldown timing, Energy/Resonance values, activation feedback and local target-focus indicator;
+- HUD presentation metadata on UJumanjiGameplayAbility for display name, description, icon and matching resource-cost display;
+- PlayerController creation of the configured ability HUD for the local player.
 
 ## Not yet included
 This is a source-code foundation, not a finished game or installable Android build. The repository still needs:
 - saved Unreal maps, including Content/Maps/L_EmeraldJungle_World.umap;
 - final portrait textures and 3D character models;
 - rigs, animation blueprints and facial animation;
-- a touch-first HUD and final Enhanced Input assets;
+- final touch-first Widget Blueprint assets, icons, UI materials and Enhanced Input mapping assets;
 - actual UMG Widget Blueprint .uasset files and card layout;
 - the configured Emerald Jungle chapter director instance and nine placed trial actors;
 - 45 character-specific ability Blueprint assets and configured Gameplay Effects;
