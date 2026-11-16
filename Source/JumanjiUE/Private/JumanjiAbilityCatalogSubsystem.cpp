@@ -34,6 +34,12 @@ void UJumanjiAbilityCatalogSubsystem::EnsureCatalogReady() const
         UJumanjiAbilityCatalogSubsystem* MutableThis =
             const_cast<UJumanjiAbilityCatalogSubsystem*>(this);
         MutableThis->BuildDefaultCatalog();
+        if (MutableThis->AbilityEntries.IsEmpty())
+        {
+            // The roster may not be initialized yet. Leave the flag false so a
+            // later query retries after all GameInstance subsystems are ready.
+            return;
+        }
         MutableThis->ApplyConfiguredDataTable();
         MutableThis->bCatalogReady = true;
     }
