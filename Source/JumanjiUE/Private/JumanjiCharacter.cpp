@@ -68,6 +68,12 @@ void AJumanjiCharacter::PossessedBy(AController* NewController)
     InitializeAbilityActorInfo();
 }
 
+void AJumanjiCharacter::OnRep_Controller()
+{
+    Super::OnRep_Controller();
+    InitializeAbilityActorInfo();
+}
+
 void AJumanjiCharacter::PawnClientRestart()
 {
     Super::PawnClientRestart();
