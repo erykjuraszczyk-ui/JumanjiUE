@@ -2,12 +2,12 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/SaveGame.h"
+#include "JumanjiProgressionTypes.h"
 #include "JumanjiPlayerProfileSaveGame.generated.h"
 
 /**
  * Versioned, per-account profile snapshot.
- * The arrays are IDs rather than UObject references so the save remains stable
- * when maps, actors or DataTable assets are unloaded.
+ * Persist stable IDs and plain data, never actor/UObject pointers.
  */
 USTRUCT(BlueprintType)
 struct FJumanjiPlayerProfileSnapshot
@@ -15,7 +15,7 @@ struct FJumanjiPlayerProfileSnapshot
     GENERATED_BODY()
 
     UPROPERTY(BlueprintReadOnly, Category = "JUMANJI|Profile")
-    int32 SchemaVersion = 1;
+    int32 SchemaVersion = 2;
 
     UPROPERTY(BlueprintReadOnly, Category = "JUMANJI|Profile")
     FString ProfileId;
@@ -34,6 +34,13 @@ struct FJumanjiPlayerProfileSnapshot
 
     UPROPERTY(BlueprintReadOnly, Category = "JUMANJI|Profile")
     TArray<FName> CompletedAdventureChapterIds;
+
+    UPROPERTY(BlueprintReadOnly, Category = "JUMANJI|Profile")
+    FJumanjiPlayerProgressionState Progression;
+
+    /** Idempotency keys are persisted with the balances/items they protect. */
+    UPROPERTY(BlueprintReadOnly, Category = "JUMANJI|Profile")
+    TArray<FName> ProcessedTransactionIds;
 
     UPROPERTY(BlueprintReadOnly, Category = "JUMANJI|Profile")
     FDateTime LastSavedUtc;
