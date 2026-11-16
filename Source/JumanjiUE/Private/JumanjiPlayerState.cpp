@@ -305,7 +305,10 @@ void AJumanjiPlayerState::PersistProfileSnapshot()
         return;
     }
 
-    ProfileSubsystem->SaveProfile(BuildProfileSnapshot());
+    if (!ProfileSubsystem->SaveProfile(BuildProfileSnapshot()))
+    {
+        UE_LOG(LogTemp, Warning, TEXT("JUMANJI profile: snapshot was rejected before save could be queued."));
+    }
 }
 
 void AJumanjiPlayerState::OnRep_WorldExplorationState()
