@@ -12,6 +12,24 @@ Create Blueprint classes derived from UJumanjiGameplayAbility. Naming pattern fo
 
 For each asset set the matching AbilitySlot. Set InputTag for primary, active, ultimate and dodge. Passive abilities normally leave InputTag unset and set bActivateOnGranted only when their implementation is designed to remain active.
 
+## Configured ability runtime (Stage 17)
+
+Create the standard combat Blueprint children from UJumanjiConfiguredEffectAbility for Primary, Active, Ultimate and Dodge. The shared base provides:
+- TargetingMode: Self, ForwardSweep, RadialPulse or Dash;
+- TargetTeam: SelfOnly, Friendly, Hostile or Any;
+- server-authoritative target acquisition using ECC_Pawn;
+- TargetEffectClass and a signed SetByCaller magnitude;
+- optional SelfEffectClass for an additional owner effect;
+- optional AttackPower scaling;
+- optional Animation Montage and Gameplay Cue;
+- BP_OnConfiguredTargetApplied for additional per-target Blueprint logic.
+
+Recommended SetByCaller tag for new effects: Data.Ability.Magnitude. The effect asset and Blueprint field must use the exact same tag. Existing damage effects may keep their own tag, such as Data.Damage.
+
+The configured base is a shared execution layer, not 36 finished combat designs. Multi-step combos, target marks, cleansing, damage absorption, world cover, faction rules and event-driven passives require dedicated Blueprint logic or additional native systems. Passive abilities should not be implemented as a one-frame sweep; manage any persistent Gameplay Effect so it is removed when the passive is unequipped.
+
+For the current production names, per-character targets and asset list, use Docs/Design/GreatSpiritAbilityProductionMatrix.md and Docs/STAGE_17_GREAT_SPIRIT_ABILITY_CONTENT_PACK.md.
+
 ## Saved AbilityId catalog (Stage 16)
 
 The logical ability IDs stored in profile schema v2 are resolved at runtime by UJumanjiAbilityCatalogSubsystem. Do not store Blueprint class paths in the player profile and do not accept client-supplied class references.
