@@ -2,9 +2,11 @@
 
 #include "JumanjiBoardWorldSubsystem.h"
 #include "JumanjiCharacter.h"
+#include "JumanjiGameState.h"
 #include "Components/BoxComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
+#include "Engine/World.h"
 #include "UObject/ConstructorHelpers.h"
 
 AJumanjiBoardActor::AJumanjiBoardActor()
@@ -37,27 +39,25 @@ AJumanjiBoardActor::AJumanjiBoardActor()
 
 bool AJumanjiBoardActor::CanInteract_Implementation(AJumanjiCharacter* InteractingCharacter) const
 {
-    if (!InteractingCharacter || EventId.IsNone())
+    if (!InteractingCharacter || EventId.IsNone() || !GetWorld())
     {
         return false;
     }
 
-    const UWorld* World = GetWorld();
-    if (!World)
-    {
-        return false;
-    }
-
+    const AJumanjiGameState* BoardGameState = GetWorld()->GetGameState<AJumanjiGameState>();
     const UJumanjiBoardWorldSubsystem* BoardSubsystem =
-        World->GetSubsystem<UJumanjiBoardWorldSubsystem>();
+        GetWorld()->GetSubsystem<UJumanjiBoardWorldSubsystem>();
 
-    return BoardSubsystem != nullptr
-        && !World->GetGameState<AGameStateBase>()->HasAuthority() == false;
+    return BoardGameState != nullptr
+        && BoardSubsystem != nullptr
+        && !BoardGameState->IsBoardEventActive()
+        && FVector::DistSquared(GetActorLocation(), InteractingCharacter->GetActorLocation())
+            <= FMath::Square(450.0f);
 }
 
 void AJumanjiBoardActor::Interact_Implementation(AJumanjiCharacter* InteractingCharacter)
 {
-    if (!InteractingCharacter || !HasAuthority())
+    if (!InteractingCharacter || !HasAuthority() || !GetWorld())
     {
         return;
     }
