@@ -7,6 +7,7 @@
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "JumanjiAbilitySystemComponent.h"
+#include "JumanjiAbilityCatalogSubsystem.h"
 #include "JumanjiCharacterDefinition.h"
 #include "JumanjiCharacterRosterSubsystem.h"
 #include "JumanjiPlayerState.h"
@@ -77,6 +78,10 @@ void AJumanjiCharacter::BindToPlayerCharacterSelection()
         this, &AJumanjiCharacter::HandleSelectedCharacterChanged);
     JumanjiPlayerState->OnSelectedCharacterChanged.AddDynamic(
         this, &AJumanjiCharacter::HandleSelectedCharacterChanged);
+    JumanjiPlayerState->OnProgressionChanged.RemoveDynamic(
+        this, &AJumanjiCharacter::HandleProgressionChanged);
+    JumanjiPlayerState->OnProgressionChanged.AddDynamic(
+        this, &AJumanjiCharacter::HandleProgressionChanged);
 
     InitializeAbilityActorInfo();
     ApplySelectedCharacterPresentation();
@@ -96,11 +101,15 @@ void AJumanjiCharacter::InitializeAbilityActorInfo()
 
 void AJumanjiCharacter::HandleSelectedCharacterChanged(FName CharacterId)
 {
-    if (CharacterId != LastAppliedCharacterId
-        || CharacterId != LastGrantedAbilityLoadoutCharacterId)
-    {
-        ApplySelectedCharacterPresentation();
-    }
+    ApplySelectedCharacterPresentation();
+}
+
+void AJumanjiCharacter::HandleProgressionChanged(
+    const FJumanjiPlayerProgressionState& NewProgressionState)
+{
+    // The PlayerState owns both the ASC and saved loadout. Re-resolve after
+    // profile restoration or a server-confirmed equipment change.
+    ApplySelectedCharacterPresentation();
 }
 
 void AJumanjiCharacter::ApplySelectedCharacterPresentation()
@@ -149,7 +158,7 @@ void AJumanjiCharacter::ApplySelectedAbilityLoadout(
     FName CharacterId,
     const FJumanjiCharacterDefinition& Definition)
 {
-    if (!HasAuthority() || CharacterId == LastGrantedAbilityLoadoutCharacterId)
+    if (!HasAuthority() || CharacterId.IsNone())
     {
         return;
     }
@@ -157,18 +166,29 @@ void AJumanjiCharacter::ApplySelectedAbilityLoadout(
     AJumanjiPlayerState* JumanjiPlayerState = GetPlayerState<AJumanjiPlayerState>();
     UJumanjiAbilitySystemComponent* AbilitySystem =
         JumanjiPlayerState ? JumanjiPlayerState->GetJumanjiAbilitySystemComponent() : nullptr;
+    const UGameInstance* GameInstance = GetGameInstance();
+    const UJumanjiAbilityCatalogSubsystem* AbilityCatalog = GameInstance
+        ? GameInstance->GetSubsystem<UJumanjiAbilityCatalogSubsystem>()
+        : nullptr;
 
-    if (!AbilitySystem)
+    if (!AbilitySystem || !AbilityCatalog)
     {
         return;
     }
 
-    AbilitySystem->ClearGrantedAbilities(GrantedCharacterAbilityHandles);
-    GrantedCharacterAbilityHandles.Reset();
-    AbilitySystem->GrantCharacterAbilityLoadout(Definition, GrantedCharacterAbilityHandles);
-    LastGrantedAbilityLoadoutCharacterId = CharacterId;
-}
+    TArray<FJumanjiResolvedAbility> ResolvedAbilities;
+    const FJumanjiPlayerProgressionState Progression = JumanjiPlayerState->GetProgressionState();
 
+    if (!AbilityCatalog->ResolveEquippedLoadout(
+        CharacterId,
+        Progression.EquippedAbilitySlots,
+        ResolvedAbilities))
+    {
+        return;
+    }
+
+    AbilitySystem->ApplyResolvedCharacterAbilityLoadout(CharacterId, ResolvedAbilities);
+}
 bool AJumanjiCharacter::ActivateAbilityByInputTag(FGameplayTag InputTag)
 {
     AJumanjiPlayerState* JumanjiPlayerState = GetPlayerState<AJumanjiPlayerState>();
