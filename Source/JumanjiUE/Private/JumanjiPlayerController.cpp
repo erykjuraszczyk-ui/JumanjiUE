@@ -4,7 +4,7 @@
 #include "Engine/GameInstance.h"
 #include "GameFramework/Pawn.h"
 #include "JumanjiCharacterRosterSubsystem.h"
-#include "JumanjiAdventureHUDWidget.h"
+#include "JumanjiAdventureHUDWidget.h"\n#include "JumanjiAbilityHUDWidget.h"
 #include "JumanjiAbilityCatalogSubsystem.h"
 #include "JumanjiGreatSpiritSelectionWidget.h"
 #include "JumanjiPlayerState.h"
@@ -22,19 +22,35 @@ void AJumanjiPlayerController::BeginPlay()
 {
     Super::BeginPlay();
 
-    if (!IsLocalController() || !AdventureHUDWidgetClass)
+    if (!IsLocalController())
     {
         return;
     }
 
-    ActiveAdventureHUDWidget = CreateWidget<UJumanjiAdventureHUDWidget>(
-        this,
-        AdventureHUDWidgetClass
-    );
-
-    if (IsValid(ActiveAdventureHUDWidget))
+    if (AdventureHUDWidgetClass)
     {
-        ActiveAdventureHUDWidget->AddToViewport(50);
+        ActiveAdventureHUDWidget = CreateWidget<UJumanjiAdventureHUDWidget>(
+            this,
+            AdventureHUDWidgetClass
+        );
+
+        if (IsValid(ActiveAdventureHUDWidget))
+        {
+            ActiveAdventureHUDWidget->AddToViewport(50);
+        }
+    }
+
+    if (AbilityHUDWidgetClass)
+    {
+        ActiveAbilityHUDWidget = CreateWidget<UJumanjiAbilityHUDWidget>(
+            this,
+            AbilityHUDWidgetClass
+        );
+
+        if (IsValid(ActiveAbilityHUDWidget))
+        {
+            ActiveAbilityHUDWidget->AddToViewport(60);
+        }
     }
 }
 
