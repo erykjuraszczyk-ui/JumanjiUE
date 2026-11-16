@@ -86,7 +86,7 @@ Asynchroniczny zapis ogranicza ryzyko krótkiego zatrzymania klatki podczas eksp
 Profil nie jest identyfikowany przez DisplayName ani nazwę postaci.
 
 AJumanjiGameMode przypisuje identyfikator w PostLogin po stronie serwera:
-1. jeżeli platformowy UniqueNetId jest dostępny, jego wartość jest używana jako klucz profilu;
+1. jeżeli platformowy UniqueNetId jest dostępny, wartość wraz z typem dostawcy jest używana jako klucz profilu;
 2. w trybie standalone używany jest stały lokalny profil LOCAL_SINGLEPLAYER;
 3. host lokalny listen server może użyć LOCAL_LISTEN_HOST;
 4. zdalny klient bez stabilnego platformowego identyfikatora nie otrzymuje lokalnego profilu zapisu.
