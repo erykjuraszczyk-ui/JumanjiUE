@@ -63,6 +63,9 @@ struct JUMANJIUE_API FJumanjiSpiritUpgradeRecipe : public FTableRowBase
     FName RecipeId = NAME_None;
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "JUMANJI|Upgrade")
+    FName CharacterId = NAME_None;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "JUMANJI|Upgrade")
     int64 CharacterExperienceReward = 0;
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "JUMANJI|Upgrade")
