@@ -39,7 +39,7 @@ void AJumanjiGameMode::PostLogin(APlayerController* NewPlayer)
 
     if (UniqueId.IsValid())
     {
-        ProfileId = UniqueId.ToString();
+        ProfileId = FString::Printf(TEXT("%s:%s"), *UniqueId.GetType().ToString(), *UniqueId.ToString());
     }
     else if (GetNetMode() == NM_Standalone)
     {
@@ -100,7 +100,7 @@ void AJumanjiGameMode::Logout(AController* Exiting)
             if (AJumanjiPlayerState* JumanjiPlayerState =
                 PlayerController->GetPlayerState<AJumanjiPlayerState>())
             {
-                JumanjiPlayerState->SaveProfileNow();
+                JumanjiPlayerState->RequestProfileSave();
             }
         }
     }
