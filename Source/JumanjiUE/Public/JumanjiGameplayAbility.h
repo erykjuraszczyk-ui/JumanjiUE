@@ -5,6 +5,8 @@
 #include "GameplayTagContainer.h"
 #include "JumanjiGameplayAbility.generated.h"
 
+class UTexture2D;
+
 UENUM(BlueprintType)
 enum class EJumanjiAbilityHUDResource : uint8
 {
