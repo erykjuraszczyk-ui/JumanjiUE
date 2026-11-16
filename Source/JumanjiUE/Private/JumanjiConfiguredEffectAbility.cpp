@@ -296,7 +296,10 @@ bool UJumanjiConfiguredEffectAbility::ApplyConfiguredEffect(
     {
         const float AttackPower = SourceASC->GetNumericAttribute(
             UJumanjiAttributeSet::GetAttackPowerAttribute());
-        AppliedMagnitude += AttackPower * AttackPowerCoefficient;
+        const float PowerContribution = AttackPower * AttackPowerCoefficient;
+        AppliedMagnitude += BaseMagnitude < 0.0f
+            ? -PowerContribution
+            : PowerContribution;
     }
 
     OutAppliedMagnitude = AppliedMagnitude;
