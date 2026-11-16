@@ -83,7 +83,7 @@ bool UJumanjiPlayerProfileSubsystem::IsValidSnapshot(
     const FJumanjiPlayerProfileSnapshot& Snapshot) const
 {
     if (!IsValidProfileId(Snapshot.ProfileId)
-        || Snapshot.SchemaVersion < 1
+        || Snapshot.SchemaVersion != CurrentSchemaVersion
         || Snapshot.SelectedCharacterId.IsNone()
         || Snapshot.ExplorationRevision < 0
         || Snapshot.DiscoveredRegionIds.Num() > MaxRegions
