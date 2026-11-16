@@ -77,6 +77,7 @@ protected:
         FGameplayTag MagnitudeTag,
         float BaseMagnitude,
         float AttackPowerCoefficient,
+        float& OutAppliedMagnitude,
         const FGameplayAbilitySpecHandle Handle,
         const FGameplayAbilityActorInfo* ActorInfo) const;
 
