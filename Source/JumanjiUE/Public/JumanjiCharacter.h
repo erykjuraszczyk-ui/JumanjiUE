@@ -29,13 +29,13 @@ public:
 
     virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 
-    /** Can be called from keyboard input or a UMG touch button. */
     UFUNCTION(BlueprintCallable, Category = "JUMANJI|Interaction")
     void TryInteract();
 
 protected:
     virtual void BeginPlay() override;
     virtual void PossessedBy(AController* NewController) override;
+    virtual void OnRep_Controller() override;
     virtual void PawnClientRestart() override;
     virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 
