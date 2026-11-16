@@ -45,3 +45,13 @@ Implement OnAbilityInputFeedback to show a brief result for activation, insuffic
 SetTargetFocus accepts a local UI focus candidate only if the actor has an Ability System Component and is within MaxTargetFocusDistance. Use OnAbilityTargetFocusChanged for a target label/marker. This local focus marker is not gameplay target data and cannot bypass server-side ability validation.
 
 See Docs/STAGE_18_ABILITY_HUD_INPUT_FEEDBACK.md for full widget wiring and mobile acceptance checks.
+
+
+## Stage 19 — Ability Presentation Asset Pack
+
+Stage 19 defines the presentation asset contract for all 45 Great Spirit ability slots. See:
+- `Docs/STAGE_19_ABILITY_PRESENTATION_ASSET_PACK.md` for icon, material, audio, Gameplay Cue, VFX and mobile authoring specifications;
+- `Content/UI/AbilityPresentation/AbilityPresentationManifest.csv` for the 45 stable AbilityId rows, target asset paths, slot cooldown references and proposed Great Spirit palettes;
+- `Content/UI/AbilityPresentation/README.md` for the import and assignment workflow.
+
+The CSV is a production manifest, not a claim that the referenced PNG/.uasset/Sound Wave/Niagara assets already exist. Create/import those binary assets in Unreal Editor. Stage 18 remains the source of live cooldown/resource state; UI must never mutate GAS attributes or apply effects.
