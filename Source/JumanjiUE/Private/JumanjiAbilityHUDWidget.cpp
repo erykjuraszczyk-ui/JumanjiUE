@@ -295,11 +295,13 @@ bool UJumanjiAbilityHUDWidget::ActivateAbilitySlot(EJumanjiAbilitySlot Slot)
         return false;
     }
 
-    const APlayerController* PlayerController = GetOwningPlayer();
-    const AJumanjiCharacter* Character = PlayerController
-        ? Cast<AJumanjiCharacter>(PlayerController->GetPawn())
-        : nullptr;
+    APlayerController* PlayerController = GetOwningPlayer();
+    if (!PlayerController || !PlayerController->IsLocalController())
+    {
+        return false;
+    }
 
+    AJumanjiCharacter* Character = Cast<AJumanjiCharacter>(PlayerController->GetPawn());
     if (!Character)
     {
         OnAbilityInputFeedback(
@@ -350,8 +352,13 @@ bool UJumanjiAbilityHUDWidget::ActivateAbilitySlot(EJumanjiAbilitySlot Slot)
 
 bool UJumanjiAbilityHUDWidget::SetTargetFocus(AActor* Candidate)
 {
-    const APlayerController* PlayerController = GetOwningPlayer();
-    const APawn* OwnerPawn = PlayerController ? PlayerController->GetPawn() : nullptr;
+    APlayerController* PlayerController = GetOwningPlayer();
+    if (!PlayerController || !PlayerController->IsLocalController())
+    {
+        return false;
+    }
+
+    const APawn* OwnerPawn = PlayerController->GetPawn();
 
     if (!IsValid(Candidate)
         || !OwnerPawn
