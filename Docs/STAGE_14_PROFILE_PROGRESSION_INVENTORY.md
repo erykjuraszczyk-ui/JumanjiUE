@@ -64,7 +64,7 @@ Stage 13 zapisywał `SchemaVersion = 1`. Odrzucenie tych zapisów oznaczałoby u
 5. zwraca snapshot jako schema v2;
 6. odrzuca nieobsługiwane lub niepoprawne zapisy bez automatycznego kasowania slotu.
 
-Po przywróceniu profilu PlayerState normalizuje stan według aktualnego katalogu i zleca zapis schema v2. Stare dane eksploracji i wybór postaci pozostają zachowane.
+Po przywróceniu profilu PlayerState normalizuje stan według aktualnego katalogu i zleca zapis schema v2. Stare dane eksploracji i wybór postaci pozostają zachowane. Jeżeli slot istnieje, ale nie przechodzi walidacji lub ma nieobsługiwaną wersję, GameMode rozpoznaje go przez HasProfile, uruchamia bezpieczne wartości tylko na czas sesji i wyłącza zapisy do tego slotu. Dzięki temu nowy profil startowy nie nadpisuje od razu danych wymagających odzyskania.
 
 ## 3. Katalog walut
 
