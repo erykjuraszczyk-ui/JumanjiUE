@@ -55,9 +55,7 @@ protected:
     void BindToPlayerCharacterSelection();
     void InitializeAbilityActorInfo();
     void ApplySelectedCharacterPresentation();
-    void ApplySelectedAbilityLoadout(
-        FName CharacterId,
-        const struct FJumanjiCharacterDefinition& Definition);
+    void ApplySelectedAbilityLoadout(FName CharacterId);
 
 private:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera", meta = (AllowPrivateAccess = "true"))
