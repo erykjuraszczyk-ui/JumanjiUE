@@ -68,6 +68,9 @@ public:
     const FString& GetPersistentProfileId() const { return PersistentProfileId; }
     void RequestProfileSave();
 
+    /** Prevents fallback state from overwriting an existing unreadable profile slot. */
+    void DisableProfilePersistenceForSession();
+
     /** Initialize starter balances and level-one progression for a new profile. */
     void InitializeNewProfileProgression();
 
@@ -178,6 +181,7 @@ private:
 
     /** Server-only key; never accepted directly from a client RPC. */
     FString PersistentProfileId;
+    bool bProfilePersistenceEnabled = true;
 
     /** Server-only idempotency ledger; saved with the progression snapshot, not replicated. */
     TArray<FName> ProcessedTransactionIds;
