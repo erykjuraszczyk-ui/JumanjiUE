@@ -30,6 +30,10 @@ public:
     UFUNCTION(BlueprintCallable, Category = "JUMANJI|Character")
     void RequestSelectCharacter(FName CharacterId);
 
+    /** Client request; the server validates recipe, character and profile costs. */
+    UFUNCTION(BlueprintCallable, Category = "JUMANJI|Progression")
+    bool RequestGreatSpiritUpgrade(FName CharacterId, FName RecipeId);
+
     UFUNCTION(BlueprintCallable, Category = "JUMANJI|UI")
     bool OpenGreatSpiritSelection();
 
@@ -58,6 +62,9 @@ protected:
     void ServerSelectCharacter(FName CharacterId);
 
     UFUNCTION(Server, Reliable)
+    void ServerRequestGreatSpiritUpgrade(FName CharacterId, FName RecipeId);
+
+    UFUNCTION(Server, Reliable)
     void ServerRequestTrialInteraction(
         AJumanjiTrialActor* TrialActor,
         FName OptionId,
@@ -78,6 +85,7 @@ protected:
 
 private:
     void ApplyCharacterSelectionOnServer(FName CharacterId);
+    bool ProcessGreatSpiritUpgradeOnServer(FName CharacterId, FName RecipeId);
 
     bool ProcessTrialInteractionOnServer(
         AJumanjiTrialActor* TrialActor,
