@@ -17,6 +17,7 @@ Open-world third-person adventure RPG prototype with a shared-world direction an
 - Stage 12 — Emerald Jungle Traversal & Navigation: local route selection for discovered regions/landmarks, NavMesh path queries, world-space destination anchors and mobile navigation UI integration hooks.
 - Stage 13 — Player Profile & Exploration Persistence: versioned profile snapshot, server-bound profile identity, async local SaveGame and persistence of Great Spirit choice, exploration and completed chapters.
 - Stage 14 — Profile Progression & Inventory Persistence: schema v2 with v1 migration, account and Great Spirit levels, currencies, upgrade materials, logical ability-slot persistence and idempotent all-or-nothing profile transactions.
+- Stage 15 — Progression Gameplay Integration & Reward Tables: Great Spirit level-derived GAS base attributes, idempotent chapter completion rewards, server-validated material/currency upgrade recipes and optional reward/recipe DataTable overrides.
 
 ## The nine playable Great Spirits
 1. Great Spirit I — Duch Korzeni (Root / Guardian)
@@ -68,6 +69,8 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - Docs/STAGE_12_EMERALD_JUNGLE_TRAVERSAL_NAVIGATION.md — NavMesh, World Partition navigation, route guidance, POI targeting and mobile map integration.
 - Docs/STAGE_13_PLAYER_PROFILE_EXPLORATION_PERSISTENCE.md — initial profile schema v1, trusted identity binding, exploration/chapter persistence and acceptance tests.
 - Docs/STAGE_14_PROFILE_PROGRESSION_INVENTORY.md — schema v2 migration, account/character levels, currency, inventory, logical loadouts, transaction validation and acceptance tests.
+- Docs/STAGE_15_PROGRESSION_GAMEPLAY_REWARDS.md — GAS attribute progression, chapter reward transactions, Great Spirit upgrade recipes, DataTable paths and acceptance tests.
+- Content/Progression/README.md — reward and upgrade DataTable authoring guide.
 - Content/Inventory/README.md — catalog IDs, material stacks and reward transaction integration.
 - [Docs/UE5_BUILD_PIPELINE.md](Docs/UE5_BUILD_PIPELINE.md) — GitHub Actions workflow, Windows self-hosted runner and Android toolchain setup.
 
@@ -114,7 +117,13 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - source-controlled currency catalog and ten upgrade-material item definitions;
 - server-authoritative inventory/currency transaction validation with duplicate TransactionId rejection;
 - replicated account level/XP, inventory stacks, wallet balances, nine Great Spirit progression entries and logical ability loadout slots;
-- profile-level transaction ledger persisted with the balances it protects.
+- profile-level transaction ledger persisted with the balances it protects;
+- level-derived MaxHealth, MaxEnergy, MaxResonance, AttackPower and Defense base values applied to the selected Great Spirit's GAS AttributeSet;
+- health, energy and resonance percentage preserved when the selected spirit's level changes its maximum values;
+- UJumanjiProgressionRewardSubsystem with validated chapter reward definitions and nine spirit-specific upgrade recipes;
+- optional DT_ChapterRewards and DT_SpiritUpgradeRecipes DataTable overrides with native starter catalog fallback;
+- idempotent chapter completion reward transactions and retry of configured missing rewards after profile restoration;
+- server-routed Great Spirit upgrade RPC using all-or-nothing currency/material/XP profile transactions.
 
 ## Not yet included
 This is a source-code foundation, not a finished game or installable Android build. The repository still needs:
@@ -129,9 +138,8 @@ This is a source-code foundation, not a finished game or installable Android bui
 - final boss attack patterns and encounter reward service;
 - Blueprint children, visuals and playable implementations for all nine Great Spirit trials;
 - the Root Rune trial Blueprint, rune meshes, UI widget, map and presentation assets;
-- integration of progression levels with GAS combat attributes and upgrade-cost calculations;
 - runtime resolution of saved AbilityId values to approved Gameplay Ability classes;
-- data-driven reward tables and automatic chapter/trial reward orchestration;
+- trial-specific reward rows and automatic reward orchestration for all nine trial actors;
 - persistent in-progress objective state;
 - a production profile backend, account authentication, cross-shard synchronization and profile conflict handling;
 - authored NavMesh data, world-space DataTable anchors and traversal link actors/animations;

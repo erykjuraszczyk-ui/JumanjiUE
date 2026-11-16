@@ -121,3 +121,19 @@ int64 UJumanjiProgressionCatalogSubsystem::GetCharacterExperienceForNextLevel(in
 
     return 150LL + static_cast<int64>(CurrentLevel) * 90LL;
 }
+
+void UJumanjiProgressionCatalogSubsystem::GetCombatProgressionValues(
+    int32 CharacterLevel,
+    FJumanjiCombatProgressionValues& OutValues) const
+{
+    const int32 SafeLevel = FMath::Clamp(CharacterLevel, 1, MaxCharacterLevel);
+    const float LevelOffset = static_cast<float>(SafeLevel - 1);
+
+    // First-pass tuning curve for the nine Great Spirits. These are base values;
+    // buffs/debuffs and temporary encounter effects remain Gameplay Effect driven.
+    OutValues.MaxHealth = 100.0f + (12.0f * LevelOffset);
+    OutValues.MaxEnergy = 100.0f + (2.0f * LevelOffset);
+    OutValues.MaxResonance = 100.0f;
+    OutValues.AttackPower = 10.0f + (1.5f * LevelOffset);
+    OutValues.Defense = 5.0f + (0.8f * LevelOffset);
+}

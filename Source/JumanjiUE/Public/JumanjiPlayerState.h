@@ -89,6 +89,12 @@ public:
     UFUNCTION(BlueprintPure, Category = "JUMANJI|Progression")
     int32 GetGreatSpiritLevel(FName CharacterId) const;
 
+    UFUNCTION(BlueprintPure, Category = "JUMANJI|Economy")
+    bool HasProcessedProfileTransaction(FName TransactionId) const;
+
+    /** Server-only: refresh base GAS combat attributes from the selected spirit level. */
+    bool RefreshCombatAttributesFromProgression();
+
     /**
      * Server-only, all-or-nothing transaction. Call only from trusted server
      * gameplay/reward code. A duplicate TransactionId is rejected.
