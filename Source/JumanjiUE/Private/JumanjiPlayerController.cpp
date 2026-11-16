@@ -7,6 +7,7 @@
 #include "JumanjiAdventureHUDWidget.h"
 #include "JumanjiGreatSpiritSelectionWidget.h"
 #include "JumanjiPlayerState.h"
+#include "JumanjiProgressionRewardSubsystem.h"
 #include "JumanjiTrialActor.h"
 #include "JumanjiWorldAtlasWidget.h"
 #include "JumanjiWorldNavigationComponent.h"
@@ -183,9 +184,52 @@ bool AJumanjiPlayerController::RequestTrialInteraction(
     return true;
 }
 
+bool AJumanjiPlayerController::RequestGreatSpiritUpgrade(FName CharacterId, FName RecipeId)
+{
+    if (CharacterId.IsNone() || RecipeId.IsNone())
+    {
+        return false;
+    }
+
+    if (HasAuthority())
+    {
+        return ProcessGreatSpiritUpgradeOnServer(CharacterId, RecipeId);
+    }
+
+    ServerRequestGreatSpiritUpgrade(CharacterId, RecipeId);
+    return true; // The request was queued; the server result is reflected by OnProgressionChanged.
+}
+
 void AJumanjiPlayerController::ServerSelectCharacter_Implementation(FName CharacterId)
 {
     ApplyCharacterSelectionOnServer(CharacterId);
+}
+
+void AJumanjiPlayerController::ServerRequestGreatSpiritUpgrade_Implementation(
+    FName CharacterId,
+    FName RecipeId)
+{
+    ProcessGreatSpiritUpgradeOnServer(CharacterId, RecipeId);
+}
+
+bool AJumanjiPlayerController::ProcessGreatSpiritUpgradeOnServer(
+    FName CharacterId,
+    FName RecipeId)
+{
+    if (!HasAuthority() || CharacterId.IsNone() || RecipeId.IsNone())
+    {
+        return false;
+    }
+
+    UGameInstance* GameInstance = GetGameInstance();
+    UJumanjiProgressionRewardSubsystem* RewardSubsystem = GameInstance
+        ? GameInstance->GetSubsystem<UJumanjiProgressionRewardSubsystem>()
+        : nullptr;
+    AJumanjiPlayerState* JumanjiPlayerState = GetPlayerState<AJumanjiPlayerState>();
+
+    return RewardSubsystem
+        && JumanjiPlayerState
+        && RewardSubsystem->TryUpgradeGreatSpirit(JumanjiPlayerState, CharacterId, RecipeId);
 }
 
 void AJumanjiPlayerController::ServerRequestTrialInteraction_Implementation(
