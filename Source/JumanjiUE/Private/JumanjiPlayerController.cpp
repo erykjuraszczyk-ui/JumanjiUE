@@ -5,6 +5,7 @@
 #include "GameFramework/Pawn.h"
 #include "JumanjiCharacterRosterSubsystem.h"
 #include "JumanjiAdventureHUDWidget.h"
+#include "JumanjiAbilityCatalogSubsystem.h"
 #include "JumanjiGreatSpiritSelectionWidget.h"
 #include "JumanjiPlayerState.h"
 #include "JumanjiProgressionRewardSubsystem.h"
@@ -211,6 +212,71 @@ void AJumanjiPlayerController::ServerRequestGreatSpiritUpgrade_Implementation(
 {
     ProcessGreatSpiritUpgradeOnServer(CharacterId, RecipeId);
 }
+
+bool AJumanjiPlayerController::RequestEquipAbilitySlot(
+    FName CharacterId,
+    FName SlotId,
+    FName AbilityId)
+{
+    if (CharacterId.IsNone() || SlotId.IsNone() || AbilityId.IsNone())
+    {
+        return false;
+    }
+
+    const UGameInstance* GameInstance = GetGameInstance();
+    const UJumanjiAbilityCatalogSubsystem* AbilityCatalog = GameInstance
+        ? GameInstance->GetSubsystem<UJumanjiAbilityCatalogSubsystem>()
+        : nullptr;
+
+    if (!AbilityCatalog
+        || !AbilityCatalog->IsValidAbilityChoice(CharacterId, SlotId, AbilityId))
+    {
+        return false;
+    }
+
+    if (HasAuthority())
+    {
+        return ProcessEquipAbilitySlotOnServer(CharacterId, SlotId, AbilityId);
+    }
+
+    ServerRequestEquipAbilitySlot(CharacterId, SlotId, AbilityId);
+    return true; // Queued only; observe PlayerState.OnProgressionChanged for the accepted result.
+}
+
+void AJumanjiPlayerController::ServerRequestEquipAbilitySlot_Implementation(
+    FName CharacterId,
+    FName SlotId,
+    FName AbilityId)
+{
+    ProcessEquipAbilitySlotOnServer(CharacterId, SlotId, AbilityId);
+}
+
+bool AJumanjiPlayerController::ProcessEquipAbilitySlotOnServer(
+    FName CharacterId,
+    FName SlotId,
+    FName AbilityId)
+{
+    if (!HasAuthority())
+    {
+        return false;
+    }
+
+    const UGameInstance* GameInstance = GetGameInstance();
+    const UJumanjiAbilityCatalogSubsystem* AbilityCatalog = GameInstance
+        ? GameInstance->GetSubsystem<UJumanjiAbilityCatalogSubsystem>()
+        : nullptr;
+
+    AJumanjiPlayerState* JumanjiPlayerState = GetPlayerState<AJumanjiPlayerState>();
+    if (!AbilityCatalog
+        || !JumanjiPlayerState
+        || !AbilityCatalog->IsValidAbilityChoice(CharacterId, SlotId, AbilityId))
+    {
+        return false;
+    }
+
+    return JumanjiPlayerState->SetEquippedAbilitySlot(CharacterId, SlotId, AbilityId);
+}
+
 
 bool AJumanjiPlayerController::ProcessGreatSpiritUpgradeOnServer(
     FName CharacterId,
