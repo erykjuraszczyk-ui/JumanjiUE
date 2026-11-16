@@ -69,7 +69,7 @@ void AJumanjiPlayerState::SetPersistentProfileId(const FString& InProfileId)
     PersistentProfileId = CleanProfileId;
 }
 
-void AJumanjiPlayerState::SaveProfileNow()
+void AJumanjiPlayerState::RequestProfileSave()
 {
     PersistProfileSnapshot();
 }
