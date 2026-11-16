@@ -212,7 +212,7 @@ UI ma tylko zgłaszać prośbę i obserwować OnProgressionChanged. Nie może be
 - [ ] Brak monet lub materiału powoduje odrzucenie całej transakcji.
 - [ ] Nieudane ulepszenie nie zużywa żadnego zasobu.
 - [ ] Udane ulepszenie zużywa koszty dokładnie raz.
-- [ ] Ponowienie identycznego żądania nie wykonuje drugi raz tej samej transakcji.
+- [ ] Ponowienie identycznego żądania nie wykonuje drugi raz tej samej transakcji, nawet jeśli pierwsza próba już zwiększyła revision progresji.
 - [ ] Ulepszenie na maksymalnym poziomie jest odrzucane.
 - [ ] XP i poziom zostają zapisane i odtworzone po ponownym uruchomieniu.
 
