@@ -38,7 +38,7 @@ bool UJumanjiPlayerProfileSubsystem::LoadProfile(
 }
 
 bool UJumanjiPlayerProfileSubsystem::SaveProfile(
-    const FJumanjiPlayerProfileSnapshot& Snapshot) const
+    const FJumanjiPlayerProfileSnapshot& Snapshot)
 {
     if (!IsValidSnapshot(Snapshot))
     {
@@ -46,32 +46,18 @@ bool UJumanjiPlayerProfileSubsystem::SaveProfile(
         return false;
     }
 
-    UJumanjiPlayerProfileSaveGame* SaveObject =
-        Cast<UJumanjiPlayerProfileSaveGame>(
-            UGameplayStatics::CreateSaveGameObject(UJumanjiPlayerProfileSaveGame::StaticClass())
-        );
+    const FString SlotName = BuildSlotName(Snapshot.ProfileId);
 
-    if (!SaveObject)
+    if (InFlightSlots.Contains(SlotName))
     {
-        UE_LOG(LogTemp, Error, TEXT("JUMANJI profile: failed to create SaveGame object."));
-        return false;
+        // Coalesce rapid discoveries/updates: keep only the newest complete snapshot.
+        QueuedSnapshots.Add(SlotName, Snapshot);
+        return true;
     }
 
-    SaveObject->Profile = Snapshot;
-    SaveObject->Profile.SchemaVersion = CurrentSchemaVersion;
-    SaveObject->Profile.LastSavedUtc = FDateTime::UtcNow();
-
-    const FString SlotName = BuildSlotName(SaveObject->Profile.ProfileId);
-    const bool bSaved = UGameplayStatics::SaveGameToSlot(SaveObject, SlotName, 0);
-
-    if (!bSaved)
-    {
-        UE_LOG(LogTemp, Error,
-            TEXT("JUMANJI profile: failed to save profile '%s'."),
-            *Snapshot.ProfileId);
-    }
-
-    return bSaved;
+    // A fresh snapshot supersedes a queued retry from a previously failed write.
+    QueuedSnapshots.Remove(SlotName);
+    return StartAsyncSave(SlotName, Snapshot);
 }
 
 bool UJumanjiPlayerProfileSubsystem::HasProfile(const FString& ProfileId) const
@@ -124,4 +110,73 @@ bool UJumanjiPlayerProfileSubsystem::IsValidSnapshot(
     return !HasInvalidOrDuplicateIds(Snapshot.DiscoveredRegionIds)
         && !HasInvalidOrDuplicateIds(Snapshot.VisitedLandmarkIds)
         && !HasInvalidOrDuplicateIds(Snapshot.CompletedAdventureChapterIds);
+}
+
+bool UJumanjiPlayerProfileSubsystem::StartAsyncSave(
+    const FString& SlotName,
+    const FJumanjiPlayerProfileSnapshot& Snapshot)
+{
+    UJumanjiPlayerProfileSaveGame* SaveObject =
+        Cast<UJumanjiPlayerProfileSaveGame>(
+            UGameplayStatics::CreateSaveGameObject(UJumanjiPlayerProfileSaveGame::StaticClass())
+        );
+
+    if (!SaveObject)
+    {
+        UE_LOG(LogTemp, Error, TEXT("JUMANJI profile: failed to create SaveGame object."));
+        return false;
+    }
+
+    SaveObject->Profile = Snapshot;
+    SaveObject->Profile.SchemaVersion = CurrentSchemaVersion;
+    SaveObject->Profile.LastSavedUtc = FDateTime::UtcNow();
+
+    PendingSaveObjects.Add(SlotName, SaveObject);
+    InFlightSlots.Add(SlotName);
+
+    UGameplayStatics::AsyncSaveGameToSlot(
+        SaveObject,
+        SlotName,
+        0,
+        FAsyncSaveGameToSlotDelegate::CreateUObject(
+            this,
+            &UJumanjiPlayerProfileSubsystem::HandleSaveCompleted
+        )
+    );
+
+    return true;
+}
+
+void UJumanjiPlayerProfileSubsystem::HandleSaveCompleted(
+    const FString& SlotName,
+    const int32 UserIndex,
+    bool bSuccess)
+{
+    PendingSaveObjects.Remove(SlotName);
+    InFlightSlots.Remove(SlotName);
+
+    if (!bSuccess)
+    {
+        UE_LOG(LogTemp, Error,
+            TEXT("JUMANJI profile: asynchronous save failed for slot '%s' (user index %d)."),
+            *SlotName,
+            UserIndex);
+        // The PlayerState still owns the current in-memory snapshot. A later
+        // milestone or logout call will submit a fresh write.
+        QueuedSnapshots.Remove(SlotName);
+        return;
+    }
+
+    if (FJumanjiPlayerProfileSnapshot* QueuedSnapshot = QueuedSnapshots.Find(SlotName))
+    {
+        const FJumanjiPlayerProfileSnapshot LatestSnapshot = *QueuedSnapshot;
+        QueuedSnapshots.Remove(SlotName);
+
+        if (!StartAsyncSave(SlotName, LatestSnapshot))
+        {
+            UE_LOG(LogTemp, Error,
+                TEXT("JUMANJI profile: failed to start the queued save for slot '%s'."),
+                *SlotName);
+        }
+    }
 }
