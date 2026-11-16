@@ -1,6 +1,7 @@
 #include "JumanjiPlayerState.h"
 
 #include "JumanjiAbilitySystemComponent.h"
+#include "JumanjiAbilityCatalogSubsystem.h"
 #include "JumanjiAttributeSet.h"
 #include "JumanjiCharacterRosterSubsystem.h"
 #include "JumanjiPlayerProfileSubsystem.h"
@@ -181,13 +182,16 @@ bool AJumanjiPlayerState::ApplyProfileSnapshot(
     const UJumanjiProgressionCatalogSubsystem* Catalog = GameInstance
         ? GameInstance->GetSubsystem<UJumanjiProgressionCatalogSubsystem>()
         : nullptr;
+    const UJumanjiAbilityCatalogSubsystem* AbilityCatalog = GameInstance
+        ? GameInstance->GetSubsystem<UJumanjiAbilityCatalogSubsystem>()
+        : nullptr;
 
     const UWorld* World = GetWorld();
     const UJumanjiWorldAtlasSubsystem* Atlas = World
         ? World->GetSubsystem<UJumanjiWorldAtlasSubsystem>()
         : nullptr;
 
-    if (!Atlas || !Roster || !Catalog)
+    if (!Atlas || !Roster || !Catalog || !AbilityCatalog)
     {
         return false;
     }
@@ -383,7 +387,8 @@ bool AJumanjiPlayerState::ApplyProfileSnapshot(
     {
         if (!Roster->IsPlayableCharacter(SavedSlot.CharacterId)
             || !Catalog->IsValidAbilitySlotId(SavedSlot.SlotId)
-            || SavedSlot.AbilityId.IsNone())
+            || !AbilityCatalog->IsValidAbilityChoice(
+                SavedSlot.CharacterId, SavedSlot.SlotId, SavedSlot.AbilityId))
         {
             continue;
         }
@@ -809,10 +814,14 @@ bool AJumanjiPlayerState::SetEquippedAbilitySlot(
     const UJumanjiProgressionCatalogSubsystem* Catalog = GameInstance
         ? GameInstance->GetSubsystem<UJumanjiProgressionCatalogSubsystem>()
         : nullptr;
+    const UJumanjiAbilityCatalogSubsystem* AbilityCatalog = GameInstance
+        ? GameInstance->GetSubsystem<UJumanjiAbilityCatalogSubsystem>()
+        : nullptr;
 
-    if (!Roster || !Catalog
+    if (!Roster || !Catalog || !AbilityCatalog
         || !Roster->IsPlayableCharacter(CharacterId)
         || !Catalog->IsValidAbilitySlotId(SlotId)
+        || !AbilityCatalog->IsValidAbilityChoice(CharacterId, SlotId, AbilityId)
         || AbilityId.ToString().Len() > 128)
     {
         return false;
