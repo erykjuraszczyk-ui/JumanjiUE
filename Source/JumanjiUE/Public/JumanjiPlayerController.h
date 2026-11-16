@@ -5,7 +5,8 @@
 #include "JumanjiPlayerController.generated.h"
 
 class UJumanjiGreatSpiritSelectionWidget;
-class UJumanjiAdventureHUDWidget;\nclass UJumanjiAbilityHUDWidget;
+class UJumanjiAdventureHUDWidget;
+class UJumanjiAbilityHUDWidget;
 class AJumanjiTrialActor;
 class UJumanjiWorldAtlasWidget;
 class UJumanjiWorldNavigationComponent;
