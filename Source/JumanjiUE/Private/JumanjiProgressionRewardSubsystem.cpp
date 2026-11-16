@@ -266,18 +266,18 @@ FName UJumanjiProgressionRewardSubsystem::BuildChapterTransactionId(
 FName UJumanjiProgressionRewardSubsystem::BuildUpgradeTransactionId(
     const AJumanjiPlayerState& PlayerState,
     FName CharacterId,
-    FName RecipeId,
-    int32 ProgressionRevision) const
+    FName RecipeId) const
 {
     const FString ProfileHash = FMD5::HashAnsiString(*PlayerState.GetPersistentProfileId()).Left(12);
     const FString SafeCharacterId = CharacterId.ToString().Left(20);
     const FString SafeRecipeId = RecipeId.ToString().Left(28);
+    // A recipe is a one-time tier unlock. A stable key makes duplicate RPCs
+    // idempotent even after the first successful transaction increments Revision.
     return FName(*FString::Printf(
-        TEXT("UPG_%s_%s_%s_R%d"),
+        TEXT("UPG_%s_%s_%s"),
         *ProfileHash,
         *SafeCharacterId,
-        *SafeRecipeId,
-        ProgressionRevision));
+        *SafeRecipeId));
 }
 
 bool UJumanjiProgressionRewardSubsystem::GrantChapterCompletionReward(
@@ -332,11 +332,6 @@ void UJumanjiProgressionRewardSubsystem::GrantMissingCompletedChapterRewards(
             continue;
         }
 
-        if (!ChapterRewards.Contains(ChapterId))
-        {
-            continue;
-        }
-
         if (!PlayerState->HasProcessedProfileTransaction(BuildChapterTransactionId(*PlayerState, ChapterId)))
         {
             if (!GrantChapterCompletionReward(PlayerState, ChapterId))
@@ -383,11 +378,9 @@ bool UJumanjiProgressionRewardSubsystem::TryUpgradeGreatSpirit(
         return false;
     }
 
-    const FJumanjiPlayerProgressionState Progression = PlayerState->GetProgressionState();
-
     FJumanjiProfileTransaction Transaction;
     Transaction.TransactionId = BuildUpgradeTransactionId(
-        *PlayerState, CharacterId, RecipeId, Progression.Revision);
+        *PlayerState, CharacterId, RecipeId);
     Transaction.CharacterId = CharacterId;
     Transaction.CharacterExperienceDelta = Recipe.CharacterExperienceReward;
 
