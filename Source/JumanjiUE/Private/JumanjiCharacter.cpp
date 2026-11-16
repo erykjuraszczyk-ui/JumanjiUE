@@ -107,6 +107,7 @@ void AJumanjiCharacter::HandleSelectedCharacterChanged(FName CharacterId)
 void AJumanjiCharacter::HandleProgressionChanged(
     const FJumanjiPlayerProgressionState& NewProgressionState)
 {
+    (void)NewProgressionState;
     // The PlayerState owns both the ASC and saved loadout. Re-resolve after
     // profile restoration or a server-confirmed equipment change.
     ApplySelectedCharacterPresentation();
@@ -151,12 +152,10 @@ void AJumanjiCharacter::ApplySelectedCharacterPresentation()
     }
 
     InitializeAbilityActorInfo();
-    ApplySelectedAbilityLoadout(CharacterId, Definition);
+    ApplySelectedAbilityLoadout(CharacterId);
 }
 
-void AJumanjiCharacter::ApplySelectedAbilityLoadout(
-    FName CharacterId,
-    const FJumanjiCharacterDefinition& Definition)
+void AJumanjiCharacter::ApplySelectedAbilityLoadout(FName CharacterId)
 {
     if (!HasAuthority() || CharacterId.IsNone())
     {
