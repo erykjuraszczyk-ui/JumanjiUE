@@ -89,6 +89,7 @@ void UJumanjiConfiguredEffectAbility::ExecuteConfiguredAction(
     // personal buffs on an area ability as well as self-only abilities.
     if (SelfEffectClass)
     {
+        float SelfAppliedMagnitude = SelfBaseMagnitude;
         ApplyConfiguredEffect(
             SourceASC,
             SourceASC,
@@ -99,6 +100,7 @@ void UJumanjiConfiguredEffectAbility::ExecuteConfiguredAction(
             SelfMagnitudeTag,
             SelfBaseMagnitude,
             SelfAttackPowerCoefficient,
+            SelfAppliedMagnitude,
             Handle,
             ActorInfo);
     }
@@ -191,6 +193,7 @@ void UJumanjiConfiguredEffectAbility::ExecuteConfiguredAction(
             continue;
         }
 
+        float AppliedMagnitude = TargetBaseMagnitude;
         const bool bApplied = ApplyConfiguredEffect(
             SourceASC,
             TargetASC,
@@ -201,6 +204,7 @@ void UJumanjiConfiguredEffectAbility::ExecuteConfiguredAction(
             TargetMagnitudeTag,
             TargetBaseMagnitude,
             TargetAttackPowerCoefficient,
+            AppliedMagnitude,
             Handle,
             ActorInfo);
 
@@ -211,7 +215,7 @@ void UJumanjiConfiguredEffectAbility::ExecuteConfiguredAction(
 
         ProcessedActors.Add(TargetActor);
         ++AppliedTargetCount;
-        BP_OnConfiguredTargetApplied(TargetActor, TargetBaseMagnitude);
+        BP_OnConfiguredTargetApplied(TargetActor, AppliedMagnitude);
 
         if (MaxTargets > 0 && AppliedTargetCount >= MaxTargets)
         {
@@ -261,6 +265,7 @@ bool UJumanjiConfiguredEffectAbility::ApplyConfiguredEffect(
     FGameplayTag MagnitudeTag,
     float BaseMagnitude,
     float AttackPowerCoefficient,
+    float& OutAppliedMagnitude,
     const FGameplayAbilitySpecHandle Handle,
     const FGameplayAbilityActorInfo* ActorInfo) const
 {
@@ -294,6 +299,7 @@ bool UJumanjiConfiguredEffectAbility::ApplyConfiguredEffect(
         AppliedMagnitude += AttackPower * AttackPowerCoefficient;
     }
 
+    OutAppliedMagnitude = AppliedMagnitude;
     if (MagnitudeTag.IsValid())
     {
         SpecHandle.Data->SetSetByCallerMagnitude(MagnitudeTag, AppliedMagnitude);
