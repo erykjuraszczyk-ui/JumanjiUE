@@ -21,8 +21,12 @@ public:
     UFUNCTION(BlueprintCallable, Category = "JUMANJI|Profile")
     bool LoadProfile(const FString& ProfileId, FJumanjiPlayerProfileSnapshot& OutSnapshot) const;
 
+    /**
+     * Queues an asynchronous save. A true return means accepted/queued, not
+     * that the platform has completed writing the slot yet.
+     */
     UFUNCTION(BlueprintCallable, Category = "JUMANJI|Profile")
-    bool SaveProfile(const FJumanjiPlayerProfileSnapshot& Snapshot) const;
+    bool SaveProfile(const FJumanjiPlayerProfileSnapshot& Snapshot);
 
     UFUNCTION(BlueprintPure, Category = "JUMANJI|Profile")
     bool HasProfile(const FString& ProfileId) const;
@@ -36,4 +40,16 @@ private:
     FString BuildSlotName(const FString& ProfileId) const;
     bool IsValidProfileId(const FString& ProfileId) const;
     bool IsValidSnapshot(const FJumanjiPlayerProfileSnapshot& Snapshot) const;
+    bool StartAsyncSave(const FString& SlotName, const FJumanjiPlayerProfileSnapshot& Snapshot);
+
+    void HandleSaveCompleted(const FString& SlotName, const int32 UserIndex, bool bSuccess);
+
+    /** Keeps SaveGame UObjects alive until their async write callback returns. */
+    UPROPERTY(Transient)
+    TMap<FString, TObjectPtr<UJumanjiPlayerProfileSaveGame>> PendingSaveObjects;
+
+    /** Latest snapshot received while a write for the same slot is in flight. */
+    TMap<FString, FJumanjiPlayerProfileSnapshot> QueuedSnapshots;
+
+    TSet<FString> InFlightSlots;
 };
