@@ -74,11 +74,20 @@ void AJumanjiPlayerState::SetPersistentProfileId(const FString& InProfileId)
     }
 
     PersistentProfileId = CleanProfileId;
+    bProfilePersistenceEnabled = true;
 }
 
 void AJumanjiPlayerState::RequestProfileSave()
 {
     PersistProfileSnapshot();
+}
+
+void AJumanjiPlayerState::DisableProfilePersistenceForSession()
+{
+    if (HasAuthority())
+    {
+        bProfilePersistenceEnabled = false;
+    }
 }
 
 void AJumanjiPlayerState::InitializeNewProfileProgression()
@@ -888,7 +897,7 @@ FJumanjiPlayerProfileSnapshot AJumanjiPlayerState::BuildProfileSnapshot() const
 
 void AJumanjiPlayerState::PersistProfileSnapshot()
 {
-    if (!HasAuthority() || PersistentProfileId.IsEmpty())
+    if (!HasAuthority() || !bProfilePersistenceEnabled || PersistentProfileId.IsEmpty())
     {
         return;
     }
