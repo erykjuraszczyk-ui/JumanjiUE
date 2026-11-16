@@ -20,3 +20,28 @@ Implement the OnAdventurePresentationChanged event to redraw the HUD from:
 - GetObjectiveProgress.
 
 The widget base subscribes to replicated GameState chapter/objective changes and unsubscribes in NativeDestruct. It is a presentation layer only; it must not write puzzle or objective progress.
+
+
+## Stage 18 — Ability HUD & Input Feedback
+
+Create WBP_AbilityHUD as a Widget Blueprint child of UJumanjiAbilityHUDWidget. Set it in BP_JumanjiPlayerController as AbilityHUDWidgetClass. The local PlayerController adds it to the viewport at BeginPlay.
+
+### Slot contract
+
+The native widget returns five slot snapshots in stable order: PrimaryAttack, Active, Passive, Ultimate and Dodge. Use GetAbilitySlotStates to build the slot cards. Passive is informational and must not receive a manual activation button.
+
+The four manual buttons call ActivateAbilitySlot with the matching EJumanjiAbilitySlot value. The widget forwards the ability's InputTag through the existing AJumanjiCharacter::ActivateAbilityByInputTag entry point, so touch controls share the same GAS activation path as hardware input.
+
+### Resources and cooldowns
+
+Use GetResourceState for Energy/Resonance values, maximums and percentages. Use CooldownRemaining, CooldownDuration and CooldownPercent for the radial overlay. These values are read from the PlayerState ASC and the granted Gameplay Ability cooldown state.
+
+Set HUDDisplayName, HUDDescription, HUDIcon, HUDResourceType and HUDResourceCost in each ability Blueprint. Resource type/cost are UI metadata only and must mirror the matching Gameplay Effect configuration. Never subtract resources from the widget.
+
+### Feedback and local target focus
+
+Implement OnAbilityInputFeedback to show a brief result for activation, insufficient resource, cooldown or unavailable state.
+
+SetTargetFocus accepts a local UI focus candidate only if the actor has an Ability System Component and is within MaxTargetFocusDistance. Use OnAbilityTargetFocusChanged for a target label/marker. This local focus marker is not gameplay target data and cannot bypass server-side ability validation.
+
+See Docs/STAGE_18_ABILITY_HUD_INPUT_FEEDBACK.md for full widget wiring and mobile acceptance checks.
