@@ -61,7 +61,7 @@ public:
     /** Server-only identity binding established by GameMode after login. */
     void SetPersistentProfileId(const FString& InProfileId);
     const FString& GetPersistentProfileId() const { return PersistentProfileId; }
-    void SaveProfileNow();
+    void RequestProfileSave();
 
     /** Applies a validated server-loaded profile to the replicated PlayerState. */
     bool ApplyProfileSnapshot(const FJumanjiPlayerProfileSnapshot& Snapshot);
