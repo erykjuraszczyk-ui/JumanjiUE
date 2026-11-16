@@ -1,6 +1,8 @@
 #include "JumanjiGameState.h"
 
 #include "JumanjiPlayerState.h"
+#include "JumanjiProgressionRewardSubsystem.h"
+#include "Engine/GameInstance.h"
 #include "Net/UnrealNetwork.h"
 
 namespace
@@ -83,13 +85,30 @@ bool AJumanjiGameState::CompleteAdventureChapter(FName ChapterId)
 
     OnAdventureChapterChanged.Broadcast(AdventureChapterState);
 
-    // The chapter is a shared session objective. Record completion on every
-    // currently connected profile so it survives the next login.
+    // The chapter is shared by the session. Persist completion per connected
+    // profile and grant its reward through the existing idempotent transaction ledger.
+    UJumanjiProgressionRewardSubsystem* RewardSubsystem = GetGameInstance()
+        ? GetGameInstance()->GetSubsystem<UJumanjiProgressionRewardSubsystem>()
+        : nullptr;
+
     for (APlayerState* BasePlayerState : PlayerArray)
     {
-        if (AJumanjiPlayerState* JumanjiPlayerState = Cast<AJumanjiPlayerState>(BasePlayerState))
+        AJumanjiPlayerState* JumanjiPlayerState = Cast<AJumanjiPlayerState>(BasePlayerState);
+        if (!JumanjiPlayerState)
         {
-            JumanjiPlayerState->MarkAdventureChapterCompleted(ChapterId);
+            continue;
+        }
+
+        JumanjiPlayerState->MarkAdventureChapterCompleted(ChapterId);
+
+        if (RewardSubsystem
+            && !JumanjiPlayerState->GetPersistentProfileId().IsEmpty()
+            && !RewardSubsystem->GrantChapterCompletionReward(JumanjiPlayerState, ChapterId))
+        {
+            UE_LOG(LogTemp, Warning,
+                TEXT("JUMANJI rewards: chapter '%s' completed but reward was not applied for profile '%s'. It will be retried on profile restore."),
+                *ChapterId.ToString(),
+                *JumanjiPlayerState->GetPersistentProfileId());
         }
     }
 
