@@ -332,6 +332,11 @@ void UJumanjiProgressionRewardSubsystem::GrantMissingCompletedChapterRewards(
             continue;
         }
 
+        if (!ChapterRewards.Contains(ChapterId))
+        {
+            continue;
+        }
+
         if (!PlayerState->HasProcessedProfileTransaction(BuildChapterTransactionId(*PlayerState, ChapterId)))
         {
             if (!GrantChapterCompletionReward(PlayerState, ChapterId))
