@@ -13,7 +13,11 @@
 AJumanjiWorldEncounterDirector::AJumanjiWorldEncounterDirector()
 {
     PrimaryActorTick.bCanEverTick = false;
-    bReplicates = false;
+    // The client sends this actor reference through a PlayerController server RPC.
+    // Keep the persistent encounter director addressable and relevant to clients.
+    bReplicates = true;
+    bAlwaysRelevant = true;
+    NetUpdateFrequency = 10.0f;
 
     RequiredTraversalIds = {
         FName(TEXT("EJ_FROST_GATE_LIFT_01")),
