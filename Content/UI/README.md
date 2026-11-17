@@ -75,7 +75,8 @@ Create `WBP_EmeraldJungleEncounterHUD` as a Widget Blueprint child of `UJumanjiW
 
 Implement these events:
 - `OnEncounterHUDPresentationChanged`: render phase status, Great Spirit trial count, current/total enemy wave, active enemy count, boss Health percentage and boss phase.
-- `OnEncounterPhaseCue`: play a short visual/audio cue when the replicated phase changes. Ignore Inactive if no idle announcement is wanted.
+- `OnEncounterPhaseCue`: play a short visual/audio cue when the replicated encounter phase changes. Ignore Inactive if no idle announcement is wanted.
+- `OnBossPhaseCue`: play a short one-shot cue when the boss advances to phase 1, 2 or 3.
 - `OnBossTelegraphPresentationChanged`: show or clear the warning using Pattern, Origin, Direction, Radius, Length and Width. Use a readable shape and a visible countdown.
  
 Use `GetTelegraphTimeRemaining` or `GetTelegraphRemainingPercent` for the countdown. These values are derived from the synchronized GameState server time, not the phone's local wall clock.
