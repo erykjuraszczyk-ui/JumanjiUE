@@ -30,8 +30,9 @@ AJumanjiLiftPlatform::AJumanjiLiftPlatform()
 
     PlatformMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PlatformMesh"));
     PlatformMesh->SetupAttachment(SceneRoot);
-    PlatformMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-    PlatformMesh->SetCollisionProfileName(TEXT("BlockAllDynamic"));
+    // PlatformCollision is the sole physical root. The mesh is visual only,
+    // avoiding duplicate collision surfaces and duplicate sweep contacts.
+    PlatformMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
     PlatformMesh->SetIsReplicated(false);
 
     BoardingVolume = CreateDefaultSubobject<UBoxComponent>(TEXT("BoardingVolume"));
@@ -165,11 +166,21 @@ bool AJumanjiLiftPlatform::TryBoardCharacter(
     Passenger.TraversalComponent = TraversalComponent;
     Passengers.Add(Passenger);
 
-    Character->AttachToComponent(
+    if (!Character->AttachToComponent(
         PlatformCollision,
-        FAttachmentTransformRules::KeepWorldTransform
-    );
+        FAttachmentTransformRules::KeepWorldTransform))
+    {
+        Passengers.RemoveAll(
+            [Character](const FJumanjiLiftPassenger& Entry)
+            {
+                return Entry.Character == Character;
+            });
+        LiftState.PassengerCount = Passengers.Num();
+        ForceNetUpdate();
+        return false;
+    }
 
+    LiftState.PassengerCount = Passengers.Num();
     Character->ForceNetUpdate();
     ForceNetUpdate();
     return true;
@@ -195,6 +206,7 @@ void AJumanjiLiftPlatform::RemovePassenger(ACharacter* Character, bool bRestoreM
 
     FJumanjiLiftPassenger Passenger = Passengers[PassengerIndex];
     Passengers.RemoveAtSwap(PassengerIndex);
+    LiftState.PassengerCount = Passengers.Num();
 
     if (Character->GetAttachParentActor() == this)
     {
@@ -321,6 +333,7 @@ void AJumanjiLiftPlatform::DetachAllPassengers(bool bCompleted)
 {
     TArray<FJumanjiLiftPassenger> PassengersToRelease = MoveTemp(Passengers);
     Passengers.Reset();
+    LiftState.PassengerCount = 0;
 
     for (const FJumanjiLiftPassenger& Passenger : PassengersToRelease)
     {
