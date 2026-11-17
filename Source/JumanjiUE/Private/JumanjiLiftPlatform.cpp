@@ -155,11 +155,9 @@ bool AJumanjiLiftPlatform::TryBoardCharacter(
         return false;
     }
 
-    if (LiftState.State == EJumanjiLiftPlatformState::AtLower
-        || LiftState.State == EJumanjiLiftPlatformState::AtUpper)
-    {
-        StartTravel(bReverse);
-    }
+    const bool bStartNewCourse =
+        LiftState.State == EJumanjiLiftPlatformState::AtLower
+        || LiftState.State == EJumanjiLiftPlatformState::AtUpper;
 
     FJumanjiLiftPassenger Passenger;
     Passenger.Character = Character;
@@ -181,6 +179,11 @@ bool AJumanjiLiftPlatform::TryBoardCharacter(
     }
 
     LiftState.PassengerCount = Passengers.Num();
+    if (bStartNewCourse)
+    {
+        StartTravel(bReverse);
+    }
+
     Character->ForceNetUpdate();
     ForceNetUpdate();
     return true;
