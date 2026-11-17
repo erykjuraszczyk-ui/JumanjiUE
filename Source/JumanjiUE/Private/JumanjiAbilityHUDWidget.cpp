@@ -1,6 +1,8 @@
 #include "JumanjiAbilityHUDWidget.h"
 
 #include "AbilitySystemInterface.h"
+#include "Engine/GameInstance.h"
+#include "JumanjiAbilityPresentationSubsystem.h"
 #include "JumanjiAbilitySystemComponent.h"
 #include "JumanjiAttributeSet.h"
 #include "JumanjiCharacter.h"
@@ -17,6 +19,19 @@ namespace
         EJumanjiAbilitySlot::Ultimate,
         EJumanjiAbilitySlot::Dodge
     };
+
+    FName GetCatalogSlotId(EJumanjiAbilitySlot Slot)
+    {
+        switch (Slot)
+        {
+        case EJumanjiAbilitySlot::PrimaryAttack: return FName(TEXT("SLOT_PRIMARY"));
+        case EJumanjiAbilitySlot::Active: return FName(TEXT("SLOT_ACTIVE"));
+        case EJumanjiAbilitySlot::Passive: return FName(TEXT("SLOT_PASSIVE"));
+        case EJumanjiAbilitySlot::Ultimate: return FName(TEXT("SLOT_ULTIMATE"));
+        case EJumanjiAbilitySlot::Dodge: return FName(TEXT("SLOT_DODGE"));
+        default: return NAME_None;
+        }
+    }
 
     FText GetDefaultSlotName(EJumanjiAbilitySlot Slot)
     {
@@ -158,6 +173,19 @@ TArray<FJumanjiAbilityHUDSlotState> UJumanjiAbilityHUDWidget::GetAbilitySlotStat
     const FGameplayAbilityActorInfo* ActorInfo = CachedAbilitySystem->AbilityActorInfo.Get();
     const FJumanjiAbilityHUDResourceState Resources = GetResourceState();
 
+    const APlayerController* OwningPlayerController = GetOwningPlayer();
+    const AJumanjiPlayerState* JumanjiPlayerState = OwningPlayerController
+        ? OwningPlayerController->GetPlayerState<AJumanjiPlayerState>()
+        : nullptr;
+    const FName SelectedCharacterId = JumanjiPlayerState
+        ? JumanjiPlayerState->GetSelectedCharacterId()
+        : NAME_None;
+
+    const UGameInstance* GameInstance = GetWorld() ? GetWorld()->GetGameInstance() : nullptr;
+    const UJumanjiAbilityPresentationSubsystem* PresentationSubsystem = GameInstance
+        ? GameInstance->GetSubsystem<UJumanjiAbilityPresentationSubsystem>()
+        : nullptr;
+
     for (const FGameplayAbilitySpec& Spec : CachedAbilitySystem->GetActivatableAbilities())
     {
         const UJumanjiGameplayAbility* Ability = Cast<UJumanjiGameplayAbility>(Spec.Ability);
@@ -178,6 +206,7 @@ TArray<FJumanjiAbilityHUDSlotState> UJumanjiAbilityHUDWidget::GetAbilitySlotStat
         }
 
         State->bIsGranted = true;
+        State->AbilityId = Ability->GetHUDAbilityId();
         State->DisplayName = Ability->GetHUDDisplayName().IsEmpty()
             ? GetDefaultSlotName(State->Slot)
             : Ability->GetHUDDisplayName();
@@ -186,6 +215,38 @@ TArray<FJumanjiAbilityHUDSlotState> UJumanjiAbilityHUDWidget::GetAbilitySlotStat
         State->Icon = Ability->GetHUDIcon();
         State->ResourceType = Ability->GetHUDResourceType();
         State->RequiredResource = FMath::Max(0.0f, Ability->GetHUDResourceCost());
+
+        // Stage 19 data is a presentation override only. Missing rows/assets
+        // fall back to the ability class metadata and never block HUD creation.
+        if (PresentationSubsystem
+            && !State->AbilityId.IsNone()
+            && !SelectedCharacterId.IsNone())
+        {
+            FJumanjiAbilityPresentationData Presentation;
+            if (PresentationSubsystem->GetPresentation(State->AbilityId, Presentation)
+                && Presentation.CharacterId == SelectedCharacterId
+                && Presentation.SlotId == GetCatalogSlotId(State->Slot))
+            {
+                if (!Presentation.AbilityName.IsEmpty())
+                {
+                    State->DisplayName = Presentation.AbilityName;
+                }
+                if (!Presentation.Icon.IsNull())
+                {
+                    State->Icon = Presentation.Icon;
+                }
+
+                State->AccentColor = Presentation.AccentColor;
+                State->SecondaryColor = Presentation.SecondaryColor;
+                State->CooldownMaterial = Presentation.CooldownMaterial;
+                State->ActivatedSound = Presentation.ActivatedSound;
+                State->InsufficientResourceSound = Presentation.InsufficientResourceSound;
+                State->CooldownSound = Presentation.CooldownSound;
+                State->UnavailableSound = Presentation.UnavailableSound;
+                State->PresentationCueTag = Presentation.GameplayCueTag;
+                State->CooldownSecondsReference = Presentation.CooldownSecondsReference;
+            }
+        }
 
         switch (State->ResourceType)
         {

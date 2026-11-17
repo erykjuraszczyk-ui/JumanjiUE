@@ -8,6 +8,8 @@
 class UJumanjiAbilitySystemComponent;
 class UJumanjiAttributeSet;
 class UTexture2D;
+class UMaterialInterface;
+class USoundBase;
 
 UENUM(BlueprintType)
 enum class EJumanjiAbilityHUDFeedback : uint8
@@ -51,6 +53,9 @@ struct JUMANJIUE_API FJumanjiAbilityHUDSlotState
     EJumanjiAbilitySlot Slot = EJumanjiAbilitySlot::PrimaryAttack;
 
     UPROPERTY(BlueprintReadOnly, Category = "JUMANJI|Ability HUD")
+    FName AbilityId = NAME_None;
+
+    UPROPERTY(BlueprintReadOnly, Category = "JUMANJI|Ability HUD")
     FText DisplayName;
 
     UPROPERTY(BlueprintReadOnly, Category = "JUMANJI|Ability HUD")
@@ -61,6 +66,34 @@ struct JUMANJIUE_API FJumanjiAbilityHUDSlotState
 
     UPROPERTY(BlueprintReadOnly, Category = "JUMANJI|Ability HUD")
     TSoftObjectPtr<UTexture2D> Icon;
+
+    UPROPERTY(BlueprintReadOnly, Category = "JUMANJI|Ability HUD")
+    FLinearColor AccentColor = FLinearColor::White;
+
+    UPROPERTY(BlueprintReadOnly, Category = "JUMANJI|Ability HUD")
+    FLinearColor SecondaryColor = FLinearColor::White;
+
+    UPROPERTY(BlueprintReadOnly, Category = "JUMANJI|Ability HUD")
+    TSoftObjectPtr<UMaterialInterface> CooldownMaterial;
+
+    UPROPERTY(BlueprintReadOnly, Category = "JUMANJI|Ability HUD")
+    TSoftObjectPtr<USoundBase> ActivatedSound;
+
+    UPROPERTY(BlueprintReadOnly, Category = "JUMANJI|Ability HUD")
+    TSoftObjectPtr<USoundBase> InsufficientResourceSound;
+
+    UPROPERTY(BlueprintReadOnly, Category = "JUMANJI|Ability HUD")
+    TSoftObjectPtr<USoundBase> CooldownSound;
+
+    UPROPERTY(BlueprintReadOnly, Category = "JUMANJI|Ability HUD")
+    TSoftObjectPtr<USoundBase> UnavailableSound;
+
+    UPROPERTY(BlueprintReadOnly, Category = "JUMANJI|Ability HUD")
+    FGameplayTag PresentationCueTag;
+
+    /** Reference only; do not use it as a runtime cooldown timer. */
+    UPROPERTY(BlueprintReadOnly, Category = "JUMANJI|Ability HUD")
+    float CooldownSecondsReference = 0.0f;
 
     UPROPERTY(BlueprintReadOnly, Category = "JUMANJI|Ability HUD")
     EJumanjiAbilityHUDResource ResourceType = EJumanjiAbilityHUDResource::None;

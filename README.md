@@ -21,6 +21,8 @@ Open-world third-person adventure RPG prototype with a shared-world direction an
 - Stage 16 — Saved Ability Loadout Runtime: allowlisted AbilityId-to-GAS class catalog, profile slot restoration, server-validated equipment RPC and ASC loadout replacement without duplicate grants.
 - Stage 17 — Great Spirit Ability Content Pack: server-authoritative configured ability execution, target/effect modes, montage and Gameplay Cue hooks, plus a 45-slot production matrix.
 - Stage 18 — Ability HUD & Input Feedback: mobile slot controls, GAS cooldown/resource indicators, activation feedback and local target-focus presentation.
+- Stage 19 — Ability Presentation Asset Pack: 45-slot icon manifest, nine Great Spirit palettes, radial cooldown material specification, UI audio feedback and Gameplay Cue/VFX authoring contract.
+- Stage 20 — Ability Presentation Runtime Integration: validated manifest DataTable reader, stable AbilityId binding, soft-reference presentation data and HUD integration without changing GAS authority.
 
 ## The nine playable Great Spirits
 1. Great Spirit I — Duch Korzeni (Root / Guardian)
@@ -58,6 +60,11 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - Docs/STAGE_16_SAVED_ABILITY_LOADOUT_RUNTIME.md — allowlisted ability resolver, profile restoration, server equipment RPC, ASC grant lifecycle and acceptance checklist.
 - Docs/STAGE_17_GREAT_SPIRIT_ABILITY_CONTENT_PACK.md — configured ability runtime, costs/cooldowns, Blueprint/Gameplay Effect authoring and acceptance checklist.
 - Docs/STAGE_18_ABILITY_HUD_INPUT_FEEDBACK.md — mobile ability HUD, slot input, Energy/Resonance indicators, cooldown feedback and local target focus.
+- Docs/STAGE_19_ABILITY_PRESENTATION_ASSET_PACK.md — 45 ability icon definitions, palettes, cooldown material, feedback audio/VFX contract and Unreal Editor acceptance checklist.
+- Docs/STAGE_20_ABILITY_PRESENTATION_RUNTIME.md — manifest DataTable import, AbilityId class binding, HUD presentation metadata and acceptance checklist.
+- Content/UI/AbilityPresentation/README.md — asset import, naming and per-ability assignment workflow.
+- Content/UI/AbilityPresentation/AbilityPresentationManifest.csv — 45 stable ability presentation records.
+- Content/UI/AbilityPresentation/AbilityPresentationDataTable.csv — DataTable import copy with Name row keys and 45 stable IDs.
 - Docs/Design/GreatSpiritAbilityProductionMatrix.md — production specification for all 45 Great Spirit ability slots.
 - Docs/STAGE_06_GREAT_SPIRIT_COMBAT_SYSTEM.md — combat runtime, asset setup, flow and acceptance tests.
 - Docs/Design/FirstCombatEncounter.md — first three-phase boss encounter design.
@@ -139,7 +146,9 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - UJumanjiConfiguredEffectAbility base with server-only Self/ForwardSweep/RadialPulse/Dash execution, PvE target filtering, SetByCaller target/self Gameplay Effects, AttackPower scaling and Gameplay Cue/Animation Montage hooks;
 - PlayerState-owned ASC replacement of the Great Spirit loadout, tracking and clearing only the previous granted ability handles, and avoiding duplicate grants when the same loadout is reapplied;
 - UJumanjiAbilityHUDWidget with five-slot snapshots, GAS cooldown timing, Energy/Resonance values, activation feedback and local target-focus indicator;
-- HUD presentation metadata on UJumanjiGameplayAbility for display name, description, icon and matching resource-cost display;
+- HUD presentation metadata on UJumanjiGameplayAbility for display name, description, icon, stable HUDAbilityId and matching resource-cost display;
+- UJumanjiAbilityPresentationSubsystem with validated ability presentation DataTable lookup and soft-reference conversion;
+- ability HUD slot snapshots enriched with per-ability palette, icon, cooldown material, audio references and Gameplay Cue tag.
 - PlayerController creation of the configured ability HUD for the local player.
 
 ## Not yet included
@@ -150,6 +159,8 @@ This is a source-code foundation, not a finished game or installable Android bui
 - final touch-first Widget Blueprint assets, icons, UI materials and Enhanced Input mapping assets;
 - actual UMG Widget Blueprint .uasset files and card layout;
 - the configured Emerald Jungle chapter director instance and nine placed trial actors;
+- imported DT_AbilityPresentation DataTable and configured subsystem path;
+- final Ability Blueprint HUDAbilityId assignments and binary ability icons/material/audio assets;
 - 45 character-specific ability Blueprint assets and configured Gameplay Effects;
 - configured enemy/boss meshes, animations and initialization effects;
 - final boss attack patterns and encounter reward service;

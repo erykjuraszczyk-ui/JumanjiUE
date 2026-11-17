@@ -48,6 +48,9 @@ public:
     bool ShouldActivateOnGranted() const { return bActivateOnGranted; }
 
     UFUNCTION(BlueprintPure, Category = "JUMANJI|Ability|HUD")
+    FName GetHUDAbilityId() const { return HUDAbilityId; }
+
+    UFUNCTION(BlueprintPure, Category = "JUMANJI|Ability|HUD")
     FText GetHUDDisplayName() const { return HUDDisplayName; }
 
     UFUNCTION(BlueprintPure, Category = "JUMANJI|Ability|HUD")
@@ -71,6 +74,10 @@ protected:
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "JUMANJI|Ability")
     bool bActivateOnGranted = false;
+
+    /** Stable Stage 16 catalog ID used to resolve Stage 19 presentation data. */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "JUMANJI|Ability|HUD")
+    FName HUDAbilityId = NAME_None;
 
     /** Presentation metadata; mirror the configured Gameplay Effect cost. */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "JUMANJI|Ability|HUD")
