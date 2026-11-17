@@ -242,8 +242,10 @@ void UJumanjiAbilityHUDSlotWidget::UpdateCooldownMaterial()
 
     if (CooldownOverlay)
     {
+        const bool bNeedsMaterialOverlay = CurrentState.bIsOnCooldown
+            || (CurrentState.bIsGranted && !CurrentState.bHasRequiredResource);
         CooldownOverlay->SetVisibility(
-            CurrentState.bIsOnCooldown && CooldownDynamicMaterial
+            bNeedsMaterialOverlay && CooldownDynamicMaterial
                 ? ESlateVisibility::Visible
                 : ESlateVisibility::Collapsed
         );
