@@ -123,7 +123,7 @@ bool UJumanjiTraversalComponent::TryStartTraversal(AJumanjiTraversalLink* Link)
     if (Link->GetTraversalType() == EJumanjiTraversalType::Zipline
         && Link->HasAuthoredTraversalSpline())
     {
-        constexpr int32 ZiplineSampleCount = 9;
+        constexpr int32 ZiplineSampleCount = 17;
         for (int32 SampleIndex = 0; SampleIndex < ZiplineSampleCount; ++SampleIndex)
         {
             const float SampleAlpha = static_cast<float>(SampleIndex)
