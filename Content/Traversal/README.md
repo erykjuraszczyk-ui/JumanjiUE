@@ -130,3 +130,31 @@ python -m unittest discover -s Scripts/Tests -p "test_validate_traversal_present
 ```
 
 The validator checks CSV consistency only. Montages, icons, sounds, Niagara effects, Widget Blueprints, spline meshes, link placements and a moving lift platform still need Unreal Editor assets and PIE validation.
+
+
+## Stage 25 — World integration and replicated lift platform
+
+The native overlap focus volume on each AJumanjiTraversalLink registers the link with the local PlayerController. The controller chooses the nearest usable candidate and forwards it to the existing UJumanjiTraversalPromptWidget. No full-world traversal actor scan runs each frame.
+
+Create AJumanjiLiftPlatform Blueprint children as BP_JumanjiLiftPlatform:
+- assign a platform Static Mesh;
+- adjust PlatformCollision (swept blocking root) and BoardingVolume (query-only);
+- position LowerStopAnchor and UpperStopAnchor;
+- place the actor at the lower stop;
+- assign TravelDurationSeconds and MaxPassengers;
+- assign the actor reference to the matching Lift link's LiftPlatform field.
+
+The platform moves on the server with swept movement and replicates its actor transform. Characters attach to the platform while riding. The default passenger limit is four; additional riders may join only during the boarding window and in the same direction. A blocking hit moves the platform to Blocked and releases passengers at the last safe position.
+
+Stage 25 source manifests:
+- Data/Traversal/EmeraldJungle_TraversalPlacement.csv — 12 starter links.
+- Data/Traversal/EmeraldJungle_LiftPlatformManifest.csv — two lift platforms.
+- Data/Traversal/EmeraldJungle_TraversalManifest.json — expected counts, Data Layers and authoring rules.
+
+Coordinates are greybox placeholders. Reposition all anchors against the final landscape, check capsule clearance and rebuild World Partition Navigation Data.
+
+Run source validation:
+    python Scripts/validate_emerald_jungle_traversal.py
+    python -m unittest discover -s Scripts/Tests -p "test_validate_emerald_jungle_traversal.py" -v
+
+Validation only checks source CSV/JSON. It does not compile Unreal C++, inspect .umap/.uasset, build NavMesh or prove multiplayer/device behavior. Follow Docs/STAGE_25_TRAVERSAL_WORLD_INTEGRATION_MULTIPLAYER.md for the editor and two-client acceptance tests.
