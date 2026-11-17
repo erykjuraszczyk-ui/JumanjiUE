@@ -290,11 +290,7 @@ AJumanjiTraversalLink* UJumanjiTraversalComponent::GetActiveTraversalLink() cons
 
 void UJumanjiTraversalComponent::OnRep_TraversalState()
 {
-    if (TraversalState.bActive || TraversalState.bLastTraversalCompleted)
-    {
-        ActiveTraversalLink = GetActiveTraversalLink();
-    }
-
+    ActiveTraversalLink = GetActiveTraversalLink();
     NotifyTraversalStateChanged();
 }
 
