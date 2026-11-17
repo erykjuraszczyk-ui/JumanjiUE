@@ -31,7 +31,7 @@ class BossTelegraphManifestTests(unittest.TestCase):
 
     def _write(self, path: Path, rows: list[dict[str, str]], columns: list[str]) -> None:
         with path.open("w", encoding="utf-8", newline="") as handle:
-            writer = csv.DictWriter(handle, fieldnames=columns)
+            writer = csv.DictWriter(handle, fieldnames=columns, extrasaction="ignore")
             writer.writeheader()
             writer.writerows(rows)
 
