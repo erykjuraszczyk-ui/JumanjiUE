@@ -125,6 +125,23 @@ bool AJumanjiWorldEncounterDirector::ValidatePlayerPrerequisites(
     return true;
 }
 
+bool AJumanjiWorldEncounterDirector::CanRetryEncounter() const
+{
+    const UWorld* World = GetWorld();
+    const AJumanjiGameState* GameState = World
+        ? World->GetGameState<AJumanjiGameState>()
+        : nullptr;
+
+    if (!GameState)
+    {
+        return false;
+    }
+
+    const FJumanjiWorldEncounterState State = GameState->GetWorldEncounterState();
+    return State.EncounterId == EncounterId
+        && State.Phase == EJumanjiWorldEncounterPhase::Failed;
+}
+
 bool AJumanjiWorldEncounterDirector::StartEncounter(AJumanjiPlayerState* InitiatingPlayer)
 {
     if (!HasAuthority()
@@ -141,8 +158,34 @@ bool AJumanjiWorldEncounterDirector::StartEncounter(AJumanjiPlayerState* Initiat
         : nullptr;
 
     if (!GameState
-        || GameState->GetAdventureChapterState().Phase == EJumanjiAdventureChapterPhase::Active
-        || !GameState->BeginWorldEncounter(EncounterId, Waves.Num()))
+        || GameState->GetAdventureChapterState().Phase == EJumanjiAdventureChapterPhase::Active)
+    {
+        return false;
+    }
+
+    const FJumanjiWorldEncounterState PreviousEncounterState =
+        GameState->GetWorldEncounterState();
+    const bool bIsRetry = PreviousEncounterState.Phase == EJumanjiWorldEncounterPhase::Failed;
+
+    if (bIsRetry)
+    {
+        if (PreviousEncounterState.EncounterId != EncounterId
+            || !AdventureChapterDirector->ResetChapterForEncounterRetry(EncounterId))
+        {
+            return false;
+        }
+
+        // This destroys leftovers even when the failure policy previously chose
+        // to unbind rather than immediately destroy the spawned actors.
+        DestroyActiveEnemies();
+    }
+    else if (PreviousEncounterState.Phase != EJumanjiWorldEncounterPhase::Inactive)
+    {
+        // Completed encounters remain terminal and cannot be replayed as rewards.
+        return false;
+    }
+
+    if (!GameState->BeginWorldEncounter(EncounterId, Waves.Num()))
     {
         return false;
     }
@@ -247,6 +290,7 @@ void AJumanjiWorldEncounterDirector::SpawnWave(int32 WaveIndex)
                 this,
                 &AJumanjiWorldEncounterDirector::HandleEnemyDefeated);
             ActiveEnemies.Add(Enemy);
+            SpawnedEncounterActors.Add(Enemy);
         }
     }
 
@@ -298,6 +342,7 @@ void AJumanjiWorldEncounterDirector::SpawnBoss()
     ActiveBoss->OnEnemyDefeated.AddUniqueDynamic(
         this,
         &AJumanjiWorldEncounterDirector::HandleEnemyDefeated);
+    SpawnedEncounterActors.Add(ActiveBoss);
 
     AJumanjiGameState* GameState = GetWorld()
         ? GetWorld()->GetGameState<AJumanjiGameState>()
@@ -428,6 +473,7 @@ void AJumanjiWorldEncounterDirector::CompleteEncounter()
     }
 
     UnbindActiveEnemies();
+    SpawnedEncounterActors.Reset();
     BP_OnEncounterPhaseChanged(EJumanjiWorldEncounterPhase::Completed);
     BP_OnEncounterCompleted();
 }
@@ -501,26 +547,28 @@ void AJumanjiWorldEncounterDirector::UnbindActiveEnemies()
 
 void AJumanjiWorldEncounterDirector::DestroyActiveEnemies()
 {
-    for (AJumanjiEnemyCharacter* Enemy : ActiveEnemies)
+    // Track all encounter-owned actors, not just living enemies: defeated
+    // actors can remain in their short cosmetic lifespan when a failure occurs.
+    for (AActor* SpawnedActor : SpawnedEncounterActors)
     {
-        if (IsValid(Enemy))
+        if (!IsValid(SpawnedActor))
+        {
+            continue;
+        }
+
+        if (AJumanjiEnemyCharacter* Enemy = Cast<AJumanjiEnemyCharacter>(SpawnedActor))
         {
             Enemy->OnEnemyDefeated.RemoveDynamic(
                 this,
                 &AJumanjiWorldEncounterDirector::HandleEnemyDefeated);
-            Enemy->Destroy();
         }
-    }
-    ActiveEnemies.Reset();
 
-    if (IsValid(ActiveBoss))
-    {
-        ActiveBoss->OnEnemyDefeated.RemoveDynamic(
-            this,
-            &AJumanjiWorldEncounterDirector::HandleEnemyDefeated);
-        ActiveBoss->Destroy();
-        ActiveBoss = nullptr;
+        SpawnedActor->Destroy();
     }
+
+    SpawnedEncounterActors.Reset();
+    ActiveEnemies.Reset();
+    ActiveBoss = nullptr;
 }
 
 void AJumanjiWorldEncounterDirector::EndPlay(const EEndPlayReason::Type EndPlayReason)
