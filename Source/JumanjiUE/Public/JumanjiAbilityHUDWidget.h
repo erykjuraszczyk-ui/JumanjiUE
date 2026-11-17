@@ -10,6 +10,7 @@ class UJumanjiAttributeSet;
 class UTexture2D;
 class UMaterialInterface;
 class USoundBase;
+class UJumanjiAbilityHUDSlotWidget;
 
 UENUM(BlueprintType)
 enum class EJumanjiAbilityHUDFeedback : uint8
@@ -19,6 +20,13 @@ enum class EJumanjiAbilityHUDFeedback : uint8
     Cooldown UMETA(DisplayName = "On Cooldown"),
     Unavailable UMETA(DisplayName = "Unavailable")
 };
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(
+    FJumanjiAbilitySlotFeedbackEvent,
+    EJumanjiAbilitySlot, Slot,
+    EJumanjiAbilityHUDFeedback, Feedback,
+    const FText&, Message
+);
 
 USTRUCT(BlueprintType)
 struct JUMANJIUE_API FJumanjiAbilityHUDResourceState
@@ -160,6 +168,9 @@ public:
     UFUNCTION(BlueprintPure, Category = "JUMANJI|Ability HUD")
     AActor* GetTargetFocus() const { return TargetFocus.Get(); }
 
+    UPROPERTY(BlueprintAssignable, Category = "JUMANJI|Ability HUD")
+    FJumanjiAbilitySlotFeedbackEvent OnAbilitySlotFeedback;
+
 protected:
     virtual void NativeConstruct() override;
     virtual void NativeDestruct() override;
@@ -170,6 +181,21 @@ protected:
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "JUMANJI|Ability HUD", meta = (ClampMin = "100.0", ClampMax = "5000.0"))
     float MaxTargetFocusDistance = 2500.0f;
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UJumanjiAbilityHUDSlotWidget> PrimarySlotWidget;
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UJumanjiAbilityHUDSlotWidget> ActiveSlotWidget;
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UJumanjiAbilityHUDSlotWidget> PassiveSlotWidget;
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UJumanjiAbilityHUDSlotWidget> UltimateSlotWidget;
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UJumanjiAbilityHUDSlotWidget> DodgeSlotWidget;
 
     UFUNCTION(BlueprintImplementableEvent, Category = "JUMANJI|Ability HUD")
     void OnAbilityHUDStateChanged(
@@ -187,6 +213,14 @@ private:
     void TryBindAbilitySystem();
     void UnbindAbilitySystem();
     void RefreshAbilityHUD();
+    void ApplySlotStatesToBoundWidgets(const TArray<FJumanjiAbilityHUDSlotState>& SlotStates);
+    void ReportSlotFeedback(EJumanjiAbilitySlot Slot, EJumanjiAbilityHUDFeedback Feedback, const FText& Message);
+
+    UFUNCTION()
+    void HandleAbilitySlotPressed(EJumanjiAbilitySlot Slot);
+
+    UFUNCTION()
+    void HandleAbilitySlotFeedback(EJumanjiAbilitySlot Slot, EJumanjiAbilityHUDFeedback Feedback, const FText& Message);
 
     void HandleEnergyChanged(const FOnAttributeChangeData& ChangeData);
     void HandleResonanceChanged(const FOnAttributeChangeData& ChangeData);
