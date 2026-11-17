@@ -50,9 +50,11 @@ Klasa `AJumanjiBossCharacter` otrzymuje:
 Walidacja czasów i kształtu:
 - WarningDuration: 0.25–8.0 s;
 - ActiveDuration: 0.1–6.0 s;
+- Origin: maksymalnie 10 000 cm od aktora bossa;
 - Radius: 25–2500 cm;
 - Length: 0–4000 cm;
-- Width: 0–1500 cm.
+- Width: 0–1500 cm;
+- Line i Cone wymagają dodatnich wartości Length i Width.
 
 Telegraph sam z siebie nie zadaje obrażeń i nie wykonuje ataku. To sygnał ostrzegawczy, który musi odpowiadać temu samemu AttackId i geometrii użytej później przez serwerową logikę ataku.
 
@@ -131,7 +133,8 @@ Na `BP_JumanjiPlayerController` przypisz klasę do `WorldEncounterHUDWidgetClass
 
 Implementuj:
 - `OnEncounterHUDPresentationChanged`: status, licznik fal, liczba przeciwników, zdrowie i faza bossa;
-- `OnEncounterPhaseCue`: krótki komunikat/audio po zmianie fazy spotkania; zignoruj Inactive, jeśli nie ma pokazywać komunikatu;\n- `OnBossPhaseCue`: jednorazowy komunikat/audio przy przejściu bossa do fazy 1, 2 lub 3;
+- `OnEncounterPhaseCue`: krótki komunikat/audio po zmianie fazy spotkania; zignoruj Inactive, jeśli nie ma pokazywać komunikatu;
+- `OnBossPhaseCue`: jednorazowy komunikat/audio przy przejściu bossa do fazy 1, 2 lub 3;
 - `OnBossTelegraphPresentationChanged`: pokaż/odśwież/usuń wizualny telegraph.
 
 Widget tylko odczytuje dane. Nie wolno z niego zmieniać fazy spotkania, HP bossa, liczby przeciwników, nagrody ani stanu telegraphu.
