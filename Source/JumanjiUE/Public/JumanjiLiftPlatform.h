@@ -6,6 +6,8 @@
 
 class ACharacter;
 class UBoxComponent;
+class USceneComponent;
+class UStaticMeshComponent;
 class UJumanjiTraversalComponent;
 
 UENUM(BlueprintType)
@@ -101,6 +103,9 @@ public:
     FJumanjiLiftPlatformStateChanged OnLiftStateChanged;
 
 protected:
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "JUMANJI|Lift")
+    TObjectPtr<UBoxComponent> PlatformCollision;
+
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "JUMANJI|Lift")
     TObjectPtr<USceneComponent> SceneRoot;
 
