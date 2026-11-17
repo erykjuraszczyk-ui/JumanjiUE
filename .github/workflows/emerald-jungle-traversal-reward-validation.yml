@@ -1,0 +1,32 @@
+name: Emerald Jungle Traversal Reward Validation
+
+on:
+  pull_request:
+    paths:
+      - "Data/Traversal/EmeraldJungle_TraversalPlacement.csv"
+      - "Data/Traversal/EmeraldJungle_TraversalRewards.csv"
+      - "Scripts/validate_emerald_jungle_traversal_rewards.py"
+      - "Scripts/Tests/test_validate_emerald_jungle_traversal_rewards.py"
+      - ".github/workflows/emerald-jungle-traversal-reward-validation.yml"
+  push:
+    branches: [main]
+    paths:
+      - "Data/Traversal/EmeraldJungle_TraversalPlacement.csv"
+      - "Data/Traversal/EmeraldJungle_TraversalRewards.csv"
+      - "Scripts/validate_emerald_jungle_traversal_rewards.py"
+      - "Scripts/Tests/test_validate_emerald_jungle_traversal_rewards.py"
+      - ".github/workflows/emerald-jungle-traversal-reward-validation.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate-traversal-rewards:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Validate traversal reward manifest
+        run: python Scripts/validate_emerald_jungle_traversal_rewards.py
+      - name: Run traversal reward tests
+        run: python -m unittest discover -s Scripts/Tests -p "test_validate_emerald_jungle_traversal_rewards.py" -v

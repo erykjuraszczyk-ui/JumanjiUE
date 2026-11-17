@@ -26,6 +26,12 @@ public:
     UFUNCTION(BlueprintPure, Category = "JUMANJI|Upgrade")
     bool GetSpiritUpgradeRecipe(FName RecipeId, FJumanjiSpiritUpgradeRecipe& OutRecipe) const;
 
+    UFUNCTION(BlueprintPure, Category = "JUMANJI|TraversalRewards")
+    bool GetTraversalRewardDefinition(FName TraversalId, FJumanjiTraversalRewardDefinition& OutDefinition) const;
+
+    /** Server-side, once per profile/link. The reward is granted only after server-confirmed traversal completion. */
+    bool GrantTraversalCompletionReward(AJumanjiPlayerState* PlayerState, FName TraversalId) const;
+
     /** Server-side, idempotent grant. A repeated chapter completion cannot pay twice. */
     bool GrantChapterCompletionReward(AJumanjiPlayerState* PlayerState, FName ChapterId) const;
 
@@ -42,6 +48,8 @@ private:
 
     bool IsValidChapterReward(const FJumanjiChapterRewardDefinition& Definition) const;
     bool IsValidUpgradeRecipe(const FJumanjiSpiritUpgradeRecipe& Recipe) const;
+    bool IsValidTraversalReward(const FJumanjiTraversalRewardDefinition& Definition) const;
+    FName BuildTraversalTransactionId(const AJumanjiPlayerState& PlayerState, FName TraversalId) const;
     FName BuildChapterTransactionId(const AJumanjiPlayerState& PlayerState, FName ChapterId) const;
     FName BuildUpgradeTransactionId(
         const AJumanjiPlayerState& PlayerState,
@@ -53,4 +61,7 @@ private:
 
     UPROPERTY(Transient)
     TMap<FName, FJumanjiSpiritUpgradeRecipe> UpgradeRecipes;
+
+    UPROPERTY(Transient)
+    TMap<FName, FJumanjiTraversalRewardDefinition> TraversalRewards;
 };

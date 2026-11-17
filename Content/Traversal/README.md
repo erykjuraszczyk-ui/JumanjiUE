@@ -88,14 +88,9 @@ If the spline is missing, has fewer than two points or has invalid length, the r
 
 ## Lift presentation
 
-The current Lift runtime interpolates the character between its two anchors. It does not yet simulate a moving platform, platform collision, elevator doors or synchronized multi-rider physics.
+Stage 25 added AJumanjiLiftPlatform as a real server-driven, replicated platform with swept collision and shared passenger attachment. See the Stage 25 section below for BP_JumanjiLiftPlatform authoring, boarding volumes and multi-rider tests.
 
-For a first playable greybox:
-- author the platform mesh and visible rails in the Blueprint child;
-- keep EntryAnchor and ExitAnchor at capsule-center height;
-- place the platform collision at the safe landing surface;
-- use start/end montage and cues for entering/exiting;
-- do not move the platform independently until a dedicated replicated lift-platform actor exists.
+Keep EntryAnchor and ExitAnchor at capsule-center height and align them to LowerStopAnchor/UpperStopAnchor. The platform's PlatformCollision is the swept root; PlatformMesh is visual only.
 
 ## Required editor assets
 
@@ -158,3 +153,41 @@ Run source validation:
     python -m unittest discover -s Scripts/Tests -p "test_validate_emerald_jungle_traversal.py" -v
 
 Validation only checks source CSV/JSON. It does not compile Unreal C++, inspect .umap/.uasset, build NavMesh or prove multiplayer/device behavior. Follow Docs/STAGE_25_TRAVERSAL_WORLD_INTEGRATION_MULTIPLAYER.md for the editor and two-client acceptance tests.
+
+
+## Stage 26 — World Partition resilience, lift recovery and traversal rewards
+
+### Active traversal and streamed links
+
+The server copies an authored Zipline spline into 17 FVector_NetQuantize10 samples in FJumanjiTraversalReplicatedState when the traversal starts. The path is then evaluated from the replicated snapshot rather than repeatedly dereferencing the streamed AJumanjiTraversalLink.
+
+ContextJump and Climb also move from the replicated start/end/time snapshot. When the link cell unloads during an active traversal, the character can finish the route without requiring the link actor to remain loaded. When the cell loads again, the link overlap volume calls UpdateOverlaps and can register focus with the local PlayerController again.
+
+This does not make the visual cable persistent: the Blueprint spline mesh still belongs to the streamed link actor and is loaded with its cell.
+
+### Blocked lift recovery
+
+AJumanjiLiftPlatform exposes TryRecoverBlockedPlatform. It is a BlueprintCallable, BlueprintAuthorityOnly server-side operation, not a client RPC.
+
+The method:
+- accepts recovery only from Blocked with validated anchors and zero passengers;
+- checks the platform collision shape at both authored stop positions against WorldStatic, WorldDynamic and Pawn blocking channels;
+- chooses the nearest clear stop;
+- refuses recovery if both stops are blocked;
+- updates replicated state/revision and broadcasts the new stop state.
+
+A server Blueprint/operator may call the function after clearing the obstruction. It must not be exposed as an unrestricted client repair request. The method does not teleport passengers or restart an interrupted course.
+
+### One-time exploration reward
+
+The server grants the reward only after UJumanjiTraversalComponent::FinishTraversal confirms completion and its final swept placement succeeds. Rewards use AJumanjiPlayerState::ApplyProfileTransaction and the profile's ProcessedTransactionIds ledger.
+
+Each profile receives at most one reward for each stable TraversalId. Repeating the same link does not grant a second payout. Cancelled, blocked or interrupted traversal receives no payout.
+
+The native starter catalog is also present in Data/Traversal/EmeraldJungle_TraversalRewards.csv. To override it in Unreal Editor, import the CSV as DT_TraversalRewards using FJumanjiTraversalRewardDefinition and place it at /Game/Progression/Data/DT_TraversalRewards.
+
+Validate:
+    python Scripts/validate_emerald_jungle_traversal_rewards.py
+    python -m unittest discover -s Scripts/Tests -p "test_validate_emerald_jungle_traversal_rewards.py" -v
+
+This validates source CSV only. It does not import or validate the Unreal DataTable asset, compile C++, or prove runtime behavior. See Docs/STAGE_26_TRAVERSAL_QA_LIFT_RECOVERY_REWARDS.md for World Partition unload/load, blocked lift, multiplayer and mobile test matrices.

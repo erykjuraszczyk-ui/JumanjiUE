@@ -2,6 +2,8 @@
 
 #include "Components/BoxComponent.h"
 #include "Components/SceneComponent.h"
+#include "CollisionShape.h"
+#include "Engine/CollisionProfile.h"
 #include "Engine/World.h"
 #include "Components/StaticMeshComponent.h"
 #include "GameFramework/Character.h"
@@ -222,6 +224,108 @@ void AJumanjiLiftPlatform::RemovePassenger(ACharacter* Character, bool bRestoreM
     }
 
     Character->ForceNetUpdate();
+}
+
+
+bool AJumanjiLiftPlatform::IsRecoveryLocationClear(const FVector& CandidateLocation) const
+{
+    UWorld* World = GetWorld();
+    if (!World || !PlatformCollision
+        || !FMath::IsFinite(CandidateLocation.X)
+        || !FMath::IsFinite(CandidateLocation.Y)
+        || !FMath::IsFinite(CandidateLocation.Z))
+    {
+        return false;
+    }
+
+    const FCollisionShape CollisionShape =
+        FCollisionShape::MakeBox(PlatformCollision->GetScaledBoxExtent());
+    const FCollisionQueryParams QueryParams(
+        SCENE_QUERY_STAT(JumanjiLiftRecovery),
+        false,
+        this
+    );
+
+    const ECollisionChannel Channels[] = {
+        ECC_WorldStatic,
+        ECC_WorldDynamic,
+        ECC_Pawn
+    };
+
+    for (const ECollisionChannel Channel : Channels)
+    {
+        if (World->OverlapBlockingTestByChannel(
+            CandidateLocation,
+            GetActorQuat(),
+            Channel,
+            CollisionShape,
+            QueryParams))
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool AJumanjiLiftPlatform::TryRecoverBlockedPlatform()
+{
+    if (!HasAuthority()
+        || !bAnchorsInitialized
+        || LiftState.State != EJumanjiLiftPlatformState::Blocked
+        || !Passengers.IsEmpty()
+        || LiftState.PassengerCount != 0)
+    {
+        return false;
+    }
+
+    const FVector LowerStopActorLocation = InitialActorLocation;
+    const FVector UpperStopActorLocation =
+        InitialActorLocation + (UpperStopLocation - LowerStopLocation);
+
+    const bool bLowerStopClear = IsRecoveryLocationClear(LowerStopActorLocation);
+    const bool bUpperStopClear = IsRecoveryLocationClear(UpperStopActorLocation);
+
+    if (!bLowerStopClear && !bUpperStopClear)
+    {
+        UE_LOG(LogTemp, Warning,
+            TEXT("JUMANJI lift %s recovery refused: both authored stops are obstructed."),
+            *GetName());
+        return false;
+    }
+
+    const float LowerDistanceSquared =
+        FVector::DistSquared(GetActorLocation(), LowerStopActorLocation);
+    const float UpperDistanceSquared =
+        FVector::DistSquared(GetActorLocation(), UpperStopActorLocation);
+
+    const bool bRecoverToLower = bLowerStopClear
+        && (!bUpperStopClear || LowerDistanceSquared <= UpperDistanceSquared);
+    const FVector RecoveryLocation = bRecoverToLower
+        ? LowerStopActorLocation
+        : UpperStopActorLocation;
+
+    SetActorTickEnabled(false);
+    SetActorLocation(RecoveryLocation, false, nullptr, ETeleportType::TeleportPhysics);
+
+    LiftState.State = bRecoverToLower
+        ? EJumanjiLiftPlatformState::AtLower
+        : EJumanjiLiftPlatformState::AtUpper;
+    LiftState.bReverse = false;
+    LiftState.PassengerCount = 0;
+    LiftState.ServerStartTime = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0f;
+    LiftState.Revision = LiftState.Revision < MAX_int32
+        ? LiftState.Revision + 1
+        : 1;
+
+    ForceNetUpdate();
+    NotifyStateChanged();
+
+    UE_LOG(LogTemp, Log,
+        TEXT("JUMANJI lift %s recovered to %s stop after a collision-free check."),
+        *GetName(),
+        bRecoverToLower ? TEXT("lower") : TEXT("upper"));
+    return true;
 }
 
 void AJumanjiLiftPlatform::StartTravel(bool bReverse)

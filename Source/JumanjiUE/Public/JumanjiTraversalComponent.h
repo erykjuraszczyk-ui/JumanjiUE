@@ -51,6 +51,10 @@ struct FJumanjiTraversalReplicatedState
 
     UPROPERTY(BlueprintReadOnly, Category = "JUMANJI|Traversal")
     int32 Revision = 0;
+
+    /** Self-contained world-space Zipline path so active rides survive link cell unloads. */
+    UPROPERTY(BlueprintReadOnly, Category = "JUMANJI|Traversal")
+    TArray<FVector_NetQuantize10> ZiplinePathSamples;
 };
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(

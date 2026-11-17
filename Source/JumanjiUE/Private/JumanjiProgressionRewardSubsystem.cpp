@@ -27,6 +27,7 @@ void UJumanjiProgressionRewardSubsystem::BuildDefaultTables()
 {
     ChapterRewards.Reset();
     UpgradeRecipes.Reset();
+    TraversalRewards.Reset();
 
     FJumanjiChapterRewardDefinition ChapterReward;
     ChapterReward.ChapterId = FName(TEXT("EMERALD_JUNGLE_NINE_SEALS"));
@@ -52,6 +53,32 @@ void UJumanjiProgressionRewardSubsystem::BuildDefaultTables()
     {
         ChapterRewards.Add(ChapterReward.ChapterId, ChapterReward);
     }
+
+    const auto AddTraversalReward = [this](const TCHAR* TraversalId, int64 ExplorerCoins)
+    {
+        FJumanjiTraversalRewardDefinition Definition;
+        Definition.TraversalId = FName(TraversalId);
+        Definition.CurrencyId = FName(TEXT("CURRENCY_EXPLORER_COINS"));
+        Definition.CurrencyAmount = ExplorerCoins;
+        if (IsValidTraversalReward(Definition))
+        {
+            TraversalRewards.Add(Definition.TraversalId, Definition);
+        }
+    };
+
+    // One-time exploration rewards for the 12 stable traversal IDs in Stage 25.
+    AddTraversalReward(TEXT("EJ_ROOT_CANOPY_JUMP_01"), 20);
+    AddTraversalReward(TEXT("EJ_ROOT_TOTEM_CLIMB_01"), 25);
+    AddTraversalReward(TEXT("EJ_TIDE_FALLS_ZIP_01"), 30);
+    AddTraversalReward(TEXT("EJ_TIDE_CHANNEL_JUMP_01"), 20);
+    AddTraversalReward(TEXT("EJ_STONE_PILLAR_CLIMB_01"), 25);
+    AddTraversalReward(TEXT("EJ_STORM_PEAK_ZIP_01"), 30);
+    AddTraversalReward(TEXT("EJ_EMBER_CAVERN_JUMP_01"), 20);
+    AddTraversalReward(TEXT("EJ_DAWN_MIRRORS_LIFT_01"), 40);
+    AddTraversalReward(TEXT("EJ_SHADOW_MARSH_ZIP_01"), 30);
+    AddTraversalReward(TEXT("EJ_LIFE_GARDEN_CLIMB_01"), 25);
+    AddTraversalReward(TEXT("EJ_FROST_GATE_LIFT_01"), 40);
+    AddTraversalReward(TEXT("EJ_FROST_GATE_JUMP_01"), 20);
 
     const auto AddUpgradeRecipe = [this](
         const TCHAR* RecipeId,
@@ -134,6 +161,60 @@ void UJumanjiProgressionRewardSubsystem::LoadOptionalDataTableOverrides()
             }
         }
     }
+
+    UDataTable* TraversalRewardTable = LoadObject<UDataTable>(
+        nullptr,
+        TEXT("/Game/Progression/Data/DT_TraversalRewards.DT_TraversalRewards"));
+
+    if (TraversalRewardTable)
+    {
+        TArray<FJumanjiTraversalRewardDefinition*> Rows;
+        TraversalRewardTable->GetAllRows<FJumanjiTraversalRewardDefinition>(
+            TEXT("JumanjiTraversalRewardOverrides"), Rows);
+
+        for (const FJumanjiTraversalRewardDefinition* Row : Rows)
+        {
+            if (Row && IsValidTraversalReward(*Row))
+            {
+                TraversalRewards.Add(Row->TraversalId, *Row);
+            }
+        }
+    }
+}
+
+bool UJumanjiProgressionRewardSubsystem::IsValidTraversalReward(
+    const FJumanjiTraversalRewardDefinition& Definition) const
+{
+    static const TSet<FName> AllowedCurrencyIds = {
+        FName(TEXT("CURRENCY_EXPLORER_COINS"))
+    };
+    static const TSet<FName> AllowedItemIds = {
+        FName(TEXT("MAT_ROOT_RESIN")),
+        FName(TEXT("MAT_TIDE_PEARL")),
+        FName(TEXT("MAT_STONE_CORE")),
+        FName(TEXT("MAT_STORM_ESSENCE")),
+        FName(TEXT("MAT_EMBER_ASH")),
+        FName(TEXT("MAT_DAWN_SHARD")),
+        FName(TEXT("MAT_SHADOW_SILK")),
+        FName(TEXT("MAT_LIFE_BLOOM")),
+        FName(TEXT("MAT_FROST_CRYSTAL")),
+        FName(TEXT("MAT_SPIRIT_MEMORY"))
+    };
+
+    if (Definition.TraversalId.IsNone()
+        || Definition.TraversalId.ToString().Len() > 64
+        || !AllowedCurrencyIds.Contains(Definition.CurrencyId)
+        || Definition.CurrencyAmount < 1
+        || Definition.CurrencyAmount > 5000
+        || Definition.ItemAmount < 0
+        || Definition.ItemAmount > JumanjiRewards::MaxItemCost
+        || (Definition.ItemAmount == 0 && !Definition.ItemId.IsNone())
+        || (Definition.ItemAmount > 0 && !AllowedItemIds.Contains(Definition.ItemId)))
+    {
+        return false;
+    }
+
+    return true;
 }
 
 bool UJumanjiProgressionRewardSubsystem::IsValidChapterReward(
@@ -224,6 +305,75 @@ bool UJumanjiProgressionRewardSubsystem::IsValidUpgradeRecipe(
     }
 
     return true;
+}
+
+bool UJumanjiProgressionRewardSubsystem::GetTraversalRewardDefinition(
+    FName TraversalId,
+    FJumanjiTraversalRewardDefinition& OutDefinition) const
+{
+    const FJumanjiTraversalRewardDefinition* Found = TraversalRewards.Find(TraversalId);
+    if (!Found)
+    {
+        return false;
+    }
+
+    OutDefinition = *Found;
+    return true;
+}
+
+FName UJumanjiProgressionRewardSubsystem::BuildTraversalTransactionId(
+    const AJumanjiPlayerState& PlayerState,
+    FName TraversalId) const
+{
+    const FString ProfileHash = FMD5::HashAnsiString(*PlayerState.GetPersistentProfileId()).Left(16);
+    const FString SafeTraversalId = TraversalId.ToString().Left(64);
+    return FName(*FString::Printf(
+        TEXT("TRAV_%s_%s"),
+        *ProfileHash,
+        *SafeTraversalId));
+}
+
+bool UJumanjiProgressionRewardSubsystem::GrantTraversalCompletionReward(
+    AJumanjiPlayerState* PlayerState,
+    FName TraversalId) const
+{
+    if (!IsValid(PlayerState)
+        || !PlayerState->HasAuthority()
+        || PlayerState->GetPersistentProfileId().IsEmpty()
+        || TraversalId.IsNone())
+    {
+        return false;
+    }
+
+    FJumanjiTraversalRewardDefinition Definition;
+    if (!GetTraversalRewardDefinition(TraversalId, Definition))
+    {
+        return false;
+    }
+
+    const FName TransactionId = BuildTraversalTransactionId(*PlayerState, TraversalId);
+    if (PlayerState->HasProcessedProfileTransaction(TransactionId))
+    {
+        return true;
+    }
+
+    FJumanjiProfileTransaction Transaction;
+    Transaction.TransactionId = TransactionId;
+
+    FJumanjiCurrencyDelta CurrencyReward;
+    CurrencyReward.CurrencyId = Definition.CurrencyId;
+    CurrencyReward.Delta = Definition.CurrencyAmount;
+    Transaction.CurrencyDeltas.Add(CurrencyReward);
+
+    if (Definition.ItemAmount > 0)
+    {
+        FJumanjiItemDelta ItemReward;
+        ItemReward.ItemId = Definition.ItemId;
+        ItemReward.Delta = Definition.ItemAmount;
+        Transaction.ItemDeltas.Add(ItemReward);
+    }
+
+    return PlayerState->ApplyProfileTransaction(Transaction);
 }
 
 bool UJumanjiProgressionRewardSubsystem::GetChapterRewardDefinition(
