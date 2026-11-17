@@ -148,9 +148,13 @@ bool AJumanjiAdventureChapterDirector::ResetChapterForEncounterRetry(FName Encou
 
     const FJumanjiWorldEncounterState EncounterState =
         BoardGameState->GetWorldEncounterState();
+    const FJumanjiAdventureChapterState ChapterState =
+        BoardGameState->GetAdventureChapterState();
 
     if (EncounterState.EncounterId != EncounterId
-        || EncounterState.Phase != EJumanjiWorldEncounterPhase::Failed)
+        || EncounterState.Phase != EJumanjiWorldEncounterPhase::Failed
+        || (!ChapterState.ChapterId.IsNone() && ChapterState.ChapterId != ChapterId)
+        || (!ChapterState.BoardEventId.IsNone() && ChapterState.BoardEventId != BoardEventId))
     {
         return false;
     }
@@ -183,6 +187,7 @@ bool AJumanjiAdventureChapterDirector::ResetChapterForEncounterRetry(FName Encou
         if (!MatchingActor
             || !IsValid(MatchingActor->Get())
             || MatchingActor->Get()->GetWorld() != World
+            || MatchingActor->Get()->GetStepCount() != Objective.RequiredProgress
             || SeenTrialActors.Contains(MatchingActor->Get())
             || !MatchingActor->Get()->CanResetForEncounterRetry())
         {
