@@ -73,6 +73,7 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - Docs/STAGE_20_ABILITY_PRESENTATION_RUNTIME.md — manifest DataTable import, AbilityId class binding, HUD presentation metadata and acceptance checklist.
 - Docs/STAGE_21_ABILITY_PRESENTATION_BLUEPRINT_INTEGRATION.md — WBP_AbilityHUD/WBP_AbilitySlot hierarchy, mobile layout, asynchronous assets and Blueprint acceptance checklist.
 - Content/UI/AbilityPresentation/README.md — asset import, naming and per-ability assignment workflow.
+- Content/UI/AbilityHUD/README.md — WBP_AbilityHUD/WBP_AbilitySlot asset hierarchy and exact BindWidget names.
 - Content/UI/AbilityPresentation/AbilityPresentationManifest.csv — 45 stable ability presentation records.
 - Content/UI/AbilityPresentation/AbilityPresentationDataTable.csv — DataTable import copy with Name row keys and 45 stable IDs.
 - Docs/Design/GreatSpiritAbilityProductionMatrix.md — production specification for all 45 Great Spirit ability slots.
