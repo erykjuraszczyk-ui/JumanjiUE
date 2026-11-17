@@ -23,6 +23,7 @@ Open-world third-person adventure RPG prototype with a shared-world direction an
 - Stage 18 — Ability HUD & Input Feedback: mobile slot controls, GAS cooldown/resource indicators, activation feedback and local target-focus presentation.
 - Stage 19 — Ability Presentation Asset Pack: 45-slot icon manifest, nine Great Spirit palettes, radial cooldown material specification, UI audio feedback and Gameplay Cue/VFX authoring contract.
 - Stage 20 — Ability Presentation Runtime Integration: validated manifest DataTable reader, stable AbilityId binding, soft-reference presentation data and HUD integration without changing GAS authority.
+- Stage 21 — Emerald Jungle World Authoring Pack: import-ready region/landmark DataTable CSVs, 29-row greybox placement ledger and World Partition assembly manifest.
 
 ## The nine playable Great Spirits
 1. Great Spirit I — Duch Korzeni (Root / Guardian)
@@ -75,6 +76,7 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - Docs/STAGE_09_EMERALD_JUNGLE_CHAPTER_FLOW.md — chapter director, replicated chapter state, HUD integration and nine-trial authoring contract.
 - Docs/STAGE_10_GREAT_SPIRIT_TRIAL_CONTENT_PACK.md — nine trial definitions, puzzle sequences, presentation hooks and Blueprint authoring workflow.
 - Docs/STAGE_11_EMERALD_JUNGLE_WORLD_ASSEMBLY.md — World Partition map layout, ten-region atlas, Data Layers, discovery/landmark setup and acceptance checklist.
+- Docs/STAGE_21_EMERALD_JUNGLE_WORLD_AUTHORING_PACK.md — DataTable import, greybox coordinates, actor placement and validation workflow.
 - Content/World/README.md — world atlas, navigation and profile-persistence setup.
 - Content/Adventure/Trials/README.md — Blueprint trial and UMG authoring guide.
 - Content/UI/README.md — Widget Blueprint asset setup.
@@ -120,6 +122,7 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - UJumanjiAdventureHUDWidget Blueprint base with objective/chapter event subscriptions and progress getters;
 - local PlayerController creation of the configured adventure HUD widget;
 - UJumanjiWorldAtlasSubsystem with a built-in 10-region/10-landmark catalog and validated DataTable overrides;
+- source CSVs for 10 atlas region rows and 10 landmark rows, plus a 29-actor Emerald Jungle greybox placement ledger (Stage 21);
 - server-authoritative region volume and landmark discovery;
 - per-player replicated exploration snapshot on AJumanjiPlayerState;
 - UJumanjiWorldAtlasWidget base and PlayerController OpenWorldAtlas/CloseWorldAtlas API;
@@ -154,6 +157,7 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 ## Not yet included
 This is a source-code foundation, not a finished game or installable Android build. The repository still needs:
 - saved Unreal maps, including Content/Maps/L_EmeraldJungle_World.umap;
+- imported DT_Jumanji_WorldRegions and DT_Jumanji_WorldLandmarks DataTable .uasset files (CSV source files are now present);
 - final portrait textures and 3D character models;
 - rigs, animation blueprints and facial animation;
 - final touch-first Widget Blueprint assets, icons, UI materials and Enhanced Input mapping assets;
