@@ -104,8 +104,10 @@ private:
     TSharedPtr<FStreamableHandle> MaterialLoadHandle;
     TSharedPtr<FStreamableHandle> AudioLoadHandle;
 
+    FSlateBrush DesignerPlaceholderBrush;
     FSoftObjectPath RequestedIconPath;
     FSoftObjectPath RequestedMaterialPath;
     FSoftObjectPath RequestedAudioPath;
     bool bHasReceivedState = false;
+    bool bHasCapturedPlaceholderBrush = false;
 };
