@@ -1,0 +1,54 @@
+{
+  "schema": "JUMANJI.EmeraldJungleTraversal.v1",
+  "status": "AUTHORING_PLACEHOLDERS_NOT_SURVEYED_WORLD_DATA",
+  "units": "Unreal centimeters",
+  "coordinateReference": "Same 400 km greybox coordinate space as Data/World/EmeraldJungle_WorldManifest.json; coordinates must be projected onto final landscape and NavMesh.",
+  "files": {
+    "linkPlacements": "EmeraldJungle_TraversalPlacement.csv",
+    "liftPlatforms": "EmeraldJungle_LiftPlatformManifest.csv",
+    "presentation": "TraversalPresentationManifest.csv"
+  },
+  "expectedCounts": {
+    "traversalLinks": 12,
+    "liftPlatforms": 2,
+    "traversalTypes": {
+      "ContextJump": 4,
+      "Climb": 3,
+      "Zipline": 3,
+      "Lift": 2
+    }
+  },
+  "worldPartition": {
+    "mapAsset": "/Game/Maps/L_EmeraldJungle_World",
+    "editorDataLayers": [
+      "DL_EJ_RootGrove",
+      "DL_EJ_TideFalls",
+      "DL_EJ_StoneSanctum",
+      "DL_EJ_StormPeak",
+      "DL_EJ_EmberCavern",
+      "DL_EJ_DawnMirrors",
+      "DL_EJ_ShadowMarsh",
+      "DL_EJ_LifeGarden",
+      "DL_EJ_FrostGate"
+    ],
+    "notes": "Each link and lift platform must be assigned to the matching region Editor Data Layer. Keep one-file-per-actor enabled."
+  },
+  "liftPlatformDefaults": {
+    "maxPassengers": 4,
+    "boardingWindowAlpha": 0.12,
+    "movementAuthority": "server",
+    "replicateActorMovement": true,
+    "passengerAttachment": "server-authoritative root attachment",
+    "collisionResponse": "swept actor movement; blocking hit interrupts the ride"
+  },
+  "authoringRules": [
+    "Create BP_TraversalLink_Base and per-type Blueprint children from AJumanjiTraversalLink.",
+    "Place 12 link actors using the CSV as a first-pass greybox ledger.",
+    "Create BP_JumanjiLiftPlatform from AJumanjiLiftPlatform and place two platform actors.",
+    "Assign the matching lift platform reference to each Lift link.",
+    "Align lower/upper platform stops with the lift link entry/exit anchors.",
+    "Keep interaction focus volumes and lift boarding volumes query-only.",
+    "Do not treat the CSV coordinates as final collision-safe or NavMesh-safe positions.",
+    "Rebuild World Partition navigation data and validate both endpoints after terrain authoring."
+  ]
+}
