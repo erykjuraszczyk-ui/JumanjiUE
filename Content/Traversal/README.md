@@ -108,3 +108,25 @@ For a first playable greybox:
 - mesh and collision for lift platform.
 
 The text-only repository workflow does not create binary `.uasset` files or final animation content.
+
+
+## Stage 24 — Traversal animation and interaction presentation
+
+- Import `Data/Traversal/TraversalPresentationManifest.csv` as `DT_TraversalPresentation`.
+- Row struct: `FJumanjiTraversalPresentationDefinition`.
+- Runtime lookup: `UJumanjiTraversalPresentationSubsystem`; missing rows use built-in Polish copy for the traversal type.
+- Prompt base: `UJumanjiTraversalPromptWidget`; create `WBP_TraversalPrompt` as its child.
+- Assign `WBP_TraversalPrompt` to `TraversalPromptWidgetClass` in the PlayerController Blueprint.
+- Call `SetTraversalFocus` when a nearby usable link is focused and `ClearTraversalFocus` when focus is lost.
+- Bind the widget's `OnPromptChanged` view model to the prompt visuals and call `RequestFocusedTraversal` from the primary button.
+- Traversal state now publishes `OnTraversalStateChanged`, including the server-confirmed completion/interruption result.
+- Zipline links may enable `bUseSplinePath`; the server samples the authored `TraversalSpline` with collision sweep.
+
+Validate the source manifest before importing:
+
+```bash
+python Scripts/validate_traversal_presentation.py
+python -m unittest discover -s Scripts/Tests -p "test_validate_traversal_presentation.py" -v
+```
+
+The validator checks CSV consistency only. Montages, icons, sounds, Niagara effects, Widget Blueprints, spline meshes, link placements and a moving lift platform still need Unreal Editor assets and PIE validation.
