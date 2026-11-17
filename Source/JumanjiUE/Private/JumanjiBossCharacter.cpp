@@ -53,6 +53,11 @@ bool AJumanjiBossCharacter::BeginBossTelegraph(
         || !FMath::IsFinite(Radius)
         || !FMath::IsFinite(Length)
         || !FMath::IsFinite(Width)
+        || static_cast<uint8>(Pattern) > static_cast<uint8>(EJumanjiBossTelegraphPattern::Focused)
+        || FVector::DistSquared(Origin, GetActorLocation()) > FMath::Square(10000.0f)
+        || ((Pattern == EJumanjiBossTelegraphPattern::Line
+            || Pattern == EJumanjiBossTelegraphPattern::Cone)
+            && (Length <= 0.0f || Width <= 0.0f))
         || WarningDuration < 0.25f
         || WarningDuration > 8.0f
         || ActiveDuration < 0.1f
