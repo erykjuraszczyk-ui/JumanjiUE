@@ -66,6 +66,15 @@ class BossTelegraphManifestTests(unittest.TestCase):
             errors = MODULE.validate_project(root)
             self.assertTrue(any("WarningSeconds must be within" in error for error in errors))
 
+    def test_line_requires_nonzero_length_and_width(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = self._fixture(temp_dir)
+            path, rows, columns = self._read(root)
+            rows[1]["WidthCm"] = "0"
+            self._write(path, rows, columns)
+            errors = MODULE.validate_project(root)
+            self.assertTrue(any("Line requires LengthCm and WidthCm" in error for error in errors))
+
     def test_missing_boss_phase_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = self._fixture(temp_dir)
