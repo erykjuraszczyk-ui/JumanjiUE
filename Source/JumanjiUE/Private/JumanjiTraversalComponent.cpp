@@ -7,6 +7,9 @@
 #include "Net/UnrealNetwork.h"
 #include "JumanjiTraversalLink.h"
 #include "JumanjiLiftPlatform.h"
+#include "JumanjiPlayerState.h"
+#include "JumanjiProgressionRewardSubsystem.h"
+#include "Engine/GameInstance.h"
 
 namespace
 {
@@ -113,6 +116,45 @@ bool UJumanjiTraversalComponent::TryStartTraversal(AJumanjiTraversalLink* Link)
     TraversalState.ServerStartTime = World->GetTimeSeconds();
     TraversalState.Duration = Link->GetTraversalDuration();
     TraversalState.ArcHeight = Link->GetTraversalArcHeight();
+    TraversalState.ZiplinePathSamples.Reset();
+
+    // Snapshot the spline into replicated state. The world-partition link actor
+    // may unload during a ride; motion must not depend on that actor remaining loaded.
+    if (Link->GetTraversalType() == EJumanjiTraversalType::Zipline
+        && Link->HasAuthoredTraversalSpline())
+    {
+        constexpr int32 ZiplineSampleCount = 9;
+        for (int32 SampleIndex = 0; SampleIndex < ZiplineSampleCount; ++SampleIndex)
+        {
+            const float SampleAlpha = static_cast<float>(SampleIndex)
+                / static_cast<float>(ZiplineSampleCount - 1);
+            FTransform SampleTransform;
+            if (!Link->GetTraversalPathTransformAtAlpha(
+                SampleAlpha,
+                bReverse,
+                SampleTransform)
+                || !IsFiniteVector(SampleTransform.GetLocation()))
+            {
+                TraversalState.ZiplinePathSamples.Reset();
+                break;
+            }
+
+            TraversalState.ZiplinePathSamples.Add(
+                FVector_NetQuantize10(SampleTransform.GetLocation()));
+        }
+
+        if (TraversalState.ZiplinePathSamples.Num() == ZiplineSampleCount)
+        {
+            // Keep the authored path connected to the actual character endpoints.
+            TraversalState.ZiplinePathSamples[0] = FVector_NetQuantize10(StartLocation);
+            TraversalState.ZiplinePathSamples.Last() = FVector_NetQuantize10(EndLocation);
+        }
+        else
+        {
+            TraversalState.ZiplinePathSamples.Reset();
+        }
+    }
+
     TraversalState.Revision = TraversalState.Revision < MAX_int32
         ? TraversalState.Revision + 1
         : 1;
@@ -166,22 +208,28 @@ void UJumanjiTraversalComponent::TickComponent(
         1.0f
     );
 
-    FTransform SplineTransform;
-    const bool bUsingZiplineSpline = TraversalState.TraversalType == EJumanjiTraversalType::Zipline
-        && IsValid(ActiveTraversalLink)
-        && ActiveTraversalLink->GetTraversalPathTransformAtAlpha(
-            Alpha,
-            TraversalState.bReverse,
-            SplineTransform
-        );
-
     FVector TargetLocation;
     FRotator TargetRotation;
+    const int32 PathSampleCount = TraversalState.ZiplinePathSamples.Num();
 
-    if (bUsingZiplineSpline)
+    if (TraversalState.TraversalType == EJumanjiTraversalType::Zipline
+        && PathSampleCount >= 2)
     {
-        TargetLocation = SplineTransform.GetLocation();
-        TargetRotation = SplineTransform.Rotator();
+        // The server uses the replicated snapshot, not the streamed link actor.
+        const float SamplePosition = Alpha * static_cast<float>(PathSampleCount - 1);
+        const int32 SegmentIndex = FMath::Clamp(
+            FMath::FloorToInt(SamplePosition), 0, PathSampleCount - 2);
+        const float SegmentAlpha = FMath::Clamp(
+            SamplePosition - static_cast<float>(SegmentIndex), 0.0f, 1.0f);
+
+        const FVector SegmentStart(TraversalState.ZiplinePathSamples[SegmentIndex]);
+        const FVector SegmentEnd(TraversalState.ZiplinePathSamples[SegmentIndex + 1]);
+        TargetLocation = FMath::Lerp(SegmentStart, SegmentEnd, SegmentAlpha);
+
+        FVector Forward = (SegmentEnd - SegmentStart).GetSafeNormal();
+        TargetRotation = Forward.IsNearlyZero()
+            ? FMath::Lerp(TraversalState.StartRotation, TraversalState.EndRotation, Alpha)
+            : Forward.Rotation();
     }
     else
     {
@@ -279,8 +327,10 @@ void UJumanjiTraversalComponent::FinishTraversal(bool bCompleted)
     }
 
     RestoreMovementMode();
+    const FName FinishedTraversalId = TraversalState.TraversalId;
     TraversalState.bActive = false;
     TraversalState.bLastTraversalCompleted = bCompleted;
+    TraversalState.ZiplinePathSamples.Reset();
     TraversalState.Revision = TraversalState.Revision < MAX_int32
         ? TraversalState.Revision + 1
         : 1;
@@ -288,6 +338,23 @@ void UJumanjiTraversalComponent::FinishTraversal(bool bCompleted)
     SetComponentTickEnabled(false);
     Character->ForceNetUpdate();
     NotifyTraversalStateChanged();
+
+    if (bCompleted && !FinishedTraversalId.IsNone())
+    {
+        AJumanjiPlayerState* PlayerState = Character->GetPlayerState<AJumanjiPlayerState>();
+        UGameInstance* GameInstance = GetWorld() ? GetWorld()->GetGameInstance() : nullptr;
+        UJumanjiProgressionRewardSubsystem* RewardSubsystem = GameInstance
+            ? GameInstance->GetSubsystem<UJumanjiProgressionRewardSubsystem>()
+            : nullptr;
+
+        if (RewardSubsystem && PlayerState
+            && !RewardSubsystem->GrantTraversalCompletionReward(PlayerState, FinishedTraversalId))
+        {
+            UE_LOG(LogTemp, Verbose,
+                TEXT("JUMANJI traversal reward was not applied for %s; profile/receipt may be unavailable."),
+                *FinishedTraversalId.ToString());
+        }
+    }
 
     if (!bCompleted)
     {
