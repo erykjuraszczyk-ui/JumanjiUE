@@ -148,4 +148,4 @@ Te zasoby wymagają importu i konfiguracji w Unreal Editor. Etap 20 dostarcza ko
 
 ## Następny etap
 
-Stage 21 — Ability Presentation Blueprint Integration: przygotować właściwy WBP_AbilityHUD, kontrolki slotów, radialny cooldown, loading placeholderów i event-driven audio feedback.
+Stage 21 — Ability Presentation Blueprint Integration: utworzyć WBP_AbilityHUD i WBP_AbilitySlot na natywnych klasach, dodać asynchroniczne ładowanie ikon/materiałów, fallback cooldownu i feedback per slot. Zobacz Docs/STAGE_21_ABILITY_PRESENTATION_BLUEPRINT_INTEGRATION.md.
