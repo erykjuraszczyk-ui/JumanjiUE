@@ -17,6 +17,7 @@
 #include "JumanjiTraversalLink.h"
 #include "JumanjiTraversalPromptWidget.h"
 #include "JumanjiTraversalComponent.h"
+#include "JumanjiWorldEncounterDirector.h"
 
 AJumanjiPlayerController::AJumanjiPlayerController()
 {
@@ -527,6 +528,56 @@ bool AJumanjiPlayerController::ProcessTraversalLinkOnServer(AJumanjiTraversalLin
     UJumanjiTraversalComponent* Traversal = Character ? Character->GetTraversalComponent() : nullptr;
     return Traversal && Traversal->TryStartTraversal(TraversalLink);
 }
+
+bool AJumanjiPlayerController::RequestStartWorldEncounter(
+    AJumanjiWorldEncounterDirector* EncounterDirector)
+{
+    if (!IsValid(EncounterDirector) || EncounterDirector->GetWorld() != GetWorld())
+    {
+        return false;
+    }
+
+    if (HasAuthority())
+    {
+        return ProcessStartWorldEncounterOnServer(EncounterDirector);
+    }
+
+    ServerRequestStartWorldEncounter(EncounterDirector);
+    return true; // Queued only; read replicated GameState encounter state for acceptance.
+}
+
+void AJumanjiPlayerController::ServerRequestStartWorldEncounter_Implementation(
+    AJumanjiWorldEncounterDirector* EncounterDirector)
+{
+    ProcessStartWorldEncounterOnServer(EncounterDirector);
+}
+
+bool AJumanjiPlayerController::ProcessStartWorldEncounterOnServer(
+    AJumanjiWorldEncounterDirector* EncounterDirector)
+{
+    APawn* ControlledPawn = GetPawn();
+    AJumanjiPlayerState* JumanjiPlayerState = GetPlayerState<AJumanjiPlayerState>();
+
+    if (!HasAuthority()
+        || !IsValid(EncounterDirector)
+        || EncounterDirector->GetWorld() != GetWorld()
+        || !ControlledPawn
+        || !JumanjiPlayerState
+        || !FMath::IsFinite(MaxWorldEncounterStartDistance)
+        || MaxWorldEncounterStartDistance < 100.0f
+        || MaxWorldEncounterStartDistance > 1000.0f
+        || FVector::DistSquared(
+            ControlledPawn->GetActorLocation(),
+            EncounterDirector->GetActorLocation())
+            > FMath::Square(MaxWorldEncounterStartDistance))
+    {
+        return false;
+    }
+
+    return EncounterDirector->StartEncounter(JumanjiPlayerState);
+}
+
+
 
 void AJumanjiPlayerController::ApplyCharacterSelectionOnServer(FName CharacterId)
 {

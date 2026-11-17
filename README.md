@@ -29,6 +29,7 @@ Open-world third-person adventure RPG prototype with a shared-world direction an
 - Stage 24 — Traversal Animation & Interaction Presentation: validated traversal presentation DataTable, local mobile prompt widget, replicated completion/interruption feedback and optional server-sampled Zipline spline paths.
 - Stage 25 — Traversal World Integration & Multiplayer Validation: local overlap-driven link focus, nearest-candidate prompt selection, server-driven replicated lift platforms with shared passenger attachment, 12-link/2-platform world placement manifests and automated source validation.
 - Stage 26 — World Traversal QA, Lift Recovery & Traversal Rewards: replicated self-contained Zipline paths for World Partition unload resilience, collision-safe blocked-lift recovery, idempotent first-completion rewards for all 12 traversal links and reward-manifest CI validation.
+- Stage 27 — Emerald Jungle World Encounter Integration: server-authoritative progression gate, nine-trial chapter orchestration, configurable enemy waves, boss encounter, replicated phase state and idempotent per-profile completion rewards.
 
 ## The nine playable Great Spirits
 1. Great Spirit I — Duch Korzeni (Root / Guardian)
@@ -87,6 +88,7 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - Docs/STAGE_24_TRAVERSAL_ANIMATION_INTERACTION_PRESENTATION.md — traversal presentation manifest, async montage/audio/VFX workflow, contextual mobile prompt, zipline spline setup and acceptance tests.
 - Docs/STAGE_25_TRAVERSAL_WORLD_INTEGRATION_MULTIPLAYER.md — overlap focus registry, replicated lift platform, 12-link world manifest, editor placement, multiplayer and Android acceptance tests.
 - Docs/STAGE_26_TRAVERSAL_QA_LIFT_RECOVERY_REWARDS.md — World Partition unload/load resilience, blocked-lift recovery, one-time traversal rewards, source-data validator and QA matrices.
+- Docs/STAGE_27_EMERALD_JUNGLE_WORLD_ENCOUNTER_INTEGRATION.md — exploration/traversal prerequisites, nine-trial chapter, configurable enemy waves, boss lifecycle, replicated encounter state, one-time reward and Unreal Editor authoring/QA workflow.
 - Content/Traversal/README.md — traversal DataTable, prompt widget, montage and spline authoring guide.
 - Data/Traversal/TraversalPresentationManifest.csv — four stable starter presentation records.
 - Data/Traversal/EmeraldJungle_TraversalPlacement.csv — 12 starter contextual traversal links.
@@ -157,7 +159,12 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - Optional server-sampled Zipline spline path with collision sweep and bidirectional direction handling;
 - 17-point FVector_NetQuantize10 Zipline path snapshot in the replicated traversal state so a ride can finish when its World Partition link actor unloads;
 - one-time server-side exploration reward per stable TraversalId through UJumanjiProgressionRewardSubsystem and the existing PlayerState transaction ledger;
-- 12 traversal reward definitions with optional DT_TraversalRewards override, source CSV, Python validator, unit tests and GitHub Actions quality gate.
+- 12 traversal reward definitions with optional DT_TraversalRewards override, source CSV, Python validator, unit tests and GitHub Actions quality gate;
+- AJumanjiWorldEncounterDirector with server-side Frost Gate exploration/traversal receipt checks, existing nine-trial chapter integration, configurable bounded enemy waves and an AJumanjiBossCharacter finale;
+- replicated FJumanjiWorldEncounterState with Trials/Combat/Boss/Reward/Completed/Failed phases and server-authoritative GameState lifecycle;
+- PlayerController server RPC for starting encounters with a server-checked interaction distance;
+- AJumanjiEnemyCharacter::OnEnemyDefeated event for server-side wave advancement and boss defeat sequencing;
+- idempotent per-profile encounter completion reward through the existing progression transaction ledger, with optional DT_WorldEncounterRewards and source CSV validator/CI.
 - CSV validator, unit tests and GitHub Actions quality gate for traversal presentation data.
 - UJumanjiPlayerProfileSubsystem with versioned asynchronous SaveGame profile slots for the current single-server prototype.
 - profile restore on PostLogin using server-bound platform identity where available.
@@ -199,7 +206,7 @@ This is a source-code foundation, not a finished game or installable Android bui
 - final Ability Blueprint HUDAbilityId assignments and binary ability icons/material/audio assets;
 - 45 character-specific ability Blueprint assets and configured Gameplay Effects;
 - configured enemy/boss meshes, animations and initialization effects;
-- final boss attack patterns and encounter reward service;
+- final boss attack patterns, authored world encounter actor/map configuration, enemy wave spawn point placements and final Encounter HUD/telegraph presentation;
 - Blueprint children, visuals and playable implementations for all nine Great Spirit trials;
 - the Root Rune trial Blueprint, rune meshes, UI widget, map and presentation assets;
 - trial-specific reward rows and automatic reward orchestration for all nine trial actors;
@@ -208,6 +215,7 @@ This is a source-code foundation, not a finished game or installable Android bui
 - authored NavMesh data, world-space DataTable anchors, placed traversal link actors and Blueprint children;
 - imported DT_TraversalPresentation and DT_TraversalRewards DataTables, WBP_TraversalPrompt, authored animation montages, traversal icons/sounds/Niagara effects and spline mesh cable visuals;
 - server-side operator/admin UI that invokes TryRecoverBlockedPlatform after manual obstruction checks;
+- authored BP_EmeraldJungleWorldEncounter, enemy Blueprint classes, boss Blueprint, persistent-level spawn markers, nine-trial chapter director instance and DT_WorldEncounterRewards .uasset;
 - placed traversal link actors and lift platforms in the saved Emerald Jungle .umap, with final landscape/NavMesh anchor alignment;
 - asynchronous asset preloading and device profiling;
 - production account authentication, secure economy backend and cross-shard transaction processing;

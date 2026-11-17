@@ -4,6 +4,7 @@
 #include "GameFramework/GameStateBase.h"
 #include "JumanjiAdventureObjective.h"
 #include "JumanjiAdventureChapter.h"
+#include "JumanjiWorldEncounter.h"
 #include "JumanjiGameState.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(
@@ -21,6 +22,11 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(
     FJumanjiAdventureChapterChanged,
     const FJumanjiAdventureChapterState&, ChapterState
+);
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(
+    FJumanjiWorldEncounterChanged,
+    const FJumanjiWorldEncounterState&, EncounterState
 );
 
 /** Replicated public session state. The server owns board events and adventure objectives. */
@@ -49,6 +55,26 @@ public:
 
     UFUNCTION(BlueprintCallable, Category = "JUMANJI|Adventure")
     bool CompleteAdventureChapter(FName ChapterId);
+
+    UFUNCTION(BlueprintCallable, Category = "JUMANJI|Encounter")
+    bool BeginWorldEncounter(FName EncounterId, int32 TotalWaves);
+
+    UFUNCTION(BlueprintCallable, Category = "JUMANJI|Encounter")
+    bool UpdateWorldEncounter(
+        FName EncounterId,
+        EJumanjiWorldEncounterPhase Phase,
+        int32 CurrentWave,
+        int32 TotalWaves,
+        int32 ActiveEnemyCount);
+
+    UFUNCTION(BlueprintCallable, Category = "JUMANJI|Encounter")
+    bool CompleteWorldEncounter(FName EncounterId);
+
+    UFUNCTION(BlueprintCallable, Category = "JUMANJI|Encounter")
+    bool FailWorldEncounter(FName EncounterId);
+
+    UFUNCTION(BlueprintPure, Category = "JUMANJI|Encounter")
+    FJumanjiWorldEncounterState GetWorldEncounterState() const { return WorldEncounterState; }
 
     UFUNCTION(BlueprintPure, Category = "JUMANJI|Adventure")
     FJumanjiAdventureChapterState GetAdventureChapterState() const
@@ -83,6 +109,9 @@ public:
     UPROPERTY(BlueprintAssignable, Category = "JUMANJI|Adventure")
     FJumanjiAdventureChapterChanged OnAdventureChapterChanged;
 
+    UPROPERTY(BlueprintAssignable, Category = "JUMANJI|Encounter")
+    FJumanjiWorldEncounterChanged OnWorldEncounterChanged;
+
 protected:
     UPROPERTY(ReplicatedUsing = OnRep_BoardEventState, BlueprintReadOnly, Category = "JUMANJI|Board")
     FName ActiveBoardEventId = NAME_None;
@@ -101,6 +130,9 @@ protected:
     UPROPERTY(ReplicatedUsing = OnRep_AdventureObjectiveSet, BlueprintReadOnly, Category = "JUMANJI|Adventure")
     FJumanjiAdventureObjectiveSet AdventureObjectiveSet;
 
+    UPROPERTY(ReplicatedUsing = OnRep_WorldEncounterState, BlueprintReadOnly, Category = "JUMANJI|Encounter")
+    FJumanjiWorldEncounterState WorldEncounterState;
+
     UFUNCTION()
     void OnRep_BoardEventState();
 
@@ -109,6 +141,9 @@ protected:
 
     UFUNCTION()
     void OnRep_AdventureChapterState();
+
+    UFUNCTION()
+    void OnRep_WorldEncounterState();
 
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };

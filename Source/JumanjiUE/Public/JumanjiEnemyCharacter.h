@@ -10,7 +10,13 @@ class UJumanjiAbilitySystemComponent;
 class UJumanjiAttributeSet;
 class UGameplayEffect;
 class UGameplayAbility;
+class AJumanjiEnemyCharacter;
 struct FOnAttributeChangeData;
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(
+    FJumanjiEnemyDefeated,
+    AJumanjiEnemyCharacter*, Enemy
+);
 
 /** Common GAS-enabled enemy base for PvE encounters. */
 UCLASS(Blueprintable)
@@ -43,6 +49,10 @@ public:
 
     UFUNCTION(BlueprintPure, Category = "JUMANJI|Enemy")
     FGameplayTag GetEnemyAttackInputTag() const;
+
+    /** Broadcast once on the server after the authoritative defeat state is set. */
+    UPROPERTY(BlueprintAssignable, Category = "JUMANJI|Enemy")
+    FJumanjiEnemyDefeated OnEnemyDefeated;
 
 protected:
     virtual void BeginPlay() override;

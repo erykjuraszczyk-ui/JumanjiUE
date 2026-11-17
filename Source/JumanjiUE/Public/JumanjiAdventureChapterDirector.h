@@ -26,6 +26,9 @@ public:
     UFUNCTION(BlueprintPure, Category = "JUMANJI|Adventure")
     bool IsChapterComplete() const;
 
+    UFUNCTION(BlueprintPure, Category = "JUMANJI|Adventure")
+    FName GetChapterId() const { return ChapterId; }
+
 protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "JUMANJI|Adventure")
     FName ChapterId = TEXT("EMERALD_JUNGLE_NINE_SEALS");

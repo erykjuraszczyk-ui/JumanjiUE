@@ -126,6 +126,7 @@ void AJumanjiEnemyCharacter::HandleDefeated()
 
     GetCharacterMovement()->DisableMovement();
     GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+    OnEnemyDefeated.Broadcast(this);
     BP_OnDefeated();
 
     ForceNetUpdate();

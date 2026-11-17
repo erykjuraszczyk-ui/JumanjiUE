@@ -1,0 +1,30 @@
+name: Emerald Jungle World Encounter Validation
+
+on:
+  pull_request:
+    paths:
+      - "Data/Progression/WorldEncounterRewards.csv"
+      - "Scripts/validate_emerald_jungle_encounter_rewards.py"
+      - "Scripts/Tests/test_validate_emerald_jungle_encounter_rewards.py"
+      - ".github/workflows/emerald-jungle-world-encounter-validation.yml"
+  push:
+    branches: [main]
+    paths:
+      - "Data/Progression/WorldEncounterRewards.csv"
+      - "Scripts/validate_emerald_jungle_encounter_rewards.py"
+      - "Scripts/Tests/test_validate_emerald_jungle_encounter_rewards.py"
+      - ".github/workflows/emerald-jungle-world-encounter-validation.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate-world-encounter-rewards:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Validate encounter reward manifest
+        run: python Scripts/validate_emerald_jungle_encounter_rewards.py
+      - name: Run encounter reward tests
+        run: python -m unittest discover -s Scripts/Tests -p "test_validate_emerald_jungle_encounter_rewards.py" -v

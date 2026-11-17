@@ -116,6 +116,116 @@ bool AJumanjiGameState::CompleteAdventureChapter(FName ChapterId)
     return true;
 }
 
+bool AJumanjiGameState::BeginWorldEncounter(FName EncounterId, int32 TotalWaves)
+{
+    if (!HasAuthority()
+        || EncounterId.IsNone()
+        || EncounterId.ToString().Len() > 64
+        || TotalWaves < 1
+        || TotalWaves > 16
+        || WorldEncounterState.Phase != EJumanjiWorldEncounterPhase::Inactive)
+    {
+        return false;
+    }
+
+    FJumanjiWorldEncounterState NewState;
+    NewState.EncounterId = EncounterId;
+    NewState.Phase = EJumanjiWorldEncounterPhase::Trials;
+    NewState.TotalWaves = TotalWaves;
+    NewState.Revision = WorldEncounterState.Revision < MAX_int32
+        ? WorldEncounterState.Revision + 1
+        : 1;
+    WorldEncounterState = MoveTemp(NewState);
+
+    OnWorldEncounterChanged.Broadcast(WorldEncounterState);
+    ForceNetUpdate();
+    return true;
+}
+
+bool AJumanjiGameState::UpdateWorldEncounter(
+    FName EncounterId,
+    EJumanjiWorldEncounterPhase Phase,
+    int32 CurrentWave,
+    int32 TotalWaves,
+    int32 ActiveEnemyCount)
+{
+    if (!HasAuthority()
+        || EncounterId.IsNone()
+        || EncounterId != WorldEncounterState.EncounterId
+        || WorldEncounterState.Phase == EJumanjiWorldEncounterPhase::Inactive
+        || WorldEncounterState.Phase == EJumanjiWorldEncounterPhase::Completed
+        || WorldEncounterState.Phase == EJumanjiWorldEncounterPhase::Failed
+        || Phase == EJumanjiWorldEncounterPhase::Inactive
+        || Phase == EJumanjiWorldEncounterPhase::Completed
+        || Phase == EJumanjiWorldEncounterPhase::Failed
+        || CurrentWave < 0
+        || TotalWaves != WorldEncounterState.TotalWaves
+        || CurrentWave > TotalWaves
+        || ActiveEnemyCount < 0
+        || ActiveEnemyCount > 64)
+    {
+        return false;
+    }
+
+    WorldEncounterState.Phase = Phase;
+    WorldEncounterState.CurrentWave = CurrentWave;
+    WorldEncounterState.ActiveEnemyCount = ActiveEnemyCount;
+    WorldEncounterState.Revision = WorldEncounterState.Revision < MAX_int32
+        ? WorldEncounterState.Revision + 1
+        : 1;
+
+    OnWorldEncounterChanged.Broadcast(WorldEncounterState);
+    ForceNetUpdate();
+    return true;
+}
+
+bool AJumanjiGameState::CompleteWorldEncounter(FName EncounterId)
+{
+    if (!HasAuthority()
+        || EncounterId.IsNone()
+        || EncounterId != WorldEncounterState.EncounterId
+        || WorldEncounterState.Phase != EJumanjiWorldEncounterPhase::Reward
+        || WorldEncounterState.ActiveEnemyCount != 0)
+    {
+        return false;
+    }
+
+    WorldEncounterState.Phase = EJumanjiWorldEncounterPhase::Completed;
+    WorldEncounterState.CurrentWave = 0;
+    WorldEncounterState.ActiveEnemyCount = 0;
+    WorldEncounterState.Revision = WorldEncounterState.Revision < MAX_int32
+        ? WorldEncounterState.Revision + 1
+        : 1;
+
+    OnWorldEncounterChanged.Broadcast(WorldEncounterState);
+    ForceNetUpdate();
+    return true;
+}
+
+bool AJumanjiGameState::FailWorldEncounter(FName EncounterId)
+{
+    if (!HasAuthority()
+        || EncounterId.IsNone()
+        || EncounterId != WorldEncounterState.EncounterId
+        || WorldEncounterState.Phase == EJumanjiWorldEncounterPhase::Inactive
+        || WorldEncounterState.Phase == EJumanjiWorldEncounterPhase::Completed
+        || WorldEncounterState.Phase == EJumanjiWorldEncounterPhase::Failed)
+    {
+        return false;
+    }
+
+    WorldEncounterState.Phase = EJumanjiWorldEncounterPhase::Failed;
+    WorldEncounterState.CurrentWave = 0;
+    WorldEncounterState.ActiveEnemyCount = 0;
+    WorldEncounterState.Revision = WorldEncounterState.Revision < MAX_int32
+        ? WorldEncounterState.Revision + 1
+        : 1;
+
+    OnWorldEncounterChanged.Broadcast(WorldEncounterState);
+    ForceNetUpdate();
+    return true;
+}
+
 bool AJumanjiGameState::InitializeAdventureObjectives(
     const TArray<FJumanjiAdventureObjectiveState>& Objectives)
 {
@@ -235,6 +345,11 @@ void AJumanjiGameState::OnRep_AdventureChapterState()
     OnAdventureChapterChanged.Broadcast(AdventureChapterState);
 }
 
+void AJumanjiGameState::OnRep_WorldEncounterState()
+{
+    OnWorldEncounterChanged.Broadcast(WorldEncounterState);
+}
+
 void AJumanjiGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
@@ -244,4 +359,5 @@ void AJumanjiGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
     DOREPLIFETIME(AJumanjiGameState, BoardEventRevision);
     DOREPLIFETIME(AJumanjiGameState, AdventureChapterState);
     DOREPLIFETIME(AJumanjiGameState, AdventureObjectiveSet);
+    DOREPLIFETIME(AJumanjiGameState, WorldEncounterState);
 }

@@ -1,0 +1,2 @@
+EncounterId,RequiredChapterId,AccountExperienceReward,ActiveCharacterExperienceReward,CurrencyId,CurrencyAmount,ItemId,ItemAmount,Notes
+ENCOUNTER_EMERALD_JUNGLE_CITADEL,EMERALD_JUNGLE_NINE_SEALS,500,300,CURRENCY_EXPLORER_COINS,350,MAT_SPIRIT_MEMORY,2,First successful completion reward per profile
