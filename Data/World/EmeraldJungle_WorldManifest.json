@@ -1,0 +1,47 @@
+{
+  "schema": "JUMANJI.EmeraldJungleGreybox.v1",
+  "status": "AUTHORING_PLACEHOLDERS_NOT_SURVEYED_WORLD_DATA",
+  "units": "Unreal centimeters",
+  "coordinateConvention": {
+    "origin": "Map center (0,0,0)",
+    "horizontalExtentCm": {
+      "x": 400000,
+      "y": 400000
+    },
+    "normalizedMapCoordinate": "X=(WorldX/400000)+0.5; Y=(WorldY/400000)+0.5",
+    "notes": "Use the values as an initial blockout only. Reposition after the landscape, paths, vertical traversal and navmesh have been authored."
+  },
+  "worldPartition": {
+    "mapAsset": "/Game/Maps/L_EmeraldJungle_World",
+    "template": "Open World",
+    "oneFilePerActor": true,
+    "editorDataLayers": [
+      "DL_EJ_Core",
+      "DL_EJ_HeartGrove",
+      "DL_EJ_RootGrove",
+      "DL_EJ_TideFalls",
+      "DL_EJ_StoneSanctum",
+      "DL_EJ_StormPeak",
+      "DL_EJ_EmberCavern",
+      "DL_EJ_DawnMirrors",
+      "DL_EJ_ShadowMarsh",
+      "DL_EJ_LifeGarden",
+      "DL_EJ_FrostGate"
+    ],
+    "runtimeDataLayers": [],
+    "recommendation": "Editor Data Layers organize authoring. Do not use Runtime Data Layers for static decorative regions."
+  },
+  "coordinateReference": "See CSV files in this directory for the 10 region anchors, 10 landmarks, 10 discovery volumes and nine trial actors.",
+  "actorPlacementCsv": "EmeraldJungle_GreyboxPlacement.csv",
+  "recommendedPlayableStart": {
+    "x": 0,
+    "y": 0,
+    "z": 400
+  },
+  "regionBoundaryDefaultHalfExtentCm": {
+    "x": 30000,
+    "y": 30000,
+    "z": 14000
+  },
+  "interactionNote": "Do not treat greybox coordinates as final navmesh-safe points. Project anchors to navigation after landscape and NavMeshBoundsVolume are authored."
+}
