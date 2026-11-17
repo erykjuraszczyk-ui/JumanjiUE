@@ -77,6 +77,13 @@ public:
     UFUNCTION(BlueprintCallable, Category = "JUMANJI|Encounter")
     bool FailWorldEncounter(FName EncounterId);
 
+    /** Internal server reset used only to prepare a failed encounter for a fresh attempt. */
+    bool ResetAdventureChapterForEncounterRetry(
+        FName EncounterId,
+        FName ChapterId,
+        FName BoardEventId
+    );
+
     UFUNCTION(BlueprintPure, Category = "JUMANJI|Encounter")
     FJumanjiWorldEncounterState GetWorldEncounterState() const { return WorldEncounterState; }
 
