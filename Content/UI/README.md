@@ -55,3 +55,16 @@ Stage 19 defines the presentation asset contract for all 45 Great Spirit ability
 - `Content/UI/AbilityPresentation/README.md` for the import and assignment workflow.
 
 The CSV is a production manifest, not a claim that the referenced PNG/.uasset/Sound Wave/Niagara assets already exist. Create/import those binary assets in Unreal Editor. Stage 18 remains the source of live cooldown/resource state; UI must never mutate GAS attributes or apply effects.
+
+
+## Stage 20 — Ability Presentation Runtime
+
+After compiling the project:
+
+- Import `Content/UI/AbilityPresentation/AbilityPresentationDataTable.csv` as DataTable `DT_AbilityPresentation` with row type `FJumanjiAbilityPresentationRow`.
+- Configure `ConfiguredPresentationDataTable` on `UJumanjiAbilityPresentationSubsystem` in `DefaultGame.ini`.
+- Set `HUDAbilityId` on each `GA_GS_[ROMAN]_[SLOT]` Blueprint class to the matching stable catalog ID.
+- Read the added soft icon, palette, cooldown material, sound and Gameplay Cue metadata from `FJumanjiAbilityHUDSlotState`.
+- Keep cooldown and cost presentation bound to the live GAS state from Stage 18. The manifest cooldown is reference-only.
+
+See `Docs/STAGE_20_ABILITY_PRESENTATION_RUNTIME.md` and `Content/UI/AbilityPresentation/README.md` for the complete workflow.
