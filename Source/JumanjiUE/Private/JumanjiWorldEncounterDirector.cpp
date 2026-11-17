@@ -27,6 +27,7 @@ bool AJumanjiWorldEncounterDirector::ValidateConfiguration() const
         || RequiredChapterId.IsNone()
         || !IsValid(AdventureChapterDirector)
         || AdventureChapterDirector->GetWorld() != GetWorld()
+        || AdventureChapterDirector->GetChapterId() != RequiredChapterId
         || Waves.IsEmpty()
         || Waves.Num() > 16
         || !BossClass
@@ -339,12 +340,19 @@ void AJumanjiWorldEncounterDirector::PublishEncounterState(
     {
         if (AJumanjiGameState* GameState = World->GetGameState<AJumanjiGameState>())
         {
-            GameState->UpdateWorldEncounter(
-                EncounterId,
-                Phase,
-                FMath::Max(0, WaveIndex),
-                Waves.Num(),
-                FMath::Max(0, ActiveEnemyCount));
+            if (Phase == EJumanjiWorldEncounterPhase::Failed)
+            {
+                GameState->FailWorldEncounter(EncounterId);
+            }
+            else
+            {
+                GameState->UpdateWorldEncounter(
+                    EncounterId,
+                    Phase,
+                    FMath::Max(0, WaveIndex),
+                    Waves.Num(),
+                    FMath::Max(0, ActiveEnemyCount));
+            }
         }
     }
 
@@ -420,7 +428,16 @@ void AJumanjiWorldEncounterDirector::FailEncounter(FName ReasonId)
 
     bEncounterActive = false;
 
-    PublishEncounterState(EJumanjiWorldEncounterPhase::Failed, 0, ActiveEnemies.Num());
+    if (bDestroyEncounterEnemiesOnFailure)
+    {
+        DestroyActiveEnemies();
+    }
+    else
+    {
+        UnbindActiveEnemies();
+    }
+
+    PublishEncounterState(EJumanjiWorldEncounterPhase::Failed, 0, 0);
 
     if (bListeningForChapterChanges)
     {
@@ -434,15 +451,6 @@ void AJumanjiWorldEncounterDirector::FailEncounter(FName ReasonId)
             }
         }
         bListeningForChapterChanges = false;
-    }
-
-    if (bDestroyEncounterEnemiesOnFailure)
-    {
-        DestroyActiveEnemies();
-    }
-    else
-    {
-        UnbindActiveEnemies();
     }
 
     BP_OnEncounterFailed(ReasonId);
