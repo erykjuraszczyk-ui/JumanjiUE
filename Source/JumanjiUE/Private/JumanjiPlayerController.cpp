@@ -70,6 +70,9 @@ void AJumanjiPlayerController::BeginPlay()
             ActiveTraversalPromptWidget->AddToViewport(70);
         }
     }
+
+    // Some overlap BeginPlay events may run before the prompt widget exists.
+    RefreshTraversalCandidateFocus();
 }
 
 bool AJumanjiPlayerController::OpenWorldAtlas()
