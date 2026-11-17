@@ -8,6 +8,7 @@ class APawn;
 class USceneComponent;
 class USplineComponent;
 class USphereComponent;
+class UPrimitiveComponent;
 class USceneComponent;
 class UAnimMontage;
 class AJumanjiLiftPlatform;
@@ -33,6 +34,7 @@ public:
 
     virtual void OnConstruction(const FTransform& Transform) override;
     virtual void BeginPlay() override;
+    virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
     UFUNCTION(BlueprintPure, Category = "JUMANJI|Traversal")
