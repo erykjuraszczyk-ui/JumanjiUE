@@ -112,9 +112,11 @@ protected:
 private:
     bool ValidateConfiguration() const;
     bool ValidatePlayerPrerequisites(const AJumanjiPlayerState* PlayerState) const;
+    UFUNCTION()
     void HandleAdventureChapterChanged(const FJumanjiAdventureChapterState& ChapterState);
     void SpawnWave(int32 WaveIndex);
     void SpawnBoss();
+    UFUNCTION()
     void HandleEnemyDefeated(AJumanjiEnemyCharacter* Enemy);
     void PublishEncounterState(EJumanjiWorldEncounterPhase Phase, int32 WaveIndex, int32 ActiveEnemyCount);
     void CompleteEncounter();
