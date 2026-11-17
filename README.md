@@ -28,6 +28,7 @@ Open-world third-person adventure RPG prototype with a shared-world direction an
 - Stage 23 — Emerald Jungle Traversal Interactions & Off-Mesh Links: Smart Link traversal actors, four contextual movement types, server-authoritative traversal component and client request validation.
 - Stage 24 — Traversal Animation & Interaction Presentation: validated traversal presentation DataTable, local mobile prompt widget, replicated completion/interruption feedback and optional server-sampled Zipline spline paths.
 - Stage 25 — Traversal World Integration & Multiplayer Validation: local overlap-driven link focus, nearest-candidate prompt selection, server-driven replicated lift platforms with shared passenger attachment, 12-link/2-platform world placement manifests and automated source validation.
+- Stage 26 — World Traversal QA, Lift Recovery & Traversal Rewards: replicated self-contained Zipline paths for World Partition unload resilience, collision-safe blocked-lift recovery, idempotent first-completion rewards for all 12 traversal links and reward-manifest CI validation.
 
 ## The nine playable Great Spirits
 1. Great Spirit I — Duch Korzeni (Root / Guardian)
@@ -85,11 +86,13 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - Docs/STAGE_23_EMERALD_JUNGLE_TRAVERSAL_INTERACTIONS.md — Smart Link setup, contextual traversal types, server validation and acceptance checklist.
 - Docs/STAGE_24_TRAVERSAL_ANIMATION_INTERACTION_PRESENTATION.md — traversal presentation manifest, async montage/audio/VFX workflow, contextual mobile prompt, zipline spline setup and acceptance tests.
 - Docs/STAGE_25_TRAVERSAL_WORLD_INTEGRATION_MULTIPLAYER.md — overlap focus registry, replicated lift platform, 12-link world manifest, editor placement, multiplayer and Android acceptance tests.
+- Docs/STAGE_26_TRAVERSAL_QA_LIFT_RECOVERY_REWARDS.md — World Partition unload/load resilience, blocked-lift recovery, one-time traversal rewards, source-data validator and QA matrices.
 - Content/Traversal/README.md — traversal DataTable, prompt widget, montage and spline authoring guide.
 - Data/Traversal/TraversalPresentationManifest.csv — four stable starter presentation records.
 - Data/Traversal/EmeraldJungle_TraversalPlacement.csv — 12 starter contextual traversal links.
 - Data/Traversal/EmeraldJungle_LiftPlatformManifest.csv — two starter replicated lift platforms.
 - Data/Traversal/EmeraldJungle_TraversalManifest.json — link counts, lift settings and World Partition authoring rules.
+- Data/Traversal/EmeraldJungle_TraversalRewards.csv — one-time reward for each of the 12 traversal links.
 - Content/World/README.md — world atlas, navigation and profile-persistence setup.
 - Content/Adventure/Trials/README.md — Blueprint trial and UMG authoring guide.
 - Content/UI/README.md — Widget Blueprint asset setup.
@@ -148,9 +151,13 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - PlayerController creation and focus/clear API for the local traversal prompt;
 - overlap-volume candidate registry on AJumanjiTraversalLink with nearest valid link selection in AJumanjiPlayerController;
 - AJumanjiLiftPlatform with server-authoritative swept movement, replicated transform/state, passenger limit and shared rider attachment;
+- server-only TryRecoverBlockedPlatform with no-passenger gating and collision checks at both authored stops before moving a blocked lift to the nearest safe stop;
 - Lift traversal integration through UJumanjiTraversalComponent, with riders restored after the platform completes or is blocked;
 - source manifests for 12 Emerald Jungle traversal links and two lift platforms, plus Python validator, unit tests and GitHub Actions workflow.
-- Optional server-sampled Zipline spline path with collision sweep and bidirectional direction handling.
+- Optional server-sampled Zipline spline path with collision sweep and bidirectional direction handling;
+- 17-point FVector_NetQuantize10 Zipline path snapshot in the replicated traversal state so a ride can finish when its World Partition link actor unloads;
+- one-time server-side exploration reward per stable TraversalId through UJumanjiProgressionRewardSubsystem and the existing PlayerState transaction ledger;
+- 12 traversal reward definitions with optional DT_TraversalRewards override, source CSV, Python validator, unit tests and GitHub Actions quality gate.
 - CSV validator, unit tests and GitHub Actions quality gate for traversal presentation data.
 - UJumanjiPlayerProfileSubsystem with versioned asynchronous SaveGame profile slots for the current single-server prototype.
 - profile restore on PostLogin using server-bound platform identity where available.
@@ -199,7 +206,8 @@ This is a source-code foundation, not a finished game or installable Android bui
 - persistent in-progress objective state;
 - a production profile backend, account authentication, cross-shard synchronization and profile conflict handling;
 - authored NavMesh data, world-space DataTable anchors, placed traversal link actors and Blueprint children;
-- imported DT_TraversalPresentation DataTable, WBP_TraversalPrompt, authored animation montages, traversal icons/sounds/Niagara effects and spline mesh cable visuals;
+- imported DT_TraversalPresentation and DT_TraversalRewards DataTables, WBP_TraversalPrompt, authored animation montages, traversal icons/sounds/Niagara effects and spline mesh cable visuals;
+- server-side operator/admin UI that invokes TryRecoverBlockedPlatform after manual obstruction checks;
 - placed traversal link actors and lift platforms in the saved Emerald Jungle .umap, with final landscape/NavMesh anchor alignment;
 - asynchronous asset preloading and device profiling;
 - production account authentication, secure economy backend and cross-shard transaction processing;
