@@ -1,5 +1,7 @@
 #include "JumanjiGameState.h"
 
+#include "JumanjiBossCharacter.h"
+
 #include "JumanjiPlayerState.h"
 #include "JumanjiProgressionRewardSubsystem.h"
 #include "Engine/GameInstance.h"
@@ -170,6 +172,38 @@ bool AJumanjiGameState::UpdateWorldEncounter(
     WorldEncounterState.Phase = Phase;
     WorldEncounterState.CurrentWave = CurrentWave;
     WorldEncounterState.ActiveEnemyCount = ActiveEnemyCount;
+    WorldEncounterState.Revision = WorldEncounterState.Revision < MAX_int32
+        ? WorldEncounterState.Revision + 1
+        : 1;
+
+    OnWorldEncounterChanged.Broadcast(WorldEncounterState);
+    ForceNetUpdate();
+    return true;
+}
+
+bool AJumanjiGameState::SetWorldEncounterBoss(
+    FName EncounterId,
+    AJumanjiBossCharacter* BossActor)
+{
+    if (!HasAuthority()
+        || EncounterId.IsNone()
+        || EncounterId != WorldEncounterState.EncounterId
+        || WorldEncounterState.Phase == EJumanjiWorldEncounterPhase::Inactive
+        || WorldEncounterState.Phase == EJumanjiWorldEncounterPhase::Completed
+        || WorldEncounterState.Phase == EJumanjiWorldEncounterPhase::Failed
+        || (IsValid(BossActor)
+            && (BossActor->GetWorld() != GetWorld()
+                || WorldEncounterState.Phase != EJumanjiWorldEncounterPhase::Boss)))
+    {
+        return false;
+    }
+
+    if (WorldEncounterState.BossActor == BossActor)
+    {
+        return true;
+    }
+
+    WorldEncounterState.BossActor = BossActor;
     WorldEncounterState.Revision = WorldEncounterState.Revision < MAX_int32
         ? WorldEncounterState.Revision + 1
         : 1;
