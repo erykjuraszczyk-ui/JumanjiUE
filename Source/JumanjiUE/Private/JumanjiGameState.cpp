@@ -158,6 +158,7 @@ bool AJumanjiGameState::UpdateWorldEncounter(
         || WorldEncounterState.Phase == EJumanjiWorldEncounterPhase::Failed
         || Phase == EJumanjiWorldEncounterPhase::Inactive
         || Phase == EJumanjiWorldEncounterPhase::Completed
+        || Phase == EJumanjiWorldEncounterPhase::Failed
         || CurrentWave < 0
         || TotalWaves != WorldEncounterState.TotalWaves
         || CurrentWave > TotalWaves
