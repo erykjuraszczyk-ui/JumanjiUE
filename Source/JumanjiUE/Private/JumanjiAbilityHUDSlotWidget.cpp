@@ -29,7 +29,11 @@ void UJumanjiAbilityHUDSlotWidget::NativeConstruct()
 
     if (bHasReceivedState)
     {
-        SetSlotState(CurrentState);
+        // NativeConstruct may run after the parent has already pushed the
+        // first snapshot. Rebind streamed assets explicitly on every rebuild.
+        UpdateTextAndState();
+        LoadIconAsync();
+        LoadCooldownMaterialAsync();
     }
 }
 
