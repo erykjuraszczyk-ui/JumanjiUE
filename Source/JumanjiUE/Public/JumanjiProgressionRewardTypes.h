@@ -29,6 +29,29 @@ struct JUMANJIUE_API FJumanjiChapterRewardDefinition : public FTableRowBase
     TArray<FJumanjiItemDelta> ItemRewards;
 };
 
+
+/** One-time exploration reward granted on the first successful traversal of a stable link ID. */
+USTRUCT(BlueprintType)
+struct JUMANJIUE_API FJumanjiTraversalRewardDefinition : public FTableRowBase
+{
+    GENERATED_BODY()
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "JUMANJI|TraversalRewards")
+    FName TraversalId = NAME_None;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "JUMANJI|TraversalRewards")
+    FName CurrencyId = FName(TEXT("CURRENCY_EXPLORER_COINS"));
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "JUMANJI|TraversalRewards", meta = (ClampMin = "1"))
+    int64 CurrencyAmount = 0;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "JUMANJI|TraversalRewards")
+    FName ItemId = NAME_None;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "JUMANJI|TraversalRewards", meta = (ClampMin = "0"))
+    int32 ItemAmount = 0;
+};
+
 USTRUCT(BlueprintType)
 struct JUMANJIUE_API FJumanjiCurrencyCost
 {
