@@ -6,6 +6,33 @@
 #include "Materials/MaterialInterface.h"
 #include "Sound/SoundBase.h"
 
+namespace
+{
+    FSoftObjectPath MakePresentationObjectPath(const FString& AssetPath)
+    {
+        if (AssetPath.IsEmpty())
+        {
+            return FSoftObjectPath();
+        }
+
+        FString NormalizedPath = AssetPath;
+        if (!NormalizedPath.Contains(TEXT(".")))
+        {
+            int32 LastSlashIndex = INDEX_NONE;
+            if (NormalizedPath.FindLastChar(TEXT('/'), LastSlashIndex))
+            {
+                const FString AssetName = NormalizedPath.Mid(LastSlashIndex + 1);
+                if (!AssetName.IsEmpty())
+                {
+                    NormalizedPath += TEXT(".") + AssetName;
+                }
+            }
+        }
+
+        return FSoftObjectPath(NormalizedPath);
+    }
+}
+
 void UJumanjiAbilityPresentationSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
     Super::Initialize(Collection);
@@ -144,27 +171,27 @@ FJumanjiAbilityPresentationData UJumanjiAbilityPresentationSubsystem::MakePresen
 
     if (!Row.IconAssetPath.IsEmpty())
     {
-        Result.Icon = TSoftObjectPtr<UTexture2D>(FSoftObjectPath(Row.IconAssetPath));
+        Result.Icon = TSoftObjectPtr<UTexture2D>(MakePresentationObjectPath(Row.IconAssetPath));
     }
     if (!Row.CooldownMaterialPath.IsEmpty())
     {
-        Result.CooldownMaterial = TSoftObjectPtr<UMaterialInterface>(FSoftObjectPath(Row.CooldownMaterialPath));
+        Result.CooldownMaterial = TSoftObjectPtr<UMaterialInterface>(MakePresentationObjectPath(Row.CooldownMaterialPath));
     }
     if (!Row.ActivatedSoundPath.IsEmpty())
     {
-        Result.ActivatedSound = TSoftObjectPtr<USoundBase>(FSoftObjectPath(Row.ActivatedSoundPath));
+        Result.ActivatedSound = TSoftObjectPtr<USoundBase>(MakePresentationObjectPath(Row.ActivatedSoundPath));
     }
     if (!Row.InsufficientResourceSoundPath.IsEmpty())
     {
-        Result.InsufficientResourceSound = TSoftObjectPtr<USoundBase>(FSoftObjectPath(Row.InsufficientResourceSoundPath));
+        Result.InsufficientResourceSound = TSoftObjectPtr<USoundBase>(MakePresentationObjectPath(Row.InsufficientResourceSoundPath));
     }
     if (!Row.CooldownSoundPath.IsEmpty())
     {
-        Result.CooldownSound = TSoftObjectPtr<USoundBase>(FSoftObjectPath(Row.CooldownSoundPath));
+        Result.CooldownSound = TSoftObjectPtr<USoundBase>(MakePresentationObjectPath(Row.CooldownSoundPath));
     }
     if (!Row.UnavailableSoundPath.IsEmpty())
     {
-        Result.UnavailableSound = TSoftObjectPtr<USoundBase>(FSoftObjectPath(Row.UnavailableSoundPath));
+        Result.UnavailableSound = TSoftObjectPtr<USoundBase>(MakePresentationObjectPath(Row.UnavailableSoundPath));
     }
 
     Result.bHasIconAssetPath = !Row.IconAssetPath.IsEmpty();
