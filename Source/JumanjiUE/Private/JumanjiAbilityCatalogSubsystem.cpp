@@ -248,6 +248,14 @@ bool UJumanjiAbilityCatalogSubsystem::IsEntryClassCompatible(
         return false;
     }
 
+    // When a Blueprint class declares a stable presentation/catalog ID, it
+    // must match the allowlisted row. Legacy classes may leave this unset.
+    if (!AbilityCDO->GetHUDAbilityId().IsNone()
+        && AbilityCDO->GetHUDAbilityId() != Entry.AbilityId)
+    {
+        return false;
+    }
+
     return ExpectedInputTag.IsValid()
         ? AbilityCDO->GetInputTag().MatchesTagExact(ExpectedInputTag)
         : !AbilityCDO->GetInputTag().IsValid();
