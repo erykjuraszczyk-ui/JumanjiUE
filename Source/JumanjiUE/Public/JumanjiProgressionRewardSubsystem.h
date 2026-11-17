@@ -29,6 +29,15 @@ public:
     UFUNCTION(BlueprintPure, Category = "JUMANJI|TraversalRewards")
     bool GetTraversalRewardDefinition(FName TraversalId, FJumanjiTraversalRewardDefinition& OutDefinition) const;
 
+    UFUNCTION(BlueprintPure, Category = "JUMANJI|EncounterRewards")
+    bool GetWorldEncounterRewardDefinition(FName EncounterId, FJumanjiWorldEncounterRewardDefinition& OutDefinition) const;
+
+    /** True only after the one-time server profile transaction for this traversal was committed. */
+    bool HasCompletedTraversalReward(const AJumanjiPlayerState* PlayerState, FName TraversalId) const;
+
+    /** Grants the encounter package once per profile after its required chapter has completed. */
+    bool GrantWorldEncounterCompletionReward(AJumanjiPlayerState* PlayerState, FName EncounterId) const;
+
     /** Server-side, once per profile/link. The reward is granted only after server-confirmed traversal completion. */
     bool GrantTraversalCompletionReward(AJumanjiPlayerState* PlayerState, FName TraversalId) const;
 
@@ -49,6 +58,8 @@ private:
     bool IsValidChapterReward(const FJumanjiChapterRewardDefinition& Definition) const;
     bool IsValidUpgradeRecipe(const FJumanjiSpiritUpgradeRecipe& Recipe) const;
     bool IsValidTraversalReward(const FJumanjiTraversalRewardDefinition& Definition) const;
+    bool IsValidWorldEncounterReward(const FJumanjiWorldEncounterRewardDefinition& Definition) const;
+    FName BuildWorldEncounterTransactionId(const AJumanjiPlayerState& PlayerState, FName EncounterId) const;
     FName BuildTraversalTransactionId(const AJumanjiPlayerState& PlayerState, FName TraversalId) const;
     FName BuildChapterTransactionId(const AJumanjiPlayerState& PlayerState, FName ChapterId) const;
     FName BuildUpgradeTransactionId(
@@ -64,4 +75,7 @@ private:
 
     UPROPERTY(Transient)
     TMap<FName, FJumanjiTraversalRewardDefinition> TraversalRewards;
+
+    UPROPERTY(Transient)
+    TMap<FName, FJumanjiWorldEncounterRewardDefinition> WorldEncounterRewards;
 };
