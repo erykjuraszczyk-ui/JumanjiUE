@@ -13,6 +13,7 @@ Then create these DataTables:
 |---|---|---|
 | DT_ChapterRewards | FJumanjiChapterRewardDefinition | /Game/Progression/Data/DT_ChapterRewards.DT_ChapterRewards |
 | DT_SpiritUpgradeRecipes | FJumanjiSpiritUpgradeRecipe | /Game/Progression/Data/DT_SpiritUpgradeRecipes.DT_SpiritUpgradeRecipes |
+| DT_TraversalRewards | FJumanjiTraversalRewardDefinition | /Game/Progression/Data/DT_TraversalRewards.DT_TraversalRewards |
 
 The reward subsystem loads these paths during GameInstance subsystem initialization. If an asset is absent, the built-in validated starter catalog remains active.
 
@@ -57,3 +58,25 @@ Starter recipes are available for all nine spirits. Each costs 100 Explorer Coin
 DataTables are optional overrides. Invalid rows are ignored and the native default rows remain in effect for those IDs. The local SaveGame profile is a single-server prototype, not a production cross-shard MMO economy.
 
 See Docs/STAGE_15_PROGRESSION_GAMEPLAY_REWARDS.md for the full formula, sample values, validation rules and acceptance tests.
+
+
+## Stage 26 — Traversal rewards
+
+Import Data/Traversal/EmeraldJungle_TraversalRewards.csv as DT_TraversalRewards using FJumanjiTraversalRewardDefinition.
+
+Row fields:
+- TraversalId — must match the stable TraversalId on the placed AJumanjiTraversalLink;
+- CurrencyId — currently allowlisted to CURRENCY_EXPLORER_COINS;
+- CurrencyAmount — 1..5000;
+- ItemId — optional; if supplied it must be a known material catalog ID;
+- ItemAmount — zero when ItemId is empty, otherwise 1..9999.
+
+The native fallback provides one reward for each of the 12 Stage 25 links. DT_TraversalRewards overrides a matching ID; missing table keeps the native catalog.
+
+The server calls GrantTraversalCompletionReward only after FinishTraversal confirms a completed traversal. The receipt key is stable for profile + TraversalId, so repeating the link does not pay again. Cancelled/blocked/interrupted traversal has no reward.
+
+Run:
+    python Scripts/validate_emerald_jungle_traversal_rewards.py
+    python -m unittest discover -s Scripts/Tests -p "test_validate_emerald_jungle_traversal_rewards.py" -v
+
+The CSV validator is not a substitute for DataTable import verification or a multiplayer PIE test. See Docs/STAGE_26_TRAVERSAL_QA_LIFT_RECOVERY_REWARDS.md.
