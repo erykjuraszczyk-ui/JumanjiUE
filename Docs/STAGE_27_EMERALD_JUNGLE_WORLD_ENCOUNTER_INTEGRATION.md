@@ -178,7 +178,7 @@ Walidator sprawdza jeden pakiet nagrody, jego stabilne ID spotkania i rozdziału
 - [ ] Dyrektor spotkania jest replikowany i Always Relevant, a jego referencja dociera do server RPC z klienta.
 - [ ] Klient dalej niż MaxWorldEncounterStartDistance nie może wystartować spotkania.
 - [ ] Niewłaściwy świat, pusty profil, brak regionu, landmarku lub jednego z traversal receiptów odrzuca start.
-- [ ] Encouter Director odrzuca rozdział o innym ChapterId.
+- [ ] Encounter Director odrzuca rozdział o innym ChapterId.
 - [ ] Chapter Director odrzuca brakujące/duplikowane próby i cele o innym RequiredProgress.
 - [ ] Spotkanie wchodzi do Trials i replikowany GameState przekazuje nową rewizję klientom.
 - [ ] Chapter ukończy się dopiero po wszystkich dziewięciu próbach 3/3.
