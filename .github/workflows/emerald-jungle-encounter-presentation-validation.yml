@@ -1,0 +1,30 @@
+name: Emerald Jungle Encounter Presentation Validation
+
+on:
+  pull_request:
+    paths:
+      - "Data/Encounter/EmeraldJungleBossTelegraphs.csv"
+      - "Scripts/validate_emerald_jungle_boss_telegraphs.py"
+      - "Scripts/Tests/test_validate_emerald_jungle_boss_telegraphs.py"
+      - ".github/workflows/emerald-jungle-encounter-presentation-validation.yml"
+  push:
+    branches: [main]
+    paths:
+      - "Data/Encounter/EmeraldJungleBossTelegraphs.csv"
+      - "Scripts/validate_emerald_jungle_boss_telegraphs.py"
+      - "Scripts/Tests/test_validate_emerald_jungle_boss_telegraphs.py"
+      - ".github/workflows/emerald-jungle-encounter-presentation-validation.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate-boss-telegraphs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Validate boss telegraph manifest
+        run: python Scripts/validate_emerald_jungle_boss_telegraphs.py
+      - name: Run boss telegraph unit tests
+        run: python -m unittest discover -s Scripts/Tests -p "test_validate_emerald_jungle_boss_telegraphs.py" -v
