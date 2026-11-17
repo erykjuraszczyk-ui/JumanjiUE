@@ -68,7 +68,7 @@ Import w Unreal Editor:
    - TRAVERSAL_ZIPLINE;
    - TRAVERSAL_LIFT.
 
-Row key jest stabilnym `TraversalId` aktora AJumanjiTraversalLink. Nie zmieniaj go przy przesuwaniu aktora na mapie. Jeżeli rekord jest nieobecny, subsystem daje wbudowany polski tekst dla typu przejścia. Jeśli rekord istnieje, ale ma inny typ niż aktor, lookup zostaje odrzucony.
+Rekord z row key równym unikalnemu `TraversalId` aktora AJumanjiTraversalLink ma najwyższy priorytet. Jeśli go nie ma, subsystem szuka kanonicznego rekordu typu: `TRAVERSAL_CONTEXT_JUMP`, `TRAVERSAL_CLIMB`, `TRAVERSAL_ZIPLINE` albo `TRAVERSAL_LIFT`. Dzięki temu cztery starterowe rekordy działają dla wszystkich aktorów danego typu. Wiersz per-aktor może nadpisać wspólny styl. Jeśli znaleziony rekord ma inny typ niż aktor, lookup zostaje odrzucony.
 
 ### UJumanjiTraversalPresentationSubsystem
 
