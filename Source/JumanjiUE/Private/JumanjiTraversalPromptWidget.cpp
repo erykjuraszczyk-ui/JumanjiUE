@@ -1,6 +1,7 @@
 #include "JumanjiTraversalPromptWidget.h"
 
 #include "Engine/World.h"
+#include "Engine/GameInstance.h"
 #include "GameFramework/PlayerController.h"
 #include "JumanjiCharacter.h"
 #include "JumanjiPlayerController.h"
@@ -33,6 +34,23 @@ void UJumanjiTraversalPromptWidget::NativeTick(
 
     const float Now = World->GetTimeSeconds();
 
+    if (PromptViewModel.Status == EJumanjiTraversalPromptStatus::Available
+        && IsValid(FocusedTraversalLink))
+    {
+        APlayerController* OwningController = GetOwningPlayer();
+        AJumanjiCharacter* Character = OwningController
+            ? Cast<AJumanjiCharacter>(OwningController->GetPawn())
+            : nullptr;
+
+        if (!Character
+            || (Character->GetTraversalComponent() && Character->GetTraversalComponent()->IsTraversing())
+            || !FocusedTraversalLink->CanBeUsedBy(Character))
+        {
+            ClearFocusedTraversal();
+            return;
+        }
+    }
+
     if (PromptViewModel.Status == EJumanjiTraversalPromptStatus::PendingServer
         && Now >= RequestDeadlineSeconds)
     {
@@ -55,14 +73,23 @@ void UJumanjiTraversalPromptWidget::NativeTick(
 
 bool UJumanjiTraversalPromptWidget::SetFocusedTraversalLink(AJumanjiTraversalLink* TraversalLink)
 {
-    APawn* Pawn = GetOwningPlayer() ? GetOwningPlayer()->GetPawn() : nullptr;
-    if (!IsValid(TraversalLink) || !TraversalLink->CanBeUsedBy(Pawn))
+    APlayerController* OwningController = GetOwningPlayer();
+    AJumanjiCharacter* Character = OwningController
+        ? Cast<AJumanjiCharacter>(OwningController->GetPawn())
+        : nullptr;
+    APawn* Pawn = Character;
+
+    if (!IsValid(TraversalLink)
+        || !Character
+        || (Character->GetTraversalComponent() && Character->GetTraversalComponent()->IsTraversing())
+        || !TraversalLink->CanBeUsedBy(Pawn))
     {
         ClearFocusedTraversal();
         return false;
     }
 
-    UGameInstance* GameInstance = GetGameInstance();
+    UWorld* World = GetWorld();
+    UGameInstance* GameInstance = World ? World->GetGameInstance() : nullptr;
     UJumanjiTraversalPresentationSubsystem* PresentationSubsystem = GameInstance
         ? GameInstance->GetSubsystem<UJumanjiTraversalPresentationSubsystem>()
         : nullptr;
