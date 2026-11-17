@@ -22,7 +22,8 @@ Open-world third-person adventure RPG prototype with a shared-world direction an
 - Stage 17 — Great Spirit Ability Content Pack: server-authoritative configured ability execution, target/effect modes, montage and Gameplay Cue hooks, plus a 45-slot production matrix.
 - Stage 18 — Ability HUD & Input Feedback: mobile slot controls, GAS cooldown/resource indicators, activation feedback and local target-focus presentation.
 - Stage 19 — Ability Presentation Asset Pack: 45-slot icon manifest, nine Great Spirit palettes, radial cooldown material specification, UI audio feedback and Gameplay Cue/VFX authoring contract.
-- Stage 20 — Ability Presentation Runtime Integration: validated manifest DataTable reader, stable AbilityId binding, soft-reference presentation data and HUD integration without changing GAS authority.\n- Stage 21 — Ability Presentation Blueprint Integration: reusable native slot widget, five BindWidgetOptional slots, asynchronous icon/material/audio loading, radial cooldown parameters and per-slot feedback routing.
+- Stage 20 — Ability Presentation Runtime Integration: validated manifest DataTable reader, stable AbilityId binding, soft-reference presentation data and HUD integration without changing GAS authority.
+- Stage 21 — Ability Presentation Blueprint Integration: reusable native slot widget, five BindWidgetOptional slots, asynchronous icon/material/audio loading, radial cooldown parameters and per-slot feedback routing.
 - Stage 21 — Emerald Jungle World Authoring Pack: import-ready region/landmark DataTable CSVs, 29-row greybox placement ledger and World Partition assembly manifest.
 - Stage 22 — Emerald Jungle Greybox Validation & Mobile Performance: source-data validator, unit/integration tests, GitHub Actions quality gate and Android profiling run template.
 - Stage 23 — Emerald Jungle Traversal Interactions & Off-Mesh Links: Smart Link traversal actors, four contextual movement types, server-authoritative traversal component and client request validation.
@@ -69,7 +70,8 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - Docs/STAGE_17_GREAT_SPIRIT_ABILITY_CONTENT_PACK.md — configured ability runtime, costs/cooldowns, Blueprint/Gameplay Effect authoring and acceptance checklist.
 - Docs/STAGE_18_ABILITY_HUD_INPUT_FEEDBACK.md — mobile ability HUD, slot input, Energy/Resonance indicators, cooldown feedback and local target focus.
 - Docs/STAGE_19_ABILITY_PRESENTATION_ASSET_PACK.md — 45 ability icon definitions, palettes, cooldown material, feedback audio/VFX contract and Unreal Editor acceptance checklist.
-- Docs/STAGE_20_ABILITY_PRESENTATION_RUNTIME.md — manifest DataTable import, AbilityId class binding, HUD presentation metadata and acceptance checklist.\n- Docs/STAGE_21_ABILITY_PRESENTATION_BLUEPRINT_INTEGRATION.md — WBP_AbilityHUD/WBP_AbilitySlot hierarchy, mobile layout, asynchronous assets and Blueprint acceptance checklist.
+- Docs/STAGE_20_ABILITY_PRESENTATION_RUNTIME.md — manifest DataTable import, AbilityId class binding, HUD presentation metadata and acceptance checklist.
+- Docs/STAGE_21_ABILITY_PRESENTATION_BLUEPRINT_INTEGRATION.md — WBP_AbilityHUD/WBP_AbilitySlot hierarchy, mobile layout, asynchronous assets and Blueprint acceptance checklist.
 - Content/UI/AbilityPresentation/README.md — asset import, naming and per-ability assignment workflow.
 - Content/UI/AbilityPresentation/AbilityPresentationManifest.csv — 45 stable ability presentation records.
 - Content/UI/AbilityPresentation/AbilityPresentationDataTable.csv — DataTable import copy with Name row keys and 45 stable IDs.
@@ -192,7 +194,9 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - PlayerState-owned ASC replacement of the Great Spirit loadout, tracking and clearing only the previous granted ability handles, and avoiding duplicate grants when the same loadout is reapplied;
 - UJumanjiAbilityHUDWidget with five-slot snapshots, GAS cooldown timing, Energy/Resonance values, activation feedback and local target-focus indicator;
 - HUD presentation metadata on UJumanjiGameplayAbility for display name, description, icon, stable HUDAbilityId and matching resource-cost display;
-- UJumanjiAbilityPresentationSubsystem with validated ability presentation DataTable lookup and soft-reference conversion;\n- UJumanjiAbilityHUDSlotWidget reusable slot base with async icon/material/audio loading, cooldown MID parameters, placeholder fallback and slot touch event;\n- five optional child-slot bindings in UJumanjiAbilityHUDWidget with per-slot feedback routing and delegate cleanup;
+- UJumanjiAbilityPresentationSubsystem with validated ability presentation DataTable lookup and soft-reference conversion;
+- UJumanjiAbilityHUDSlotWidget reusable slot base with async icon/material/audio loading, cooldown MID parameters, placeholder fallback and slot touch event;
+- five optional child-slot bindings in UJumanjiAbilityHUDWidget with per-slot feedback routing and delegate cleanup;
 - ability HUD slot snapshots enriched with per-ability palette, icon, cooldown material, audio references and Gameplay Cue tag.
 - PlayerController creation of the configured ability HUD for the local player.
 - replicated encounter snapshot now carries the spawned AJumanjiBossCharacter reference for local presentation;
