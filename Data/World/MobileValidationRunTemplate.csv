@@ -1,0 +1,8 @@
+"RunId","DateUTC","DeviceModel","AndroidVersion","BuildConfiguration","RenderAPI","Scenario","DurationSeconds","AvgFps","P50FrameMs","P95FrameMs","P99FrameMs","GameThreadP95Ms","RenderThreadP95Ms","GpuP95Ms","PeakRssMB","TexturePoolMB","StreamingHitches","NavQueryP95Ms","ThermalState","Notes"
+"ANDROID-01","","","","Development","","Hub_Idle_10m","","","","","","","","","","","","","",""
+"ANDROID-02","","","","Development","","Heart_to_Root_5x","","","","","","","","","","","","","",""
+"ANDROID-03","","","","Development","","WorldPartition_RegionLoop_10m","","","","","","","","","","","","","",""
+"ANDROID-04","","","","Development","","Landmark_Discovery_10x","","","","","","","","","","","","","",""
+"ANDROID-05","","","","Development","","Trial_Interaction_9x","","","","","","","","","","","","","",""
+"ANDROID-06","","","","Development","","Navigation_Target_Refresh_10m","","","","","","","","","","","","","",""
+"ANDROID-07","","","","Development","","Thermal_Soak_20m","","","","","","","","","","","","","",""
