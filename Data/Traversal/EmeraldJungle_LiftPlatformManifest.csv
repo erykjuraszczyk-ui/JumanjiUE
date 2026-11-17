@@ -1,0 +1,3 @@
+LiftPlatformId,RegionId,EditorDataLayer,LowerX_cm,LowerY_cm,LowerZ_cm,UpperX_cm,UpperY_cm,UpperZ_cm,TravelDuration_s,MaxPassengers,BoardingWindowAlpha,PlatformActorClass,Notes
+EJ_DAWN_MIRRORS_LIFT_PLATFORM_01,REGION_DAWN_MIRRORS,DL_EJ_DawnMirrors,88000,65000,1500,88000,65000,4200,5.0,4,0.12,BP_JumanjiLiftPlatform,First world lift; placeholders must align with lift traversal link anchors
+EJ_FROST_GATE_LIFT_PLATFORM_01,REGION_FROST_GATE,DL_EJ_FrostGate,160000,130000,1850,160000,130000,3600,4.8,4,0.12,BP_JumanjiLiftPlatform,Second world lift; placeholders must align with lift traversal link anchors
