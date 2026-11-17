@@ -1,5 +1,7 @@
 #include "JumanjiTraversalLink.h"
+
 #include "Components/SceneComponent.h"
+#include "Components/SplineComponent.h"
 #include "GameFramework/Pawn.h"
 #include "Navigation/NavLinkCustomComponent.h"
 #include "Net/UnrealNetwork.h"
@@ -12,8 +14,13 @@ AJumanjiTraversalLink::AJumanjiTraversalLink()
 
     EntryAnchor = CreateDefaultSubobject<USceneComponent>(TEXT("EntryAnchor"));
     EntryAnchor->SetupAttachment(RootComponent);
+
     ExitAnchor = CreateDefaultSubobject<USceneComponent>(TEXT("ExitAnchor"));
     ExitAnchor->SetupAttachment(RootComponent);
+
+    TraversalSpline = CreateDefaultSubobject<USplineComponent>(TEXT("TraversalSpline"));
+    TraversalSpline->SetupAttachment(RootComponent);
+    TraversalSpline->SetClosedLoop(false);
 }
 
 void AJumanjiTraversalLink::OnConstruction(const FTransform& Transform)
@@ -32,6 +39,14 @@ void AJumanjiTraversalLink::BeginPlay()
         UE_LOG(LogTemp, Warning,
             TEXT("JUMANJI traversal: %s needs a stable TraversalId and a valid type."),
             *GetName());
+    }
+
+    if (bUseSplinePath && TraversalType == EJumanjiTraversalType::Zipline
+        && !HasAuthoredTraversalSpline())
+    {
+        UE_LOG(LogTemp, Warning,
+            TEXT("JUMANJI traversal: Zipline %s has spline mode enabled but no valid spline; anchor interpolation will be used."),
+            *TraversalId.ToString());
     }
 }
 
@@ -77,6 +92,54 @@ float AJumanjiTraversalLink::GetTraversalDuration() const
 float AJumanjiTraversalLink::GetTraversalArcHeight() const
 {
     return FMath::Clamp(ArcHeight, 0.0f, 1500.0f);
+}
+
+bool AJumanjiTraversalLink::HasAuthoredTraversalSpline() const
+{
+    if (!bUseSplinePath || !TraversalSpline || TraversalSpline->GetNumberOfSplinePoints() < 2)
+    {
+        return false;
+    }
+
+    const float SplineLength = TraversalSpline->GetSplineLength();
+    return FMath::IsFinite(SplineLength) && SplineLength >= 50.0f;
+}
+
+bool AJumanjiTraversalLink::GetTraversalPathTransformAtAlpha(
+    float Alpha,
+    bool bReverse,
+    FTransform& OutTransform) const
+{
+    if (TraversalType != EJumanjiTraversalType::Zipline || !HasAuthoredTraversalSpline())
+    {
+        return false;
+    }
+
+    const float SplineLength = TraversalSpline->GetSplineLength();
+    const float SafeAlpha = FMath::Clamp(Alpha, 0.0f, 1.0f);
+    const float DistanceAlongSpline = (bReverse ? 1.0f - SafeAlpha : SafeAlpha) * SplineLength;
+
+    OutTransform = TraversalSpline->GetTransformAtDistanceAlongSpline(
+        DistanceAlongSpline,
+        ESplineCoordinateSpace::World,
+        true
+    );
+
+    FVector Forward = OutTransform.GetUnitAxis(EAxis::X);
+    if (bReverse)
+    {
+        Forward *= -1.0f;
+    }
+
+    if (!Forward.Normalize())
+    {
+        return false;
+    }
+
+    FRotator FacingRotation = Forward.Rotation();
+    FacingRotation.Roll = OutTransform.Rotator().Roll;
+    OutTransform.SetRotation(FacingRotation.Quaternion());
+    return true;
 }
 
 bool AJumanjiTraversalLink::CanBeUsedBy(const APawn* Pawn) const
