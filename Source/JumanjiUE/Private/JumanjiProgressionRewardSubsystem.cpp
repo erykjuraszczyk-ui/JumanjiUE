@@ -189,13 +189,25 @@ void UJumanjiProgressionRewardSubsystem::LoadOptionalDataTableOverrides()
         WorldEncounterRewardTable->GetAllRows<FJumanjiWorldEncounterRewardDefinition>(
             TEXT("JumanjiWorldEncounterRewardOverrides"), Rows);
 
+        TSet<FName> SeenEncounterIds;
         for (const FJumanjiWorldEncounterRewardDefinition* Row : Rows)
         {
-            if (Row && IsValidWorldEncounterReward(*Row))
+            if (!Row
+                || SeenEncounterIds.Contains(Row->EncounterId)
+                || !IsValidWorldEncounterReward(*Row))
             {
-                WorldEncounterRewards.Add(Row->EncounterId, *Row);
+                UE_LOG(LogTemp, Warning, TEXT("JUMANJI encounter rewards: skipped invalid or duplicate DataTable row."));
+                continue;
             }
+
+            SeenEncounterIds.Add(Row->EncounterId);
+            WorldEncounterRewards.Add(Row->EncounterId, *Row);
         }
+    }
+    else if (WorldEncounterRewardTable)
+    {
+        UE_LOG(LogTemp, Warning,
+            TEXT("JUMANJI encounter rewards: DT_WorldEncounterRewards uses the wrong row struct; native defaults remain active."));
     }
 
     UDataTable* TraversalRewardTable = LoadObject<UDataTable>(
