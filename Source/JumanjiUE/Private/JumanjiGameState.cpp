@@ -300,7 +300,7 @@ bool AJumanjiGameState::ResetAdventureChapterForEncounterRetry(
     ForceNetUpdate();
 
     // Deliberately do not modify PlayerState profile snapshots, chapter receipts,
-    // inventory, currencies or transaction ledgers. Retry resets session state only.
+    // inventory, currencies or ProcessedTransactionIds. Retry resets session state only.
     return true;
 }
 
