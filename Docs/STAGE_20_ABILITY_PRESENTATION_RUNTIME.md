@@ -23,7 +23,7 @@ Nowy GameInstanceSubsystem odczytuje skonfigurowaną DataTable i udostępnia:
 
 DataTable jest ładowana synchronicznie jako mały zestaw metadanych. Obiekty graficzne i audio pozostają soft references. Sam subsystem nie ładuje 45 ikon, nie odtwarza dźwięków i nie uruchamia Gameplay Cue.
 
-Subsystem sprawdza zgodność każdego wiersza z UJumanjiAbilityCatalogSubsystem. CharacterId i SlotId muszą odpowiadać allowlistowanemu AbilityId. Nieprawidłowe i powtórzone wiersze są pomijane.
+Subsystem sprawdza zgodność każdego wiersza z UJumanjiAbilityCatalogSubsystem. CharacterId i AbilityId muszą odpowiadać katalogowi Stage 16. Nazwy slotów manifestu (PrimaryAttack, Active, Passive, Ultimate, Dodge) są jawnie mapowane na identyfikatory katalogu (SLOT_PRIMARY, SLOT_ACTIVE, SLOT_PASSIVE, SLOT_ULTIMATE, SLOT_DODGE). Nieprawidłowe i powtórzone wiersze są pomijane.
 
 Jeśli DataTable nie jest skonfigurowana albo wiersz nie istnieje, HUD zachowuje metadane z klasy Gameplay Ability. Brak zasobów prezentacyjnych nie blokuje tworzenia HUD.
 
