@@ -9,10 +9,17 @@
 
 namespace
 {
-    const FGameplayTag TelegraphWarningTag = FGameplayTag::RequestGameplayTag(
-        FName(TEXT("State.Boss.Telegraph.Warning")), false);
-    const FGameplayTag TelegraphActiveTag = FGameplayTag::RequestGameplayTag(
-        FName(TEXT("State.Boss.Telegraph.Active")), false);
+    FGameplayTag GetTelegraphWarningTag()
+    {
+        return FGameplayTag::RequestGameplayTag(
+            FName(TEXT("State.Boss.Telegraph.Warning")), false);
+    }
+
+    FGameplayTag GetTelegraphActiveTag()
+    {
+        return FGameplayTag::RequestGameplayTag(
+            FName(TEXT("State.Boss.Telegraph.Active")), false);
+    }
 }
 
 AJumanjiBossCharacter::AJumanjiBossCharacter()
@@ -261,28 +268,28 @@ void AJumanjiBossCharacter::RefreshTelegraphGameplayTags()
         return;
     }
 
-    if (TelegraphWarningTag.IsValid())
+    if (GetTelegraphWarningTag().IsValid())
     {
         ASC->RemoveLooseGameplayTag(
-            TelegraphWarningTag, 1, EGameplayTagReplicationState::TagAndCountToAll);
+            GetTelegraphWarningTag(), 1, EGameplayTagReplicationState::TagAndCountToAll);
     }
-    if (TelegraphActiveTag.IsValid())
+    if (GetTelegraphActiveTag().IsValid())
     {
         ASC->RemoveLooseGameplayTag(
-            TelegraphActiveTag, 1, EGameplayTagReplicationState::TagAndCountToAll);
+            GetTelegraphActiveTag(), 1, EGameplayTagReplicationState::TagAndCountToAll);
     }
 
     if (BossTelegraphState.Stage == EJumanjiBossTelegraphStage::Warning
-        && TelegraphWarningTag.IsValid())
+        && GetTelegraphWarningTag().IsValid())
     {
         ASC->AddLooseGameplayTag(
-            TelegraphWarningTag, 1, EGameplayTagReplicationState::TagAndCountToAll);
+            GetTelegraphWarningTag(), 1, EGameplayTagReplicationState::TagAndCountToAll);
     }
     else if (BossTelegraphState.Stage == EJumanjiBossTelegraphStage::Executing
-        && TelegraphActiveTag.IsValid())
+        && GetTelegraphActiveTag().IsValid())
     {
         ASC->AddLooseGameplayTag(
-            TelegraphActiveTag, 1, EGameplayTagReplicationState::TagAndCountToAll);
+            GetTelegraphActiveTag(), 1, EGameplayTagReplicationState::TagAndCountToAll);
     }
 }
 
