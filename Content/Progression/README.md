@@ -80,3 +80,27 @@ Run:
     python -m unittest discover -s Scripts/Tests -p "test_validate_emerald_jungle_traversal_rewards.py" -v
 
 The CSV validator is not a substitute for DataTable import verification or a multiplayer PIE test. See Docs/STAGE_26_TRAVERSAL_QA_LIFT_RECOVERY_REWARDS.md.
+
+
+## Stage 27 — World encounter completion rewards
+
+Import Data/Progression/WorldEncounterRewards.csv as DT_WorldEncounterRewards using FJumanjiWorldEncounterRewardDefinition.
+
+Required fields:
+- EncounterId — stable encounter identity;
+- RequiredChapterId — completed chapter required before payout;
+- AccountExperienceReward and ActiveCharacterExperienceReward — bounded XP values;
+- CurrencyId/CurrencyAmount — optional catalog currency and amount;
+- ItemId/ItemAmount — optional catalog material and amount.
+
+The starter package for ENCOUNTER_EMERALD_JUNGLE_CITADEL requires EMERALD_JUNGLE_NINE_SEALS and grants 500 account XP, 300 selected Great Spirit XP, 350 Explorer Coins and 2 Spirit Memory.
+
+The server applies the package through AJumanjiPlayerState::ApplyProfileTransaction. Its receipt is stable for profile + EncounterId, so duplicate calls do not award the same package twice. Invalid or duplicate DataTable rows are ignored; an absent table keeps the native starter reward.
+
+Run:
+```bash
+python Scripts/validate_emerald_jungle_encounter_rewards.py
+python -m unittest discover -s Scripts/Tests -p "test_validate_emerald_jungle_encounter_rewards.py" -v
+```
+
+The CSV check does not import a DataTable .uasset, compile UE C++, or prove multiplayer runtime behavior.
