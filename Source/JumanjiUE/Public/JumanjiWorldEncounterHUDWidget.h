@@ -82,6 +82,10 @@ protected:
     UFUNCTION(BlueprintImplementableEvent, Category = "JUMANJI|Encounter HUD")
     void OnEncounterPhaseCue(EJumanjiWorldEncounterPhase NewPhase);
 
+    /** Fires once when the boss advances from one health phase to another. */
+    UFUNCTION(BlueprintImplementableEvent, Category = "JUMANJI|Encounter HUD")
+    void OnBossPhaseCue(uint8 NewBossPhase);
+
     /** Use this event to display or clear the shape-specific boss telegraph. */
     UFUNCTION(BlueprintImplementableEvent, Category = "JUMANJI|Encounter HUD")
     void OnBossTelegraphPresentationChanged(const FJumanjiBossTelegraphState& TelegraphState);
@@ -89,6 +93,7 @@ protected:
 private:
     void BindGameState();
     void BindBoss();
+    void ReportBossPhaseIfChanged();
     void RefreshPresentation();
     float GetSynchronizedWorldTime() const;
 
@@ -107,4 +112,6 @@ private:
     float RefreshAccumulator = 0.0f;
     bool bHasReportedPhase = false;
     EJumanjiWorldEncounterPhase LastReportedPhase = EJumanjiWorldEncounterPhase::Inactive;
+    bool bHasReportedBossPhase = false;
+    uint8 LastReportedBossPhase = 0;
 };
