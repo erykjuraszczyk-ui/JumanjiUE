@@ -24,7 +24,8 @@ namespace
                 const FString AssetName = NormalizedPath.Mid(LastSlashIndex + 1);
                 if (!AssetName.IsEmpty())
                 {
-                    NormalizedPath += TEXT(".") + AssetName;
+                    NormalizedPath += TEXT(".");
+                    NormalizedPath += AssetName;
                 }
             }
         }
