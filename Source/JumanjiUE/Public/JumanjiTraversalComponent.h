@@ -1,4 +1,5 @@
 #pragma once
+
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -14,6 +15,12 @@ struct FJumanjiTraversalReplicatedState
 
     UPROPERTY(BlueprintReadOnly, Category = "JUMANJI|Traversal")
     bool bActive = false;
+
+    UPROPERTY(BlueprintReadOnly, Category = "JUMANJI|Traversal")
+    bool bReverse = false;
+
+    UPROPERTY(BlueprintReadOnly, Category = "JUMANJI|Traversal")
+    bool bLastTraversalCompleted = false;
 
     UPROPERTY(BlueprintReadOnly, Category = "JUMANJI|Traversal")
     FName TraversalId = NAME_None;
@@ -46,6 +53,11 @@ struct FJumanjiTraversalReplicatedState
     int32 Revision = 0;
 };
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(
+    FJumanjiTraversalStateChanged,
+    const FJumanjiTraversalReplicatedState&, State
+);
+
 /** Server-authoritative motion through an authored traversal link. */
 UCLASS(ClassGroup = (JUMANJI), meta = (BlueprintSpawnableComponent))
 class JUMANJIUE_API UJumanjiTraversalComponent : public UActorComponent
@@ -75,6 +87,9 @@ public:
     UFUNCTION(BlueprintCallable, Category = "JUMANJI|Traversal")
     void CancelTraversal();
 
+    UPROPERTY(BlueprintAssignable, Category = "JUMANJI|Traversal")
+    FJumanjiTraversalStateChanged OnTraversalStateChanged;
+
 protected:
     UPROPERTY(ReplicatedUsing = OnRep_TraversalState, BlueprintReadOnly, Category = "JUMANJI|Traversal")
     FJumanjiTraversalReplicatedState TraversalState;
@@ -89,8 +104,12 @@ private:
     bool CanStartTraversal(const AJumanjiTraversalLink* Link) const;
     void FinishTraversal(bool bCompleted);
     void RestoreMovementMode();
+    void NotifyTraversalStateChanged();
 
     TEnumAsByte<EMovementMode> PreviousMovementMode = MOVE_Walking;
     uint8 PreviousCustomMovementMode = 0;
     bool bHasPreviousMovementMode = false;
+
+    UPROPERTY(Transient)
+    TObjectPtr<AJumanjiTraversalLink> ActiveTraversalLink;
 };

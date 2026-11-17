@@ -1,0 +1,30 @@
+name: Traversal Presentation Validation
+
+on:
+  pull_request:
+    paths:
+      - "Data/Traversal/**"
+      - "Scripts/validate_traversal_presentation.py"
+      - "Scripts/Tests/test_validate_traversal_presentation.py"
+      - ".github/workflows/traversal-presentation-validation.yml"
+  push:
+    branches: [main]
+    paths:
+      - "Data/Traversal/**"
+      - "Scripts/validate_traversal_presentation.py"
+      - "Scripts/Tests/test_validate_traversal_presentation.py"
+      - ".github/workflows/traversal-presentation-validation.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate-traversal-presentation:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Validate traversal manifest
+        run: python Scripts/validate_traversal_presentation.py
+      - name: Run traversal manifest tests
+        run: python -m unittest discover -s Scripts/Tests -p "test_validate_traversal_presentation.py" -v

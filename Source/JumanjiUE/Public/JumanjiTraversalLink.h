@@ -1,9 +1,12 @@
 #pragma once
+
 #include "CoreMinimal.h"
 #include "Navigation/NavLinkProxy.h"
 #include "JumanjiTraversalLink.generated.h"
+
 class APawn;
 class USceneComponent;
+class USplineComponent;
 class UAnimMontage;
 
 UENUM(BlueprintType)
@@ -21,8 +24,10 @@ UCLASS(Blueprintable)
 class JUMANJIUE_API AJumanjiTraversalLink : public ANavLinkProxy
 {
     GENERATED_BODY()
+
 public:
     AJumanjiTraversalLink();
+
     virtual void OnConstruction(const FTransform& Transform) override;
     virtual void BeginPlay() override;
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
@@ -52,9 +57,24 @@ public:
     bool IsTraversalEnabled() const { return bTraversalEnabled; }
 
     UFUNCTION(BlueprintPure, Category = "JUMANJI|Traversal")
+    bool HasAuthoredTraversalSpline() const;
+
+    UFUNCTION(BlueprintPure, Category = "JUMANJI|Traversal")
     bool CanBeUsedBy(const APawn* Pawn) const;
 
-    bool GetTraversalEndpoints(const APawn* Pawn, FTransform& OutStart, FTransform& OutEnd, bool& bOutReverse) const;
+    bool GetTraversalEndpoints(
+        const APawn* Pawn,
+        FTransform& OutStart,
+        FTransform& OutEnd,
+        bool& bOutReverse
+    ) const;
+
+    /** Returns a world-space spline pose for a Zipline link, or false to use anchor interpolation. */
+    bool GetTraversalPathTransformAtAlpha(
+        float Alpha,
+        bool bReverse,
+        FTransform& OutTransform
+    ) const;
 
     UFUNCTION(BlueprintCallable, Category = "JUMANJI|Traversal")
     bool SetTraversalEnabled(bool bEnabled);
@@ -65,6 +85,10 @@ protected:
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "JUMANJI|Traversal")
     TObjectPtr<USceneComponent> ExitAnchor;
+
+    /** Optional authored path for Zipline. Add/edit points in the link Blueprint. */
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "JUMANJI|Traversal")
+    TObjectPtr<USplineComponent> TraversalSpline;
 
     UPROPERTY(EditInstanceOnly, BlueprintReadOnly, Category = "JUMANJI|Traversal")
     FName TraversalId = NAME_None;
@@ -81,6 +105,9 @@ protected:
     UPROPERTY(EditInstanceOnly, BlueprintReadOnly, Category = "JUMANJI|Traversal")
     bool bExposeSmartLinkToNavigation = true;
 
+    UPROPERTY(EditInstanceOnly, BlueprintReadOnly, Category = "JUMANJI|Traversal")
+    bool bUseSplinePath = false;
+
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "JUMANJI|Traversal",
         meta = (ClampMin = "100.0", ClampMax = "1000.0"))
     float MaxInteractionDistance = 250.0f;
@@ -93,6 +120,7 @@ protected:
         meta = (ClampMin = "0.0", ClampMax = "1500.0"))
     float ArcHeight = 220.0f;
 
+    /** Legacy per-link animation override; manifest data takes priority in the presentation Blueprint. */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "JUMANJI|Traversal")
     TSoftObjectPtr<UAnimMontage> TraversalMontage;
 

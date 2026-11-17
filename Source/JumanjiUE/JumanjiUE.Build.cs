@@ -20,7 +20,8 @@ public class JumanjiUE : ModuleRules
                 "GameplayTasks",
                 "UMG",
                 "AIModule",
-                "NavigationSystem"
+                "NavigationSystem",
+                "Niagara"
             }
         );
     }

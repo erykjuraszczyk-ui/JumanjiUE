@@ -7,6 +7,7 @@
 class UJumanjiGreatSpiritSelectionWidget;
 class UJumanjiAdventureHUDWidget;
 class UJumanjiAbilityHUDWidget;
+class UJumanjiTraversalPromptWidget;
 class AJumanjiTrialActor;
 class UJumanjiWorldAtlasWidget;
 class UJumanjiWorldNavigationComponent;
@@ -28,6 +29,18 @@ public:
     {
         return WorldNavigationComponent;
     }
+
+    UFUNCTION(BlueprintPure, Category = "JUMANJI|Traversal|UI")
+    UJumanjiTraversalPromptWidget* GetTraversalPromptWidget() const
+    {
+        return ActiveTraversalPromptWidget;
+    }
+
+    UFUNCTION(BlueprintCallable, Category = "JUMANJI|Traversal|UI")
+    bool SetTraversalFocus(AJumanjiTraversalLink* TraversalLink);
+
+    UFUNCTION(BlueprintCallable, Category = "JUMANJI|Traversal|UI")
+    void ClearTraversalFocus();
 
     UFUNCTION(BlueprintCallable, Category = "JUMANJI|Character")
     void RequestSelectCharacter(FName CharacterId);
@@ -52,10 +65,6 @@ public:
     UFUNCTION(BlueprintCallable, Category = "JUMANJI|World")
     void CloseWorldAtlas();
 
-    /**
-     * Sends a puzzle option to the server. A true return on a client means the
-     * request was queued, not that the server accepted the solution.
-     */
     UFUNCTION(BlueprintCallable, Category = "JUMANJI|Adventure")
     bool RequestTrialInteraction(
         AJumanjiTrialActor* TrialActor,
@@ -95,6 +104,9 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "JUMANJI|Abilities|UI")
     TSubclassOf<UJumanjiAbilityHUDWidget> AbilityHUDWidgetClass;
 
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "JUMANJI|Traversal|UI")
+    TSubclassOf<UJumanjiTraversalPromptWidget> TraversalPromptWidgetClass;
+
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "JUMANJI|World|UI")
     TSubclassOf<UJumanjiWorldAtlasWidget> WorldAtlasWidgetClass;
 
@@ -122,6 +134,9 @@ private:
 
     UPROPERTY(Transient)
     TObjectPtr<UJumanjiAbilityHUDWidget> ActiveAbilityHUDWidget;
+
+    UPROPERTY(Transient)
+    TObjectPtr<UJumanjiTraversalPromptWidget> ActiveTraversalPromptWidget;
 
     UPROPERTY(Transient)
     TObjectPtr<UJumanjiWorldAtlasWidget> ActiveWorldAtlasWidget;

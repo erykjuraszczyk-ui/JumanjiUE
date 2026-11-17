@@ -1,4 +1,5 @@
 #include "JumanjiTraversalComponent.h"
+
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "GameFramework/Character.h"
@@ -10,7 +11,9 @@ namespace
 {
     bool IsFiniteVector(const FVector& Value)
     {
-        return FMath::IsFinite(Value.X) && FMath::IsFinite(Value.Y) && FMath::IsFinite(Value.Z);
+        return FMath::IsFinite(Value.X)
+            && FMath::IsFinite(Value.Y)
+            && FMath::IsFinite(Value.Z);
     }
 }
 
@@ -34,6 +37,7 @@ void UJumanjiTraversalComponent::EndPlay(const EEndPlayReason::Type EndPlayReaso
     {
         FinishTraversal(false);
     }
+
     SetComponentTickEnabled(false);
     Super::EndPlay(EndPlayReason);
 }
@@ -70,9 +74,9 @@ bool UJumanjiTraversalComponent::TryStartTraversal(AJumanjiTraversalLink* Link)
         return false;
     }
 
-    (void)bReverse; // Direction is already reflected in the resolved start/end transforms.
     const FVector StartLocation = Character->GetActorLocation();
     const FVector EndLocation = EndTransform.GetLocation();
+
     if (!IsFiniteVector(StartLocation) || !IsFiniteVector(EndLocation)
         || FVector::DistSquared(StartLocation, EndLocation) < FMath::Square(50.0f))
     {
@@ -85,7 +89,10 @@ bool UJumanjiTraversalComponent::TryStartTraversal(AJumanjiTraversalLink* Link)
     Movement->StopMovementImmediately();
     Movement->DisableMovement();
 
+    ActiveTraversalLink = Link;
     TraversalState.bActive = true;
+    TraversalState.bReverse = bReverse;
+    TraversalState.bLastTraversalCompleted = false;
     TraversalState.TraversalId = Link->GetTraversalId();
     TraversalState.TraversalType = Link->GetTraversalType();
     TraversalState.StartLocation = StartLocation;
@@ -95,11 +102,13 @@ bool UJumanjiTraversalComponent::TryStartTraversal(AJumanjiTraversalLink* Link)
     TraversalState.ServerStartTime = World->GetTimeSeconds();
     TraversalState.Duration = Link->GetTraversalDuration();
     TraversalState.ArcHeight = Link->GetTraversalArcHeight();
-    TraversalState.Revision = TraversalState.Revision < MAX_int32 ? TraversalState.Revision + 1 : 1;
+    TraversalState.Revision = TraversalState.Revision < MAX_int32
+        ? TraversalState.Revision + 1
+        : 1;
 
     SetComponentTickEnabled(true);
     Character->ForceNetUpdate();
-    OnTraversalPresentationChanged(true, TraversalState.TraversalId, TraversalState.TraversalType, Link);
+    NotifyTraversalStateChanged();
     return true;
 }
 
@@ -125,21 +134,46 @@ void UJumanjiTraversalComponent::TickComponent(
         1.0f
     );
 
-    FVector TargetLocation = FMath::Lerp(
-        FVector(TraversalState.StartLocation),
-        FVector(TraversalState.EndLocation),
-        Alpha
-    );
+    FTransform SplineTransform;
+    const bool bUsingZiplineSpline = TraversalState.TraversalType == EJumanjiTraversalType::Zipline
+        && IsValid(ActiveTraversalLink)
+        && ActiveTraversalLink->GetTraversalPathTransformAtAlpha(
+            Alpha,
+            TraversalState.bReverse,
+            SplineTransform
+        );
 
-    if (TraversalState.TraversalType == EJumanjiTraversalType::ContextJump)
+    FVector TargetLocation;
+    FRotator TargetRotation;
+
+    if (bUsingZiplineSpline)
     {
-        TargetLocation.Z += FMath::Sin(Alpha * PI) * FMath::Clamp(TraversalState.ArcHeight, 0.0f, 1500.0f);
+        TargetLocation = SplineTransform.GetLocation();
+        TargetRotation = SplineTransform.Rotator();
+    }
+    else
+    {
+        TargetLocation = FMath::Lerp(
+            FVector(TraversalState.StartLocation),
+            FVector(TraversalState.EndLocation),
+            Alpha
+        );
+
+        if (TraversalState.TraversalType == EJumanjiTraversalType::ContextJump)
+        {
+            TargetLocation.Z += FMath::Sin(Alpha * PI)
+                * FMath::Clamp(TraversalState.ArcHeight, 0.0f, 1500.0f);
+        }
+
+        TargetRotation = FMath::Lerp(
+            TraversalState.StartRotation,
+            TraversalState.EndRotation,
+            Alpha
+        );
     }
 
-    const FRotator TargetRotation = FMath::Lerp(TraversalState.StartRotation, TraversalState.EndRotation, Alpha);
     FHitResult Hit;
     Character->SetActorLocation(TargetLocation, true, &Hit, ETeleportType::None);
-
     if (Hit.IsValidBlockingHit())
     {
         FinishTraversal(false);
@@ -173,7 +207,13 @@ void UJumanjiTraversalComponent::FinishTraversal(bool bCompleted)
     if (bCompleted)
     {
         FHitResult FinalHit;
-        Character->SetActorLocation(FVector(TraversalState.EndLocation), true, &FinalHit, ETeleportType::None);
+        Character->SetActorLocation(
+            FVector(TraversalState.EndLocation),
+            true,
+            &FinalHit,
+            ETeleportType::None
+        );
+
         if (FinalHit.IsValidBlockingHit())
         {
             bCompleted = false;
@@ -186,16 +226,14 @@ void UJumanjiTraversalComponent::FinishTraversal(bool bCompleted)
 
     RestoreMovementMode();
     TraversalState.bActive = false;
-    TraversalState.Revision = TraversalState.Revision < MAX_int32 ? TraversalState.Revision + 1 : 1;
+    TraversalState.bLastTraversalCompleted = bCompleted;
+    TraversalState.Revision = TraversalState.Revision < MAX_int32
+        ? TraversalState.Revision + 1
+        : 1;
+
     SetComponentTickEnabled(false);
     Character->ForceNetUpdate();
-
-    OnTraversalPresentationChanged(
-        false,
-        TraversalState.TraversalId,
-        TraversalState.TraversalType,
-        GetActiveTraversalLink()
-    );
+    NotifyTraversalStateChanged();
 
     if (!bCompleted)
     {
@@ -215,14 +253,25 @@ void UJumanjiTraversalComponent::RestoreMovementMode()
         return;
     }
 
-    const EMovementMode RestoreMode = bHasPreviousMovementMode ? PreviousMovementMode.GetValue() : MOVE_Walking;
-    const uint8 RestoreCustomMode = bHasPreviousMovementMode ? PreviousCustomMovementMode : 0;
+    const EMovementMode RestoreMode = bHasPreviousMovementMode
+        ? PreviousMovementMode.GetValue()
+        : MOVE_Walking;
+    const uint8 RestoreCustomMode = bHasPreviousMovementMode
+        ? PreviousCustomMovementMode
+        : 0;
+
     Movement->SetMovementMode(RestoreMode == MOVE_None ? MOVE_Walking : RestoreMode, RestoreCustomMode);
     bHasPreviousMovementMode = false;
 }
 
 AJumanjiTraversalLink* UJumanjiTraversalComponent::GetActiveTraversalLink() const
 {
+    if (IsValid(ActiveTraversalLink)
+        && ActiveTraversalLink->GetTraversalId() == TraversalState.TraversalId)
+    {
+        return ActiveTraversalLink;
+    }
+
     if (TraversalState.TraversalId.IsNone() || !GetWorld())
     {
         return nullptr;
@@ -235,11 +284,20 @@ AJumanjiTraversalLink* UJumanjiTraversalComponent::GetActiveTraversalLink() cons
             return *It;
         }
     }
+
     return nullptr;
 }
 
 void UJumanjiTraversalComponent::OnRep_TraversalState()
 {
+    ActiveTraversalLink = GetActiveTraversalLink();
+    NotifyTraversalStateChanged();
+}
+
+void UJumanjiTraversalComponent::NotifyTraversalStateChanged()
+{
+    OnTraversalStateChanged.Broadcast(TraversalState);
+
     OnTraversalPresentationChanged(
         TraversalState.bActive,
         TraversalState.TraversalId,
