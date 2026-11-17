@@ -110,8 +110,16 @@ def validate_project(project_root: Path) -> list[str]:
                 f"line {line}: Pattern must be one of {', '.join(sorted(ALLOWED_PATTERNS))}"
             )
 
-        for field in NUMERIC_BOUNDS:
-            _number(row, field, errors, line)
+        numeric_values = {
+            field: _number(row, field, errors, line)
+            for field in NUMERIC_BOUNDS
+        }
+
+        if pattern in {"Line", "Cone"}:
+            length = numeric_values.get("LengthCm")
+            width = numeric_values.get("WidthCm")
+            if length is not None and width is not None and (length <= 0.0 or width <= 0.0):
+                errors.append(f"line {line}: {pattern} requires LengthCm and WidthCm greater than zero")
 
     missing_phases = sorted(EXPECTED_PHASES - seen_phases)
     if missing_phases:
