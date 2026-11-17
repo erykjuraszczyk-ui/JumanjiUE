@@ -354,6 +354,7 @@ void UJumanjiAbilityHUDSlotWidget::PlaySoundAsync(const TSoftObjectPtr<USoundBas
     }
 
     const FSoftObjectPath SoundPath = Sound.ToSoftObjectPath();
+    RequestedAudioPath = SoundPath;
     if (SoundPath.IsNull())
     {
         return;
@@ -365,7 +366,7 @@ void UJumanjiAbilityHUDSlotWidget::PlaySoundAsync(const TSoftObjectPtr<USoundBas
         FStreamableDelegate::CreateLambda([WeakThis, SoundPath]()
         {
             UJumanjiAbilityHUDSlotWidget* Widget = WeakThis.Get();
-            if (!Widget)
+            if (!Widget || Widget->RequestedAudioPath != SoundPath)
             {
                 return;
             }
