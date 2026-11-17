@@ -9,7 +9,6 @@ class USceneComponent;
 class USplineComponent;
 class USphereComponent;
 class UPrimitiveComponent;
-class USceneComponent;
 class UAnimMontage;
 class AJumanjiLiftPlatform;
 
