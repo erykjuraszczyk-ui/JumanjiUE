@@ -90,3 +90,21 @@ Set up the boss Blueprint:
 4. Cancel on interruption or phase-specific transition.
 
 See `Docs/STAGE_28_EMERALD_JUNGLE_ENCOUNTER_PRESENTATION_QA.md` for the full contract, validation and multiplayer/mobile QA checklist. The CSV is an authoring manifest, not an imported DataTable asset; the UMG Blueprint and all final icon/material/audio/Niagara assets still need to be created in Unreal Editor.
+
+
+## Stage 21 — Ability Presentation Blueprint Integration
+
+Create `WBP_AbilitySlot` as a child of `UJumanjiAbilityHUDSlotWidget` and `WBP_AbilityHUD` as a child of `UJumanjiAbilityHUDWidget`.
+
+The five child widget names must match the optional bindings:
+- `PrimarySlotWidget`
+- `ActiveSlotWidget`
+- `PassiveSlotWidget`
+- `UltimateSlotWidget`
+- `DodgeSlotWidget`
+
+Inside each slot widget, use the optional names `SlotButton`, `AbilityIcon`, `CooldownOverlay`, `CooldownFallbackBar`, `AbilityNameText`, `CooldownText`, `ResourceCostText`, and `SlotStateText`. An optional `ActivationPulseAnimation` plays on successful activation.
+
+Slot assets are streamed asynchronously. The original designer placeholder brush remains visible until an icon is loaded. If the radial material is unavailable, the slot uses the fallback progress bar. Sound is played only from the explicit per-slot feedback event, never from the regular HUD refresh.
+
+See `Docs/STAGE_21_ABILITY_PRESENTATION_BLUEPRINT_INTEGRATION.md` for the full widget hierarchy, mobile layout guidance and acceptance checklist. The .uasset files and final icon/material/audio binaries must be authored/imported in Unreal Editor.
