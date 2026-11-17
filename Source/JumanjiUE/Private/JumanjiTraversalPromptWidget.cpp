@@ -34,15 +34,15 @@ void UJumanjiTraversalPromptWidget::NativeTick(
 
     const float Now = World->GetTimeSeconds();
 
-    if (PromptViewModel.Status == EJumanjiTraversalPromptStatus::Available
-        && IsValid(FocusedTraversalLink))
+    if (PromptViewModel.Status == EJumanjiTraversalPromptStatus::Available)
     {
         APlayerController* OwningController = GetOwningPlayer();
         AJumanjiCharacter* Character = OwningController
             ? Cast<AJumanjiCharacter>(OwningController->GetPawn())
             : nullptr;
 
-        if (!Character
+        if (!IsValid(FocusedTraversalLink)
+            || !Character
             || (Character->GetTraversalComponent() && Character->GetTraversalComponent()->IsTraversing())
             || !FocusedTraversalLink->CanBeUsedBy(Character))
         {
@@ -159,6 +159,17 @@ bool UJumanjiTraversalPromptWidget::RequestFocusedTraversal()
     if (!PlayerController || !PlayerController->RequestTraversalLink(FocusedTraversalLink))
     {
         return false;
+    }
+
+    const FJumanjiTraversalReplicatedState CurrentState = BoundTraversalComponent
+        ? BoundTraversalComponent->GetTraversalState()
+        : FJumanjiTraversalReplicatedState();
+
+    if (CurrentState.bActive && CurrentState.TraversalId == PromptViewModel.TraversalId)
+    {
+        // Standalone/listen-server authority can start the traversal synchronously.
+        HandleTraversalStateChanged(CurrentState);
+        return true;
     }
 
     PromptViewModel.Status = EJumanjiTraversalPromptStatus::PendingServer;
