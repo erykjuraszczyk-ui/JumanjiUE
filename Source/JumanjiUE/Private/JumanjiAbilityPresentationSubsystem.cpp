@@ -8,6 +8,16 @@
 
 namespace
 {
+    FName GetCatalogSlotIdFromManifestSlotId(FName ManifestSlotId)
+    {
+        if (ManifestSlotId == FName(TEXT("PrimaryAttack"))) return FName(TEXT("SLOT_PRIMARY"));
+        if (ManifestSlotId == FName(TEXT("Active"))) return FName(TEXT("SLOT_ACTIVE"));
+        if (ManifestSlotId == FName(TEXT("Passive"))) return FName(TEXT("SLOT_PASSIVE"));
+        if (ManifestSlotId == FName(TEXT("Ultimate"))) return FName(TEXT("SLOT_ULTIMATE"));
+        if (ManifestSlotId == FName(TEXT("Dodge"))) return FName(TEXT("SLOT_DODGE"));
+        return NAME_None;
+    }
+
     FSoftObjectPath MakePresentationObjectPath(const FString& AssetPath)
     {
         if (AssetPath.IsEmpty())
@@ -120,6 +130,12 @@ bool UJumanjiAbilityPresentationSubsystem::IsRowCompatible(
         return false;
     }
 
+    const FName CatalogSlotId = GetCatalogSlotIdFromManifestSlotId(Row.SlotId);
+    if (CatalogSlotId.IsNone())
+    {
+        return false;
+    }
+
     const UGameInstance* GameInstance = GetGameInstance();
     const UJumanjiAbilityCatalogSubsystem* Catalog = GameInstance
         ? GameInstance->GetSubsystem<UJumanjiAbilityCatalogSubsystem>()
@@ -133,7 +149,7 @@ bool UJumanjiAbilityPresentationSubsystem::IsRowCompatible(
     FJumanjiAbilityCatalogEntry AbilityEntry;
     return Catalog->GetAbilityDefinition(Row.AbilityId, AbilityEntry)
         && AbilityEntry.CharacterId == Row.CharacterId
-        && AbilityEntry.SlotId == Row.SlotId;
+        && AbilityEntry.SlotId == CatalogSlotId;
 }
 
 FLinearColor UJumanjiAbilityPresentationSubsystem::ParseHexColor(
