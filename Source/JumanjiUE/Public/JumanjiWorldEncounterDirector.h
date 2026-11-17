@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "JumanjiWorldEncounter.h"
 #include "JumanjiWorldEncounterDirector.generated.h"
 
 class AActor;
@@ -127,6 +128,7 @@ private:
     UPROPERTY(Transient)
     TObjectPtr<AJumanjiBossCharacter> ActiveBoss;
 
+    int32 ActiveWaveIndex = INDEX_NONE;
     bool bEncounterActive = false;
     bool bListeningForChapterChanges = false;
 };
