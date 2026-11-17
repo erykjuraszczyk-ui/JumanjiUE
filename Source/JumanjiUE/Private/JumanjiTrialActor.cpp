@@ -73,6 +73,34 @@ bool AJumanjiTrialActor::IsReadyToActivateForObjective(
         && ValidateStepDefinitions();
 }
 
+bool AJumanjiTrialActor::CanResetForEncounterRetry() const
+{
+    return !ObjectiveId.IsNone()
+        && ValidateStepDefinitions()
+        && static_cast<uint8>(TrialState) <= static_cast<uint8>(EJumanjiTrialState::Completed);
+}
+
+bool AJumanjiTrialActor::ResetForEncounterRetry()
+{
+    if (!HasAuthority() || !CanResetForEncounterRetry())
+    {
+        return false;
+    }
+
+    if (TrialState == EJumanjiTrialState::Dormant && CurrentStepIndex == 0)
+    {
+        return true;
+    }
+
+    TrialState = EJumanjiTrialState::Dormant;
+    CurrentStepIndex = 0;
+    TrialRevision = TrialRevision < MAX_int32 ? TrialRevision + 1 : 1;
+
+    BroadcastTrialStateChanged();
+    ForceNetUpdate();
+    return true;
+}
+
 bool AJumanjiTrialActor::ActivateTrial()
 {
     if (!HasAuthority()
