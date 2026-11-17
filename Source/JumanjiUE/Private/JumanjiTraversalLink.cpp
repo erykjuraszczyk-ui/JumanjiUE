@@ -125,7 +125,7 @@ bool AJumanjiTraversalLink::GetTraversalPathTransformAtAlpha(
         true
     );
 
-    FVector Forward = OutTransform.GetUnitAxis(EAxis::X);
+    FVector Forward = OutTransform.GetRotation().GetAxisX();
     if (bReverse)
     {
         Forward *= -1.0f;
