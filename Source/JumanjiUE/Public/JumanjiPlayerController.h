@@ -10,6 +10,7 @@ class UJumanjiAbilityHUDWidget;
 class AJumanjiTrialActor;
 class UJumanjiWorldAtlasWidget;
 class UJumanjiWorldNavigationComponent;
+class AJumanjiTraversalLink;
 
 /** Validates character selection and routes world interactions through the server. */
 UCLASS()
@@ -62,6 +63,9 @@ public:
         int32 ExpectedRevision
     );
 
+    UFUNCTION(BlueprintCallable, Category = "JUMANJI|Traversal")
+    bool RequestTraversalLink(AJumanjiTraversalLink* TraversalLink);
+
 protected:
     UFUNCTION(Server, Reliable)
     void ServerSelectCharacter(FName CharacterId);
@@ -78,6 +82,9 @@ protected:
         FName OptionId,
         int32 ExpectedRevision
     );
+
+    UFUNCTION(Server, Reliable)
+    void ServerRequestTraversalLink(AJumanjiTraversalLink* TraversalLink);
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "JUMANJI|UI")
     TSubclassOf<UJumanjiGreatSpiritSelectionWidget> GreatSpiritSelectionWidgetClass;
@@ -104,6 +111,8 @@ private:
         FName OptionId,
         int32 ExpectedRevision
     );
+
+    bool ProcessTraversalLinkOnServer(AJumanjiTraversalLink* TraversalLink);
 
     UPROPERTY(Transient)
     TObjectPtr<UJumanjiGreatSpiritSelectionWidget> ActiveGreatSpiritSelectionWidget;

@@ -38,3 +38,17 @@ python -m unittest discover -s Scripts/Tests -p "test_*.py" -v
 GitHub Actions runs the source-data checks for relevant pull requests and updates to main. Reports are uploaded as a workflow artifact.
 
 The validator checks only CSV/JSON consistency; it does not inspect Unreal binary assets, build Navigation Data Chunks, validate runtime collision, or measure Android performance. Use `Docs/STAGE_22_EMERALD_JUNGLE_GREYBOX_VALIDATION.md` for the editor and device test plan.
+
+
+## Stage 23 — Contextual traversal and off-mesh links
+
+- AJumanjiTraversalLink derives from ANavLinkProxy and exposes entry/exit scene anchors, a stable TraversalId and a traversal type.
+- The Smart Link connects the local NavMesh areas and can be enabled/disabled by the server.
+- UJumanjiTraversalComponent is created on AJumanjiCharacter. It validates grounded state, link range and active traversal state, then interpolates the character on the server with collision sweep.
+- AJumanjiPlayerController::RequestTraversalLink submits the client request. A true result on the client means queued, not accepted.
+- Supported traversal types: ContextJump, Climb, Zipline and Lift.
+- Montage references are presentation hooks. The character Blueprint must load and play them asynchronously after OnTraversalPresentationChanged.
+
+Authoring and acceptance criteria: Docs/STAGE_23_EMERALD_JUNGLE_TRAVERSAL_INTERACTIONS.md.
+
+The map, placed traversal links, Blueprint children, final montages, touch widget and built Navigation Data are not part of the C++ source commit.
