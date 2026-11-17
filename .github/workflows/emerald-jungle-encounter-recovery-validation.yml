@@ -1,0 +1,40 @@
+name: Emerald Jungle Encounter Recovery Validation
+
+on:
+  pull_request:
+    paths:
+      - "Source/JumanjiUE/Private/JumanjiGameState.cpp"
+      - "Source/JumanjiUE/Private/JumanjiTrialActor.cpp"
+      - "Source/JumanjiUE/Private/JumanjiAdventureChapterDirector.cpp"
+      - "Source/JumanjiUE/Private/JumanjiWorldEncounterDirector.cpp"
+      - "Source/JumanjiUE/Public/JumanjiWorldEncounterDirector.h"
+      - "Docs/STAGE_29_ENCOUNTER_REPLAY_RECOVERY.md"
+      - "Scripts/validate_emerald_jungle_encounter_recovery.py"
+      - "Scripts/Tests/test_validate_emerald_jungle_encounter_recovery.py"
+      - ".github/workflows/emerald-jungle-encounter-recovery-validation.yml"
+  push:
+    branches: [main]
+    paths:
+      - "Source/JumanjiUE/Private/JumanjiGameState.cpp"
+      - "Source/JumanjiUE/Private/JumanjiTrialActor.cpp"
+      - "Source/JumanjiUE/Private/JumanjiAdventureChapterDirector.cpp"
+      - "Source/JumanjiUE/Private/JumanjiWorldEncounterDirector.cpp"
+      - "Source/JumanjiUE/Public/JumanjiWorldEncounterDirector.h"
+      - "Docs/STAGE_29_ENCOUNTER_REPLAY_RECOVERY.md"
+      - "Scripts/validate_emerald_jungle_encounter_recovery.py"
+      - "Scripts/Tests/test_validate_emerald_jungle_encounter_recovery.py"
+      - ".github/workflows/emerald-jungle-encounter-recovery-validation.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate-encounter-recovery:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Validate encounter replay/recovery source contracts
+        run: python Scripts/validate_emerald_jungle_encounter_recovery.py
+      - name: Run encounter recovery unit tests
+        run: python -m unittest discover -s Scripts/Tests -p "test_validate_emerald_jungle_encounter_recovery.py" -v
