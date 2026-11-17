@@ -102,6 +102,10 @@ public:
     /** Detaches one rider when traversal is cancelled or its component ends. */
     void RemovePassenger(ACharacter* Character, bool bRestoreMovement);
 
+    /** Server/operator recovery for a blocked lift. Moves only to a collision-free authored stop. */
+    UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "JUMANJI|Lift")
+    bool TryRecoverBlockedPlatform();
+
     UPROPERTY(BlueprintAssignable, Category = "JUMANJI|Lift")
     FJumanjiLiftPlatformStateChanged OnLiftStateChanged;
 
@@ -148,6 +152,7 @@ private:
     void OnRep_LiftState();
 
     bool IsCharacterInsideBoardingVolume(const ACharacter* Character) const;
+    bool IsRecoveryLocationClear(const FVector& CandidateLocation) const;
     void StartTravel(bool bReverse);
     void UpdateLiftMotion();
     void FinishTravel(bool bCompleted);
