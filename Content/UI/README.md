@@ -68,3 +68,24 @@ After compiling the project:
 - Keep cooldown and cost presentation bound to the live GAS state from Stage 18. The manifest cooldown is reference-only.
 
 See `Docs/STAGE_20_ABILITY_PRESENTATION_RUNTIME.md` and `Content/UI/AbilityPresentation/README.md` for the complete workflow.
+
+## Stage 28 — Emerald Jungle Encounter HUD
+
+Create `WBP_EmeraldJungleEncounterHUD` as a Widget Blueprint child of `UJumanjiWorldEncounterHUDWidget` in `/Game/UI/Encounter`. Assign it to `WorldEncounterHUDWidgetClass` on `BP_JumanjiPlayerController`. The local controller creates the widget at BeginPlay.
+
+Implement these events:
+- `OnEncounterHUDPresentationChanged`: render phase status, Great Spirit trial count, current/total enemy wave, active enemy count, boss Health percentage and boss phase.
+- `OnEncounterPhaseCue`: play a short visual/audio cue when the replicated phase changes. Ignore Inactive if no idle announcement is wanted.
+- `OnBossTelegraphPresentationChanged`: show or clear the warning using Pattern, Origin, Direction, Radius, Length and Width. Use a readable shape and a visible countdown.
+ 
+Use `GetTelegraphTimeRemaining` or `GetTelegraphRemainingPercent` for the countdown. These values are derived from the synchronized GameState server time, not the phone's local wall clock.
+
+The widget is a read-only presentation surface. Do not modify WorldEncounterState, boss health, enemy count, reward state or telegraph state from UMG. The real boss action is invoked by the server-side `BP_OnBossTelegraphExecutionRequested` event on the boss Blueprint; the visual warning itself does not apply damage.
+
+Set up the boss Blueprint:
+1. Call `BeginBossTelegraph` from server-owned boss logic with a stable AttackId from `Data/Encounter/EmeraldJungleBossTelegraphs.csv`.
+2. Use `BP_OnBossTelegraphChanged` for the warning/clear VFX.
+3. Use `BP_OnBossTelegraphExecutionRequested` to run the actual server-authoritative GAS/ability behavior.
+4. Cancel on interruption or phase-specific transition.
+
+See `Docs/STAGE_28_EMERALD_JUNGLE_ENCOUNTER_PRESENTATION_QA.md` for the full contract, validation and multiplayer/mobile QA checklist. The CSV is an authoring manifest, not an imported DataTable asset; the UMG Blueprint and all final icon/material/audio/Niagara assets still need to be created in Unreal Editor.
