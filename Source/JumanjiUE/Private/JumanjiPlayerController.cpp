@@ -6,6 +6,7 @@
 #include "JumanjiCharacterRosterSubsystem.h"
 #include "JumanjiAdventureHUDWidget.h"
 #include "JumanjiAbilityHUDWidget.h"
+#include "JumanjiWorldEncounterHUDWidget.h"
 #include "JumanjiAbilityCatalogSubsystem.h"
 #include "JumanjiGreatSpiritSelectionWidget.h"
 #include "JumanjiPlayerState.h"
@@ -56,6 +57,19 @@ void AJumanjiPlayerController::BeginPlay()
         if (IsValid(ActiveAbilityHUDWidget))
         {
             ActiveAbilityHUDWidget->AddToViewport(60);
+        }
+    }
+
+    if (WorldEncounterHUDWidgetClass)
+    {
+        ActiveWorldEncounterHUDWidget = CreateWidget<UJumanjiWorldEncounterHUDWidget>(
+            this,
+            WorldEncounterHUDWidgetClass
+        );
+
+        if (IsValid(ActiveWorldEncounterHUDWidget))
+        {
+            ActiveWorldEncounterHUDWidget->AddToViewport(65);
         }
     }
 
