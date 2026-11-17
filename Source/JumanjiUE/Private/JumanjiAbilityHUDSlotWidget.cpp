@@ -348,6 +348,8 @@ void UJumanjiAbilityHUDSlotWidget::PlayFeedback(EJumanjiAbilityHUDFeedback Feedb
 
 void UJumanjiAbilityHUDSlotWidget::PlaySoundAsync(const TSoftObjectPtr<USoundBase>& Sound)
 {
+    RequestedAudioPath = Sound.ToSoftObjectPath();
+
     if (AudioLoadHandle.IsValid())
     {
         AudioLoadHandle->CancelHandle();
@@ -360,8 +362,7 @@ void UJumanjiAbilityHUDSlotWidget::PlaySoundAsync(const TSoftObjectPtr<USoundBas
         return;
     }
 
-    const FSoftObjectPath SoundPath = Sound.ToSoftObjectPath();
-    RequestedAudioPath = SoundPath;
+    const FSoftObjectPath SoundPath = RequestedAudioPath;
     if (SoundPath.IsNull())
     {
         return;
