@@ -11,6 +11,7 @@ class UCameraComponent;
 class USpringArmComponent;
 class UInputComponent;
 class UAbilitySystemComponent;
+class UJumanjiTraversalComponent;
 
 /**
  * Base third-person character for JUMANJI.
@@ -25,6 +26,9 @@ public:
     AJumanjiCharacter();
 
     virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
+
+    UFUNCTION(BlueprintPure, Category = "JUMANJI|Traversal")
+    UJumanjiTraversalComponent* GetTraversalComponent() const { return TraversalComponent; }
 
     /** Entry point for both hardware input and future mobile touch buttons. */
     UFUNCTION(BlueprintCallable, Category = "JUMANJI|Abilities")
@@ -66,6 +70,9 @@ private:
 
     UPROPERTY(Transient)
     FName LastAppliedCharacterId = NAME_None;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "JUMANJI|Traversal", meta = (AllowPrivateAccess = "true"))
+    TObjectPtr<UJumanjiTraversalComponent> TraversalComponent;
 
 
 };

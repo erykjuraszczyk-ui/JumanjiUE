@@ -11,6 +11,7 @@
 #include "JumanjiCharacterDefinition.h"
 #include "JumanjiCharacterRosterSubsystem.h"
 #include "JumanjiPlayerState.h"
+#include "JumanjiTraversalComponent.h"
 #include "Math/RotationMatrix.h"
 
 AJumanjiCharacter::AJumanjiCharacter()
@@ -38,6 +39,7 @@ AJumanjiCharacter::AJumanjiCharacter()
     FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
     FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
     FollowCamera->bUsePawnControlRotation = false;
+    TraversalComponent = CreateDefaultSubobject<UJumanjiTraversalComponent>(TEXT("TraversalComponent"));
 }
 
 UAbilitySystemComponent* AJumanjiCharacter::GetAbilitySystemComponent() const
@@ -190,6 +192,11 @@ void AJumanjiCharacter::ApplySelectedAbilityLoadout(FName CharacterId)
 }
 bool AJumanjiCharacter::ActivateAbilityByInputTag(FGameplayTag InputTag)
 {
+    if (TraversalComponent && TraversalComponent->IsTraversing())
+    {
+        return false;
+    }
+
     AJumanjiPlayerState* JumanjiPlayerState = GetPlayerState<AJumanjiPlayerState>();
     UJumanjiAbilitySystemComponent* AbilitySystem =
         JumanjiPlayerState ? JumanjiPlayerState->GetJumanjiAbilitySystemComponent() : nullptr;
@@ -239,7 +246,7 @@ void AJumanjiCharacter::Input_Dodge()
 
 void AJumanjiCharacter::MoveForward(float Value)
 {
-    if (!Controller || FMath::IsNearlyZero(Value))
+    if ((TraversalComponent && TraversalComponent->IsTraversing()) || !Controller || FMath::IsNearlyZero(Value))
     {
         return;
     }
@@ -251,7 +258,7 @@ void AJumanjiCharacter::MoveForward(float Value)
 
 void AJumanjiCharacter::MoveRight(float Value)
 {
-    if (!Controller || FMath::IsNearlyZero(Value))
+    if ((TraversalComponent && TraversalComponent->IsTraversing()) || !Controller || FMath::IsNearlyZero(Value))
     {
         return;
     }

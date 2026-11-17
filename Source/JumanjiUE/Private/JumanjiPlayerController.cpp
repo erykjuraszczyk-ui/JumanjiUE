@@ -13,6 +13,9 @@
 #include "JumanjiTrialActor.h"
 #include "JumanjiWorldAtlasWidget.h"
 #include "JumanjiWorldNavigationComponent.h"
+#include "JumanjiCharacter.h"
+#include "JumanjiTraversalLink.h"
+#include "JumanjiTraversalComponent.h"
 
 AJumanjiPlayerController::AJumanjiPlayerController()
 {
@@ -350,6 +353,36 @@ bool AJumanjiPlayerController::ProcessTrialInteractionOnServer(
     }
 
     return TrialActor->SubmitOption(OptionId, ExpectedRevision);
+}
+
+bool AJumanjiPlayerController::RequestTraversalLink(AJumanjiTraversalLink* TraversalLink)
+{
+    if (!IsValid(TraversalLink) || !TraversalLink->CanBeUsedBy(GetPawn()))
+    {
+        return false;
+    }
+    if (HasAuthority())
+    {
+        return ProcessTraversalLinkOnServer(TraversalLink);
+    }
+    ServerRequestTraversalLink(TraversalLink);
+    return true; // Queued only; observe replicated traversal state for acceptance.
+}
+
+void AJumanjiPlayerController::ServerRequestTraversalLink_Implementation(AJumanjiTraversalLink* TraversalLink)
+{
+    ProcessTraversalLinkOnServer(TraversalLink);
+}
+
+bool AJumanjiPlayerController::ProcessTraversalLinkOnServer(AJumanjiTraversalLink* TraversalLink)
+{
+    if (!HasAuthority() || !IsValid(TraversalLink))
+    {
+        return false;
+    }
+    AJumanjiCharacter* Character = Cast<AJumanjiCharacter>(GetPawn());
+    UJumanjiTraversalComponent* Traversal = Character ? Character->GetTraversalComponent() : nullptr;
+    return Traversal && Traversal->TryStartTraversal(TraversalLink);
 }
 
 void AJumanjiPlayerController::ApplyCharacterSelectionOnServer(FName CharacterId)
