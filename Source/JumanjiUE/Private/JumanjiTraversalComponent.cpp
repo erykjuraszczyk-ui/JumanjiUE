@@ -6,6 +6,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "JumanjiTraversalLink.h"
+#include "JumanjiLiftPlatform.h"
 
 namespace
 {
@@ -35,6 +36,16 @@ void UJumanjiTraversalComponent::EndPlay(const EEndPlayReason::Type EndPlayReaso
 {
     if (GetOwner() && GetOwner()->HasAuthority() && TraversalState.bActive)
     {
+        if (AJumanjiTraversalLink* Link = GetActiveTraversalLink())
+        {
+            if (Link->GetTraversalType() == EJumanjiTraversalType::Lift)
+            {
+                if (AJumanjiLiftPlatform* LiftPlatform = Link->GetLiftPlatform())
+                {
+                    LiftPlatform->RemovePassenger(Cast<ACharacter>(GetOwner()), false);
+                }
+            }
+        }
         FinishTraversal(false);
     }
 
@@ -106,7 +117,28 @@ bool UJumanjiTraversalComponent::TryStartTraversal(AJumanjiTraversalLink* Link)
         ? TraversalState.Revision + 1
         : 1;
 
-    SetComponentTickEnabled(true);
+    if (Link->GetTraversalType() == EJumanjiTraversalType::Lift)
+    {
+        AJumanjiLiftPlatform* LiftPlatform = Link->GetLiftPlatform();
+        if (!IsValid(LiftPlatform)
+            || !LiftPlatform->TryBoardCharacter(Character, this, bReverse))
+        {
+            TraversalState.bActive = false;
+            TraversalState.bLastTraversalCompleted = false;
+            ActiveTraversalLink = nullptr;
+            RestoreMovementMode();
+            return false;
+        }
+
+        // The replicated lift actor moves the platform and attached riders.
+        // The character traversal component waits for the platform completion callback.
+        SetComponentTickEnabled(false);
+    }
+    else
+    {
+        SetComponentTickEnabled(true);
+    }
+
     Character->ForceNetUpdate();
     NotifyTraversalStateChanged();
     return true;
@@ -189,9 +221,31 @@ void UJumanjiTraversalComponent::TickComponent(
 
 void UJumanjiTraversalComponent::CancelTraversal()
 {
-    if (GetOwner() && GetOwner()->HasAuthority() && TraversalState.bActive)
+    if (!GetOwner() || !GetOwner()->HasAuthority() || !TraversalState.bActive)
     {
-        FinishTraversal(false);
+        return;
+    }
+
+    if (AJumanjiTraversalLink* Link = GetActiveTraversalLink())
+    {
+        if (Link->GetTraversalType() == EJumanjiTraversalType::Lift)
+        {
+            if (AJumanjiLiftPlatform* LiftPlatform = Link->GetLiftPlatform())
+            {
+                LiftPlatform->RemovePassenger(Cast<ACharacter>(GetOwner()), false);
+            }
+        }
+    }
+
+    FinishTraversal(false);
+}
+
+void UJumanjiTraversalComponent::CompleteLiftPlatformRide(bool bCompleted)
+{
+    if (GetOwner() && GetOwner()->HasAuthority() && TraversalState.bActive
+        && TraversalState.TraversalType == EJumanjiTraversalType::Lift)
+    {
+        FinishTraversal(bCompleted);
     }
 }
 
