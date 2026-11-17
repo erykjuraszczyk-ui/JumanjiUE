@@ -6,6 +6,7 @@
 #include "JumanjiTraversalPromptWidget.generated.h"
 
 class AJumanjiTraversalLink;
+class UTexture2D;
 class UJumanjiTraversalComponent;
 
 UENUM(BlueprintType)
@@ -39,6 +40,18 @@ struct JUMANJIUE_API FJumanjiTraversalPromptViewModel
 
     UPROPERTY(BlueprintReadOnly, Category = "JUMANJI|Traversal|UI")
     FText StatusText;
+
+    UPROPERTY(BlueprintReadOnly, Category = "JUMANJI|Traversal|UI")
+    FText PromptText;
+
+    UPROPERTY(BlueprintReadOnly, Category = "JUMANJI|Traversal|UI")
+    FText InProgressText;
+
+    UPROPERTY(BlueprintReadOnly, Category = "JUMANJI|Traversal|UI")
+    FText CompletedText;
+
+    UPROPERTY(BlueprintReadOnly, Category = "JUMANJI|Traversal|UI")
+    FText InterruptedText;
 
     UPROPERTY(BlueprintReadOnly, Category = "JUMANJI|Traversal|UI")
     TSoftObjectPtr<UTexture2D> Icon;
@@ -97,7 +110,10 @@ protected:
 private:
     void BindTraversalComponent();
     void UnbindTraversalComponent();
+
+    UFUNCTION()
     void HandleTraversalStateChanged(const FJumanjiTraversalReplicatedState& State);
+
     void BroadcastPrompt();
 
     UPROPERTY(Transient)
