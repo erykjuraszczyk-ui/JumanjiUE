@@ -24,6 +24,7 @@ Open-world third-person adventure RPG prototype with a shared-world direction an
 - Stage 19 — Ability Presentation Asset Pack: 45-slot icon manifest, nine Great Spirit palettes, radial cooldown material specification, UI audio feedback and Gameplay Cue/VFX authoring contract.
 - Stage 20 — Ability Presentation Runtime Integration: validated manifest DataTable reader, stable AbilityId binding, soft-reference presentation data and HUD integration without changing GAS authority.
 - Stage 21 — Emerald Jungle World Authoring Pack: import-ready region/landmark DataTable CSVs, 29-row greybox placement ledger and World Partition assembly manifest.
+- Stage 22 — Emerald Jungle Greybox Validation & Mobile Performance: source-data validator, unit/integration tests, GitHub Actions quality gate and Android profiling run template.
 
 ## The nine playable Great Spirits
 1. Great Spirit I — Duch Korzeni (Root / Guardian)
@@ -77,6 +78,7 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - Docs/STAGE_10_GREAT_SPIRIT_TRIAL_CONTENT_PACK.md — nine trial definitions, puzzle sequences, presentation hooks and Blueprint authoring workflow.
 - Docs/STAGE_11_EMERALD_JUNGLE_WORLD_ASSEMBLY.md — World Partition map layout, ten-region atlas, Data Layers, discovery/landmark setup and acceptance checklist.
 - Docs/STAGE_21_EMERALD_JUNGLE_WORLD_AUTHORING_PACK.md — DataTable import, greybox coordinates, actor placement and validation workflow.
+- Docs/STAGE_22_EMERALD_JUNGLE_GREYBOX_VALIDATION.md — automated source validation, Unreal Editor/World Partition test plan and Android performance profiling.
 - Content/World/README.md — world atlas, navigation and profile-persistence setup.
 - Content/Adventure/Trials/README.md — Blueprint trial and UMG authoring guide.
 - Content/UI/README.md — Widget Blueprint asset setup.
