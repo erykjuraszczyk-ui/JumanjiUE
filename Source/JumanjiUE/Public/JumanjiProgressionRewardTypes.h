@@ -119,3 +119,35 @@ struct JUMANJIUE_API FJumanjiCombatProgressionValues
     UPROPERTY(BlueprintReadOnly, Category = "JUMANJI|Progression")
     float Defense = 5.0f;
 };
+
+
+/** One-time personal reward issued when a server-authoritative world encounter is completed. */
+USTRUCT(BlueprintType)
+struct JUMANJIUE_API FJumanjiWorldEncounterRewardDefinition : public FTableRowBase
+{
+    GENERATED_BODY()
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "JUMANJI|EncounterRewards")
+    FName EncounterId = NAME_None;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "JUMANJI|EncounterRewards")
+    FName RequiredChapterId = NAME_None;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "JUMANJI|EncounterRewards")
+    int64 AccountExperienceReward = 0;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "JUMANJI|EncounterRewards")
+    int64 ActiveCharacterExperienceReward = 0;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "JUMANJI|EncounterRewards")
+    FName CurrencyId = NAME_None;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "JUMANJI|EncounterRewards")
+    int64 CurrencyAmount = 0;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "JUMANJI|EncounterRewards")
+    FName ItemId = NAME_None;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "JUMANJI|EncounterRewards")
+    int32 ItemAmount = 0;
+};
