@@ -1,5 +1,6 @@
 #include "JumanjiAbilityHUDWidget.h"
 
+#include "JumanjiAbilityHUDSlotWidget.h"
 #include "AbilitySystemInterface.h"
 #include "Engine/GameInstance.h"
 #include "JumanjiAbilityPresentationSubsystem.h"
@@ -56,12 +57,63 @@ namespace
 void UJumanjiAbilityHUDWidget::NativeConstruct()
 {
     Super::NativeConstruct();
+
+    const TArray<UJumanjiAbilityHUDSlotWidget*> SlotWidgets =
+    {
+        PrimarySlotWidget,
+        ActiveSlotWidget,
+        PassiveSlotWidget,
+        UltimateSlotWidget,
+        DodgeSlotWidget
+    };
+
+    for (UJumanjiAbilityHUDSlotWidget* SlotWidget : SlotWidgets)
+    {
+        if (SlotWidget)
+        {
+            SlotWidget->OnSlotPressed.AddDynamic(
+                this,
+                &UJumanjiAbilityHUDWidget::HandleAbilitySlotPressed
+            );
+        }
+    }
+
+    OnAbilitySlotFeedback.AddDynamic(
+        this,
+        &UJumanjiAbilityHUDWidget::HandleAbilitySlotFeedback
+    );
+
     TryBindAbilitySystem();
     RefreshAbilityHUD();
 }
 
 void UJumanjiAbilityHUDWidget::NativeDestruct()
 {
+    const TArray<UJumanjiAbilityHUDSlotWidget*> SlotWidgets =
+    {
+        PrimarySlotWidget,
+        ActiveSlotWidget,
+        PassiveSlotWidget,
+        UltimateSlotWidget,
+        DodgeSlotWidget
+    };
+
+    for (UJumanjiAbilityHUDSlotWidget* SlotWidget : SlotWidgets)
+    {
+        if (SlotWidget)
+        {
+            SlotWidget->OnSlotPressed.RemoveDynamic(
+                this,
+                &UJumanjiAbilityHUDWidget::HandleAbilitySlotPressed
+            );
+        }
+    }
+
+    OnAbilitySlotFeedback.RemoveDynamic(
+        this,
+        &UJumanjiAbilityHUDWidget::HandleAbilitySlotFeedback
+    );
+
     UnbindAbilitySystem();
     TargetFocus.Reset();
     Super::NativeDestruct();
@@ -333,7 +385,8 @@ bool UJumanjiAbilityHUDWidget::ActivateAbilitySlot(EJumanjiAbilitySlot Slot)
 {
     if (Slot == EJumanjiAbilitySlot::Passive || !IsValid(CachedAbilitySystem))
     {
-        OnAbilityInputFeedback(
+        ReportSlotFeedback(
+            Slot,
             EJumanjiAbilityHUDFeedback::Unavailable,
             FText::FromString(TEXT("Ten slot nie ma ręcznego przycisku."))
         );
@@ -349,7 +402,8 @@ bool UJumanjiAbilityHUDWidget::ActivateAbilitySlot(EJumanjiAbilitySlot Slot)
 
     if (!State || !State->bIsGranted || !State->InputTag.IsValid())
     {
-        OnAbilityInputFeedback(
+        ReportSlotFeedback(
+            Slot,
             EJumanjiAbilityHUDFeedback::Unavailable,
             FText::FromString(TEXT("Ten slot nie jest skonfigurowany."))
         );
@@ -365,7 +419,8 @@ bool UJumanjiAbilityHUDWidget::ActivateAbilitySlot(EJumanjiAbilitySlot Slot)
     AJumanjiCharacter* Character = Cast<AJumanjiCharacter>(PlayerController->GetPawn());
     if (!Character)
     {
-        OnAbilityInputFeedback(
+        ReportSlotFeedback(
+            Slot,
             EJumanjiAbilityHUDFeedback::Unavailable,
             FText::FromString(TEXT("Postać nie jest jeszcze gotowa."))
         );
@@ -377,7 +432,8 @@ bool UJumanjiAbilityHUDWidget::ActivateAbilitySlot(EJumanjiAbilitySlot Slot)
 
     if (bActivated)
     {
-        OnAbilityInputFeedback(
+        ReportSlotFeedback(
+            Slot,
             EJumanjiAbilityHUDFeedback::Activated,
             FText::FromString(TEXT("Aktywowano zdolność."))
         );
@@ -386,14 +442,16 @@ bool UJumanjiAbilityHUDWidget::ActivateAbilitySlot(EJumanjiAbilitySlot Slot)
 
     if (State->bIsOnCooldown)
     {
-        OnAbilityInputFeedback(
+        ReportSlotFeedback(
+            Slot,
             EJumanjiAbilityHUDFeedback::Cooldown,
             FText::FromString(TEXT("Zdolność jest w trakcie odnowienia."))
         );
     }
     else if (!State->bHasRequiredResource)
     {
-        OnAbilityInputFeedback(
+        ReportSlotFeedback(
+            Slot,
             EJumanjiAbilityHUDFeedback::InsufficientResource,
             State->ResourceType == EJumanjiAbilityHUDResource::Resonance
                 ? FText::FromString(TEXT("Za mało rezonansu."))
@@ -402,7 +460,8 @@ bool UJumanjiAbilityHUDWidget::ActivateAbilitySlot(EJumanjiAbilitySlot Slot)
     }
     else
     {
-        OnAbilityInputFeedback(
+        ReportSlotFeedback(
+            Slot,
             EJumanjiAbilityHUDFeedback::Unavailable,
             FText::FromString(TEXT("Zdolność nie może być teraz aktywowana."))
         );
@@ -465,7 +524,69 @@ void UJumanjiAbilityHUDWidget::HandleResonanceChanged(const FOnAttributeChangeDa
     RefreshAbilityHUD();
 }
 
+void UJumanjiAbilityHUDWidget::ApplySlotStatesToBoundWidgets(
+    const TArray<FJumanjiAbilityHUDSlotState>& SlotStates)
+{
+    for (const FJumanjiAbilityHUDSlotState& State : SlotStates)
+    {
+        UJumanjiAbilityHUDSlotWidget* TargetWidget = nullptr;
+        switch (State.Slot)
+        {
+        case EJumanjiAbilitySlot::PrimaryAttack: TargetWidget = PrimarySlotWidget; break;
+        case EJumanjiAbilitySlot::Active: TargetWidget = ActiveSlotWidget; break;
+        case EJumanjiAbilitySlot::Passive: TargetWidget = PassiveSlotWidget; break;
+        case EJumanjiAbilitySlot::Ultimate: TargetWidget = UltimateSlotWidget; break;
+        case EJumanjiAbilitySlot::Dodge: TargetWidget = DodgeSlotWidget; break;
+        default: break;
+        }
+
+        if (TargetWidget)
+        {
+            TargetWidget->SetSlotState(State);
+        }
+    }
+}
+
+void UJumanjiAbilityHUDWidget::HandleAbilitySlotPressed(EJumanjiAbilitySlot Slot)
+{
+    ActivateAbilitySlot(Slot);
+}
+
+void UJumanjiAbilityHUDWidget::HandleAbilitySlotFeedback(
+    EJumanjiAbilitySlot Slot,
+    EJumanjiAbilityHUDFeedback Feedback,
+    const FText& Message)
+{
+    UJumanjiAbilityHUDSlotWidget* TargetWidget = nullptr;
+    switch (Slot)
+    {
+    case EJumanjiAbilitySlot::PrimaryAttack: TargetWidget = PrimarySlotWidget; break;
+    case EJumanjiAbilitySlot::Active: TargetWidget = ActiveSlotWidget; break;
+    case EJumanjiAbilitySlot::Passive: TargetWidget = PassiveSlotWidget; break;
+    case EJumanjiAbilitySlot::Ultimate: TargetWidget = UltimateSlotWidget; break;
+    case EJumanjiAbilitySlot::Dodge: TargetWidget = DodgeSlotWidget; break;
+    default: break;
+    }
+
+    if (TargetWidget)
+    {
+        TargetWidget->PlayFeedback(Feedback);
+    }
+}
+
+void UJumanjiAbilityHUDWidget::ReportSlotFeedback(
+    EJumanjiAbilitySlot Slot,
+    EJumanjiAbilityHUDFeedback Feedback,
+    const FText& Message)
+{
+    OnAbilityInputFeedback(Feedback, Message);
+    OnAbilitySlotFeedback.Broadcast(Slot, Feedback, Message);
+}
+
 void UJumanjiAbilityHUDWidget::RefreshAbilityHUD()
 {
-    OnAbilityHUDStateChanged(GetAbilitySlotStates(), GetResourceState());
+    const TArray<FJumanjiAbilityHUDSlotState> SlotStates = GetAbilitySlotStates();
+    const FJumanjiAbilityHUDResourceState ResourceState = GetResourceState();
+    ApplySlotStatesToBoundWidgets(SlotStates);
+    OnAbilityHUDStateChanged(SlotStates, ResourceState);
 }
