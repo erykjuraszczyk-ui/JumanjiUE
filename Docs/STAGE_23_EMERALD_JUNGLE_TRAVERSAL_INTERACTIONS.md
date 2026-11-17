@@ -219,4 +219,4 @@ W tej wersji animacja jest prezentacją Blueprint, a ruch jest prostą interpola
 
 ## Następny etap
 
-**Stage 24 — Traversal Animation & Interaction Presentation Pack**: finalne animacje przejść, montages, punkty synchronizacji, interfejs kontekstowy dotykowy, splines tyrolek i prezentacja wind.
+**Stage 24 — Traversal Animation & Interaction Presentation** is implemented on branch `feature/traversal-animation-presentation-2.111.1`. Its draft PR adds the prompt widget base, presentation manifest and optional Zipline spline path. Final .uasset authoring and PIE/device validation remain separate.
