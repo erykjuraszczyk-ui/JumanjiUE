@@ -116,13 +116,14 @@ Dla HUD używaj lekkiego materiału UI i krótkiej animacji UMG; Niagara nie jes
 
 Dla każdego wiersza manifestu:
 1. Otwórz odpowiednią klasę GA_GS_[ROMAN]_[SLOT].
-2. Ustaw HUDDisplayName zgodnie z AbilityNamePL.
-3. Ustaw HUDIcon na IconAssetPath.
-4. Ustaw HUDResourceType/HUDResourceCost zgodnie z rzeczywistym Gameplay Effect.
-5. Ustaw klasę/Gameplay Cue zgodnie z konfiguracją Stage 17 i manifestem.
-6. Sprawdź, czy AbilitySlot i InputTag pasują do SlotId.
-7. Nie ustawiaj ręcznego wejścia dla Passive.
-8. Uruchom WBP_AbilityHUD i sprawdź stany gotowości, cooldownu, braku zasobu i braku przyznanej zdolności.
+2. Ustaw HUDAbilityId identyczny z AbilityId w katalogu Stage 16 i wierszu manifestu. Stage 20 używa tego identyfikatora do połączenia klasy Gameplay Ability z prezentacją.
+3. Ustaw HUDDisplayName zgodnie z AbilityNamePL.
+4. Ustaw HUDIcon na IconAssetPath.
+5. Ustaw HUDResourceType/HUDResourceCost zgodnie z rzeczywistym Gameplay Effect.
+6. Ustaw klasę/Gameplay Cue zgodnie z konfiguracją Stage 17 i manifestem.
+7. Sprawdź, czy AbilitySlot i InputTag pasują do SlotId.
+8. Nie ustawiaj ręcznego wejścia dla Passive.
+9. Uruchom WBP_AbilityHUD i sprawdź stany gotowości, cooldownu, braku zasobu i braku przyznanej zdolności.
 
 Standardy referencyjne z produkcyjnej matrycy:
 - Active: 20 Energy, bazowy cooldown 10 s;
