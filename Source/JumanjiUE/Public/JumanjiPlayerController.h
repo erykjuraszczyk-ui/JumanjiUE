@@ -9,6 +9,7 @@ class UJumanjiAdventureHUDWidget;
 class UJumanjiAbilityHUDWidget;
 class UJumanjiTraversalPromptWidget;
 class AJumanjiTrialActor;
+class AJumanjiWorldEncounterDirector;
 class UJumanjiWorldAtlasWidget;
 class UJumanjiWorldNavigationComponent;
 class AJumanjiTraversalLink;
@@ -80,6 +81,10 @@ public:
     UFUNCTION(BlueprintCallable, Category = "JUMANJI|Traversal")
     bool RequestTraversalLink(AJumanjiTraversalLink* TraversalLink);
 
+    /** Client request to begin the configured server-side Emerald Jungle encounter. */
+    UFUNCTION(BlueprintCallable, Category = "JUMANJI|Encounter")
+    bool RequestStartWorldEncounter(AJumanjiWorldEncounterDirector* EncounterDirector);
+
 protected:
     UFUNCTION(Server, Reliable)
     void ServerSelectCharacter(FName CharacterId);
@@ -100,6 +105,9 @@ protected:
     UFUNCTION(Server, Reliable)
     void ServerRequestTraversalLink(AJumanjiTraversalLink* TraversalLink);
 
+    UFUNCTION(Server, Reliable)
+    void ServerRequestStartWorldEncounter(AJumanjiWorldEncounterDirector* EncounterDirector);
+
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "JUMANJI|UI")
     TSubclassOf<UJumanjiGreatSpiritSelectionWidget> GreatSpiritSelectionWidgetClass;
 
@@ -118,6 +126,10 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "JUMANJI|Adventure", meta = (ClampMin = "100.0", ClampMax = "1000.0"))
     float MaxTrialInteractionDistance = 350.0f;
 
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "JUMANJI|Encounter",
+        meta = (ClampMin = "100.0", ClampMax = "1000.0"))
+    float MaxWorldEncounterStartDistance = 500.0f;
+
 private:
     void ApplyCharacterSelectionOnServer(FName CharacterId);
     bool ProcessGreatSpiritUpgradeOnServer(FName CharacterId, FName RecipeId);
@@ -130,6 +142,7 @@ private:
     );
 
     bool ProcessTraversalLinkOnServer(AJumanjiTraversalLink* TraversalLink);
+    bool ProcessStartWorldEncounterOnServer(AJumanjiWorldEncounterDirector* EncounterDirector);
 
     UPROPERTY(Transient)
     TObjectPtr<UJumanjiGreatSpiritSelectionWidget> ActiveGreatSpiritSelectionWidget;
