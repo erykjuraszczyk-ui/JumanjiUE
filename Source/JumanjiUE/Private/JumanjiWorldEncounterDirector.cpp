@@ -298,6 +298,15 @@ void AJumanjiWorldEncounterDirector::SpawnBoss()
     ActiveBoss->OnEnemyDefeated.AddUniqueDynamic(
         this,
         &AJumanjiWorldEncounterDirector::HandleEnemyDefeated);
+
+    AJumanjiGameState* GameState = GetWorld()
+        ? GetWorld()->GetGameState<AJumanjiGameState>()
+        : nullptr;
+    if (!GameState || !GameState->SetWorldEncounterBoss(EncounterId, ActiveBoss))
+    {
+        FailEncounter(FName(TEXT("BOSS_REFERENCE_REJECTED")));
+        return;
+    }
 }
 
 void AJumanjiWorldEncounterDirector::HandleEnemyDefeated(AJumanjiEnemyCharacter* Enemy)
@@ -439,6 +448,14 @@ void AJumanjiWorldEncounterDirector::FailEncounter(FName ReasonId)
     else
     {
         UnbindActiveEnemies();
+    }
+
+    if (UWorld* World = GetWorld())
+    {
+        if (AJumanjiGameState* GameState = World->GetGameState<AJumanjiGameState>())
+        {
+            GameState->SetWorldEncounterBoss(EncounterId, nullptr);
+        }
     }
 
     PublishEncounterState(EJumanjiWorldEncounterPhase::Failed, 0, 0);
