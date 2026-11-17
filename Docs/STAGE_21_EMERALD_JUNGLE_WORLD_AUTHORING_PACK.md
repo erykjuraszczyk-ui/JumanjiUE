@@ -126,4 +126,4 @@ Suggested region half-extents are greybox starting values. Adjust boundaries so 
 
 ## Next stage
 
-Stage 22 — Emerald Jungle Greybox Validation & Mobile Performance: run the assembled map through region-boundary, streaming, landmark, navigation and Android performance validation before replacing greybox geometry with final art.
+Stage 22 — Emerald Jungle Greybox Validation & Mobile Performance: automate CSV/JSON consistency checks, validate region/landmark/trial placements in Unreal Editor, build World Partition navigation data and collect Android performance baselines before replacing greybox geometry with final art.
