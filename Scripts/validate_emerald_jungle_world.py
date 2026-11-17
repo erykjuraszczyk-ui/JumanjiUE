@@ -67,7 +67,7 @@ PLACEMENT_COLUMNS = [
     "ExtentX_cm", "ExtentY_cm", "ExtentZ_cm", "EditorDataLayer", "Notes",
 ]
 VECTOR_PATTERN = re.compile(
-    r"([XYZ])\\s*=\\s*([+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?)"
+    r"([XYZ])\s*=\s*([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?)"
 )
 
 
