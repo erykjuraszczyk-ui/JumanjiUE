@@ -54,10 +54,25 @@ void UJumanjiTraversalPromptWidget::NativeTick(
     if (PromptViewModel.Status == EJumanjiTraversalPromptStatus::PendingServer
         && Now >= RequestDeadlineSeconds)
     {
+        APlayerController* OwningController = GetOwningPlayer();
+        AJumanjiCharacter* Character = OwningController
+            ? Cast<AJumanjiCharacter>(OwningController->GetPawn())
+            : nullptr;
+        const bool bAlreadyActive = Character
+            && Character->GetTraversalComponent()
+            && Character->GetTraversalComponent()->IsTraversing();
+
+        if (bAlreadyActive)
+        {
+            HandleTraversalStateChanged(Character->GetTraversalComponent()->GetTraversalState());
+            return;
+        }
+
         PromptViewModel.Status = EJumanjiTraversalPromptStatus::Available;
         PromptViewModel.StatusText = FText::FromString(TEXT("Brak potwierdzenia serwera — spróbuj ponownie"));
         PromptViewModel.bCanRequest = IsValid(FocusedTraversalLink)
-            && FocusedTraversalLink->CanBeUsedBy(GetOwningPlayer() ? GetOwningPlayer()->GetPawn() : nullptr);
+            && Character
+            && FocusedTraversalLink->CanBeUsedBy(Character);
         ++PromptViewModel.Revision;
         BroadcastPrompt();
     }
@@ -118,6 +133,10 @@ bool UJumanjiTraversalPromptWidget::SetFocusedTraversalLink(AJumanjiTraversalLin
     PromptViewModel.Status = EJumanjiTraversalPromptStatus::Available;
     PromptViewModel.DisplayName = Definition.DisplayName;
     PromptViewModel.StatusText = Definition.PromptText;
+    PromptViewModel.PromptText = Definition.PromptText;
+    PromptViewModel.InProgressText = Definition.InProgressText;
+    PromptViewModel.CompletedText = Definition.CompletedText;
+    PromptViewModel.InterruptedText = Definition.InterruptedText;
     PromptViewModel.Icon = Definition.PromptIcon;
     PromptViewModel.bCanRequest = true;
     PromptViewModel.bAllowCameraLook = Definition.bAllowCameraLook;
@@ -231,7 +250,7 @@ void UJumanjiTraversalPromptWidget::HandleTraversalStateChanged(
     if (State.bActive)
     {
         PromptViewModel.Status = EJumanjiTraversalPromptStatus::InProgress;
-        PromptViewModel.StatusText = FText::FromString(TEXT("Przejście w toku"));
+        PromptViewModel.StatusText = PromptViewModel.InProgressText;
         PromptViewModel.bCanRequest = false;
         RequestDeadlineSeconds = 0.0f;
         StatusHideDeadlineSeconds = 0.0f;
@@ -242,8 +261,8 @@ void UJumanjiTraversalPromptWidget::HandleTraversalStateChanged(
             ? EJumanjiTraversalPromptStatus::Completed
             : EJumanjiTraversalPromptStatus::Interrupted;
         PromptViewModel.StatusText = State.bLastTraversalCompleted
-            ? FText::FromString(TEXT("Przejście zakończone"))
-            : FText::FromString(TEXT("Przejście przerwane — przeszkoda"));
+            ? PromptViewModel.CompletedText
+            : PromptViewModel.InterruptedText;
         PromptViewModel.bCanRequest = false;
 
         const float HoldSeconds = FMath::Clamp(PromptViewModel.PromptHoldSeconds, 0.2f, 3.0f);
