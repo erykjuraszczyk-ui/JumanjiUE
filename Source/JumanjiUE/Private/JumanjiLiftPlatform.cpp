@@ -2,6 +2,7 @@
 
 #include "Components/BoxComponent.h"
 #include "Components/SceneComponent.h"
+#include "Engine/World.h"
 #include "Components/StaticMeshComponent.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -18,8 +19,14 @@ AJumanjiLiftPlatform::AJumanjiLiftPlatform()
     NetUpdateFrequency = 30.0f;
     MinNetUpdateFrequency = 10.0f;
 
+    PlatformCollision = CreateDefaultSubobject<UBoxComponent>(TEXT("PlatformCollision"));
+    SetRootComponent(PlatformCollision);
+    PlatformCollision->SetBoxExtent(FVector(240.0f, 240.0f, 60.0f));
+    PlatformCollision->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+    PlatformCollision->SetCollisionProfileName(TEXT("BlockAllDynamic"));
+
     SceneRoot = CreateDefaultSubobject<USceneComponent>(TEXT("SceneRoot"));
-    SetRootComponent(SceneRoot);
+    SceneRoot->SetupAttachment(PlatformCollision);
 
     PlatformMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PlatformMesh"));
     PlatformMesh->SetupAttachment(SceneRoot);
@@ -111,7 +118,15 @@ bool AJumanjiLiftPlatform::IsCharacterInsideBoardingVolume(const ACharacter* Cha
         return false;
     }
 
-    return BoardingVolume->IsOverlappingActor(Character);
+    if (BoardingVolume->IsOverlappingActor(Character))
+    {
+        return true;
+    }
+
+    // The prompt anchor may be slightly outside the query box due to capsule
+    // center offsets; keep a bounded server-side distance fallback.
+    return FVector::DistSquared(Character->GetActorLocation(), GetActorLocation())
+        <= FMath::Square(350.0f);
 }
 
 bool AJumanjiLiftPlatform::TryBoardCharacter(
@@ -151,7 +166,7 @@ bool AJumanjiLiftPlatform::TryBoardCharacter(
     Passengers.Add(Passenger);
 
     Character->AttachToComponent(
-        SceneRoot,
+        PlatformCollision,
         FAttachmentTransformRules::KeepWorldTransform
     );
 
