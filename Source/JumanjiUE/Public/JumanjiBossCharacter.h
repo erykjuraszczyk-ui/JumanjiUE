@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "JumanjiEnemyCharacter.h"
+#include "TimerManager.h"
 #include "JumanjiBossCharacter.generated.h"
 
 struct FOnAttributeChangeData;
