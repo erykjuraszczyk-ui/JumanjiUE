@@ -256,6 +256,24 @@ bool UJumanjiProgressionRewardSubsystem::IsValidTraversalReward(
 bool UJumanjiProgressionRewardSubsystem::IsValidWorldEncounterReward(
     const FJumanjiWorldEncounterRewardDefinition& Definition) const
 {
+    static const TSet<FName> AllowedCurrencyIds = {
+        FName(TEXT("CURRENCY_EXPLORER_COINS")),
+        FName(TEXT("CURRENCY_BOARD_SEALS")),
+        FName(TEXT("CURRENCY_ECHO_CRYSTALS"))
+    };
+    static const TSet<FName> AllowedItemIds = {
+        FName(TEXT("MAT_ROOT_RESIN")),
+        FName(TEXT("MAT_TIDE_PEARL")),
+        FName(TEXT("MAT_STONE_CORE")),
+        FName(TEXT("MAT_STORM_ESSENCE")),
+        FName(TEXT("MAT_EMBER_ASH")),
+        FName(TEXT("MAT_DAWN_SHARD")),
+        FName(TEXT("MAT_SHADOW_SILK")),
+        FName(TEXT("MAT_LIFE_BLOOM")),
+        FName(TEXT("MAT_FROST_CRYSTAL")),
+        FName(TEXT("MAT_SPIRIT_MEMORY"))
+    };
+
     if (Definition.EncounterId.IsNone()
         || Definition.EncounterId.ToString().Len() > 64
         || Definition.RequiredChapterId.IsNone()
@@ -269,43 +287,17 @@ bool UJumanjiProgressionRewardSubsystem::IsValidWorldEncounterReward(
         || Definition.ItemAmount < 0
         || Definition.ItemAmount > JumanjiRewards::MaxItemCost
         || (Definition.CurrencyAmount == 0 && !Definition.CurrencyId.IsNone())
-        || (Definition.CurrencyAmount > 0 && Definition.CurrencyId.IsNone())
+        || (Definition.CurrencyAmount > 0
+            && !AllowedCurrencyIds.Contains(Definition.CurrencyId))
         || (Definition.ItemAmount == 0 && !Definition.ItemId.IsNone())
-        || (Definition.ItemAmount > 0 && Definition.ItemId.IsNone())
+        || (Definition.ItemAmount > 0
+            && !AllowedItemIds.Contains(Definition.ItemId))
         || (Definition.AccountExperienceReward == 0
             && Definition.ActiveCharacterExperienceReward == 0
             && Definition.CurrencyAmount == 0
             && Definition.ItemAmount == 0))
     {
         return false;
-    }
-
-    const UGameInstance* GameInstance = GetGameInstance();
-    const UJumanjiProgressionCatalogSubsystem* Catalog = GameInstance
-        ? GameInstance->GetSubsystem<UJumanjiProgressionCatalogSubsystem>()
-        : nullptr;
-
-    if (!Catalog)
-    {
-        return false;
-    }
-
-    if (Definition.CurrencyAmount > 0)
-    {
-        FJumanjiCurrencyDefinition Currency;
-        if (!Catalog->GetCurrencyDefinition(Definition.CurrencyId, Currency))
-        {
-            return false;
-        }
-    }
-
-    if (Definition.ItemAmount > 0)
-    {
-        FJumanjiItemDefinition Item;
-        if (!Catalog->GetItemDefinition(Definition.ItemId, Item) || !Item.bCanBeConsumed)
-        {
-            return false;
-        }
     }
 
     return true;
