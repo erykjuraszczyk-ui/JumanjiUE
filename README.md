@@ -30,7 +30,8 @@ Open-world third-person adventure RPG prototype with a shared-world direction an
 - Stage 25 — Traversal World Integration & Multiplayer Validation: local overlap-driven link focus, nearest-candidate prompt selection, server-driven replicated lift platforms with shared passenger attachment, 12-link/2-platform world placement manifests and automated source validation.
 - Stage 26 — World Traversal QA, Lift Recovery & Traversal Rewards: replicated self-contained Zipline paths for World Partition unload resilience, collision-safe blocked-lift recovery, idempotent first-completion rewards for all 12 traversal links and reward-manifest CI validation.
 - Stage 27 — Emerald Jungle World Encounter Integration: server-authoritative progression gate, nine-trial chapter orchestration, configurable enemy waves, boss encounter, replicated phase state and idempotent per-profile completion rewards.
-- Stage 28 — Emerald Jungle Encounter Presentation & Multiplayer QA: replicated boss reference, server-timed attack telegraphs, encounter HUD base, three-phase telegraph manifest, source validator and multiplayer/mobile QA workflow.\n- Stage 29 — Encounter Replay & Recovery: server-only retry of a matching Failed encounter, Living Board trial/objective reset, cleanup of all encounter-spawned actors and preservation of persistent profile/economy receipts.
+- Stage 28 — Emerald Jungle Encounter Presentation & Multiplayer QA: replicated boss reference, server-timed attack telegraphs, encounter HUD base, three-phase telegraph manifest, source validator and multiplayer/mobile QA workflow.
+- Stage 29 — Encounter Replay & Recovery: server-only retry of a matching Failed encounter, Living Board trial/objective reset, cleanup of all encounter-spawned actors and preservation of persistent profile/economy receipts.
 
 ## The nine playable Great Spirits
 1. Great Spirit I — Duch Korzeni (Root / Guardian)
@@ -90,7 +91,8 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - Docs/STAGE_25_TRAVERSAL_WORLD_INTEGRATION_MULTIPLAYER.md — overlap focus registry, replicated lift platform, 12-link world manifest, editor placement, multiplayer and Android acceptance tests.
 - Docs/STAGE_26_TRAVERSAL_QA_LIFT_RECOVERY_REWARDS.md — World Partition unload/load resilience, blocked-lift recovery, one-time traversal rewards, source-data validator and QA matrices.
 - Docs/STAGE_27_EMERALD_JUNGLE_WORLD_ENCOUNTER_INTEGRATION.md — exploration/traversal prerequisites, nine-trial chapter, configurable enemy waves, boss lifecycle, replicated encounter state, one-time reward and Unreal Editor authoring/QA workflow.
-- Docs/STAGE_28_EMERALD_JUNGLE_ENCOUNTER_PRESENTATION_QA.md — encounter HUD, replicated boss telemetry, attack telegraph lifecycle, Blueprint authoring, multiplayer QA and mobile profiling.\n- Docs/STAGE_29_ENCOUNTER_REPLAY_RECOVERY.md — failed encounter retry, session-only chapter/trial reset, encounter-owned actor cleanup, profile/economy invariants and QA workflow.
+- Docs/STAGE_28_EMERALD_JUNGLE_ENCOUNTER_PRESENTATION_QA.md — encounter HUD, replicated boss telemetry, attack telegraph lifecycle, Blueprint authoring, multiplayer QA and mobile profiling.
+- Docs/STAGE_29_ENCOUNTER_REPLAY_RECOVERY.md — failed encounter retry, session-only chapter/trial reset, encounter-owned actor cleanup, profile/economy invariants and QA workflow.
 - Data/Encounter/EmeraldJungleBossTelegraphs.csv — nine sample telegraph definitions across the three boss phases.
 - Content/Traversal/README.md — traversal DataTable, prompt widget, montage and spline authoring guide.
 - Data/Traversal/TraversalPresentationManifest.csv — four stable starter presentation records.
@@ -198,7 +200,10 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - replicated encounter snapshot now carries the spawned AJumanjiBossCharacter reference for local presentation;
 - AJumanjiBossCharacter server-timed Warning/Executing telegraph state with replicated pattern geometry, GAS state tags, cancellation on phase change/defeat and a Blueprint execution hook for the actual server-owned attack;
 - UJumanjiWorldEncounterHUDWidget Blueprint base for encounter phase, trial/wave counters, boss Health/phase and synchronized telegraph countdown;
-- local PlayerController creation of the configured Encounter HUD, plus nine-row boss telegraph CSV manifest, Python validator, unit tests and GitHub Actions workflow (Stage 28);\n- server-authoritative encounter retry from Failed for the same EncounterId, chapter/trial reset and revision increments;\n- tracking and cleanup of all spawned encounter actors, including defeated actors awaiting cosmetic lifespan expiry;\n- static source validator, unit tests and GitHub Actions quality gate for encounter recovery (Stage 29).
+- local PlayerController creation of the configured Encounter HUD, plus nine-row boss telegraph CSV manifest, Python validator, unit tests and GitHub Actions workflow (Stage 28);
+- server-authoritative encounter retry from Failed for the same EncounterId, chapter/trial reset and revision increments;
+- tracking and cleanup of all spawned encounter actors, including defeated actors awaiting cosmetic lifespan expiry;
+- static source validator, unit tests and GitHub Actions quality gate for encounter recovery (Stage 29).
 
 ## Not yet included
 This is a source-code foundation, not a finished game or installable Android build. The repository still needs:
@@ -228,7 +233,8 @@ This is a source-code foundation, not a finished game or installable Android bui
 - asynchronous asset preloading and device profiling;
 - production account authentication, secure economy backend and cross-shard transaction processing;
 - dedicated-server deployment;
-- automated resume of an in-progress encounter after server/shard migration; Stage 29 restarts a failed attempt from the beginning and does not serialize live actors;\n- a packaged and device-tested APK/AAB.
+- automated resume of an in-progress encounter after server/shard migration; Stage 29 restarts a failed attempt from the beginning and does not serialize live actors;
+- a packaged and device-tested APK/AAB.
 
 The supplied reference image is used as an art direction source. The binary image itself and Unreal binary assets are not added by the text-file GitHub workflow; add them through Git LFS with provenance/license notes.
 
