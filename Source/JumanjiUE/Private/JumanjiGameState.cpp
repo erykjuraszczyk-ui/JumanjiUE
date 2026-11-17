@@ -191,8 +191,9 @@ bool AJumanjiGameState::SetWorldEncounterBoss(
         || WorldEncounterState.Phase == EJumanjiWorldEncounterPhase::Inactive
         || WorldEncounterState.Phase == EJumanjiWorldEncounterPhase::Completed
         || WorldEncounterState.Phase == EJumanjiWorldEncounterPhase::Failed
-        || (IsValid(BossActor)
-            && (BossActor->GetWorld() != GetWorld()
+        || (BossActor != nullptr
+            && (!IsValid(BossActor)
+                || BossActor->GetWorld() != GetWorld()
                 || WorldEncounterState.Phase != EJumanjiWorldEncounterPhase::Boss)))
     {
         return false;
