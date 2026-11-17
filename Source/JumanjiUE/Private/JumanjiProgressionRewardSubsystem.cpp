@@ -28,6 +28,7 @@ void UJumanjiProgressionRewardSubsystem::BuildDefaultTables()
     ChapterRewards.Reset();
     UpgradeRecipes.Reset();
     TraversalRewards.Reset();
+    WorldEncounterRewards.Reset();
 
     FJumanjiChapterRewardDefinition ChapterReward;
     ChapterReward.ChapterId = FName(TEXT("EMERALD_JUNGLE_NINE_SEALS"));
@@ -52,6 +53,21 @@ void UJumanjiProgressionRewardSubsystem::BuildDefaultTables()
     if (IsValidChapterReward(ChapterReward))
     {
         ChapterRewards.Add(ChapterReward.ChapterId, ChapterReward);
+    }
+
+    FJumanjiWorldEncounterRewardDefinition EncounterReward;
+    EncounterReward.EncounterId = FName(TEXT("ENCOUNTER_EMERALD_JUNGLE_CITADEL"));
+    EncounterReward.RequiredChapterId = FName(TEXT("EMERALD_JUNGLE_NINE_SEALS"));
+    EncounterReward.AccountExperienceReward = 500;
+    EncounterReward.ActiveCharacterExperienceReward = 300;
+    EncounterReward.CurrencyId = FName(TEXT("CURRENCY_EXPLORER_COINS"));
+    EncounterReward.CurrencyAmount = 350;
+    EncounterReward.ItemId = FName(TEXT("MAT_SPIRIT_MEMORY"));
+    EncounterReward.ItemAmount = 2;
+
+    if (IsValidWorldEncounterReward(EncounterReward))
+    {
+        WorldEncounterRewards.Add(EncounterReward.EncounterId, EncounterReward);
     }
 
     const auto AddTraversalReward = [this](const TCHAR* TraversalId, int64 ExplorerCoins)
@@ -162,6 +178,26 @@ void UJumanjiProgressionRewardSubsystem::LoadOptionalDataTableOverrides()
         }
     }
 
+    UDataTable* WorldEncounterRewardTable = LoadObject<UDataTable>(
+        nullptr,
+        TEXT("/Game/Progression/Data/DT_WorldEncounterRewards.DT_WorldEncounterRewards"));
+
+    if (WorldEncounterRewardTable
+        && WorldEncounterRewardTable->GetRowStruct() == FJumanjiWorldEncounterRewardDefinition::StaticStruct())
+    {
+        TArray<FJumanjiWorldEncounterRewardDefinition*> Rows;
+        WorldEncounterRewardTable->GetAllRows<FJumanjiWorldEncounterRewardDefinition>(
+            TEXT("JumanjiWorldEncounterRewardOverrides"), Rows);
+
+        for (const FJumanjiWorldEncounterRewardDefinition* Row : Rows)
+        {
+            if (Row && IsValidWorldEncounterReward(*Row))
+            {
+                WorldEncounterRewards.Add(Row->EncounterId, *Row);
+            }
+        }
+    }
+
     UDataTable* TraversalRewardTable = LoadObject<UDataTable>(
         nullptr,
         TEXT("/Game/Progression/Data/DT_TraversalRewards.DT_TraversalRewards"));
@@ -212,6 +248,64 @@ bool UJumanjiProgressionRewardSubsystem::IsValidTraversalReward(
         || (Definition.ItemAmount > 0 && !AllowedItemIds.Contains(Definition.ItemId)))
     {
         return false;
+    }
+
+    return true;
+}
+
+bool UJumanjiProgressionRewardSubsystem::IsValidWorldEncounterReward(
+    const FJumanjiWorldEncounterRewardDefinition& Definition) const
+{
+    if (Definition.EncounterId.IsNone()
+        || Definition.EncounterId.ToString().Len() > 64
+        || Definition.RequiredChapterId.IsNone()
+        || Definition.RequiredChapterId.ToString().Len() > 64
+        || Definition.AccountExperienceReward < 0
+        || Definition.AccountExperienceReward > JumanjiRewards::MaxExperienceReward
+        || Definition.ActiveCharacterExperienceReward < 0
+        || Definition.ActiveCharacterExperienceReward > JumanjiRewards::MaxExperienceReward
+        || Definition.CurrencyAmount < 0
+        || Definition.CurrencyAmount > JumanjiRewards::MaxCurrencyCost
+        || Definition.ItemAmount < 0
+        || Definition.ItemAmount > JumanjiRewards::MaxItemCost
+        || (Definition.CurrencyAmount == 0 && !Definition.CurrencyId.IsNone())
+        || (Definition.CurrencyAmount > 0 && Definition.CurrencyId.IsNone())
+        || (Definition.ItemAmount == 0 && !Definition.ItemId.IsNone())
+        || (Definition.ItemAmount > 0 && Definition.ItemId.IsNone())
+        || (Definition.AccountExperienceReward == 0
+            && Definition.ActiveCharacterExperienceReward == 0
+            && Definition.CurrencyAmount == 0
+            && Definition.ItemAmount == 0))
+    {
+        return false;
+    }
+
+    const UGameInstance* GameInstance = GetGameInstance();
+    const UJumanjiProgressionCatalogSubsystem* Catalog = GameInstance
+        ? GameInstance->GetSubsystem<UJumanjiProgressionCatalogSubsystem>()
+        : nullptr;
+
+    if (!Catalog)
+    {
+        return false;
+    }
+
+    if (Definition.CurrencyAmount > 0)
+    {
+        FJumanjiCurrencyDefinition Currency;
+        if (!Catalog->GetCurrencyDefinition(Definition.CurrencyId, Currency))
+        {
+            return false;
+        }
+    }
+
+    if (Definition.ItemAmount > 0)
+    {
+        FJumanjiItemDefinition Item;
+        if (!Catalog->GetItemDefinition(Definition.ItemId, Item) || !Item.bCanBeConsumed)
+        {
+            return false;
+        }
     }
 
     return true;
@@ -319,6 +413,104 @@ bool UJumanjiProgressionRewardSubsystem::GetTraversalRewardDefinition(
 
     OutDefinition = *Found;
     return true;
+}
+
+bool UJumanjiProgressionRewardSubsystem::GetWorldEncounterRewardDefinition(
+    FName EncounterId,
+    FJumanjiWorldEncounterRewardDefinition& OutDefinition) const
+{
+    const FJumanjiWorldEncounterRewardDefinition* Found = WorldEncounterRewards.Find(EncounterId);
+    if (!Found)
+    {
+        return false;
+    }
+
+    OutDefinition = *Found;
+    return true;
+}
+
+FName UJumanjiProgressionRewardSubsystem::BuildWorldEncounterTransactionId(
+    const AJumanjiPlayerState& PlayerState,
+    FName EncounterId) const
+{
+    const FString ProfileHash = FMD5::HashAnsiString(*PlayerState.GetPersistentProfileId()).Left(16);
+    const FString SafeEncounterId = EncounterId.ToString().Left(64);
+    return FName(*FString::Printf(
+        TEXT("ENC_%s_%s"),
+        *ProfileHash,
+        *SafeEncounterId));
+}
+
+bool UJumanjiProgressionRewardSubsystem::HasCompletedTraversalReward(
+    const AJumanjiPlayerState* PlayerState,
+    FName TraversalId) const
+{
+    if (!IsValid(PlayerState)
+        || !PlayerState->HasAuthority()
+        || PlayerState->GetPersistentProfileId().IsEmpty()
+        || TraversalId.IsNone())
+    {
+        return false;
+    }
+
+    FJumanjiTraversalRewardDefinition Definition;
+    if (!GetTraversalRewardDefinition(TraversalId, Definition))
+    {
+        return false;
+    }
+
+    return PlayerState->HasProcessedProfileTransaction(
+        BuildTraversalTransactionId(*PlayerState, TraversalId));
+}
+
+bool UJumanjiProgressionRewardSubsystem::GrantWorldEncounterCompletionReward(
+    AJumanjiPlayerState* PlayerState,
+    FName EncounterId) const
+{
+    if (!IsValid(PlayerState)
+        || !PlayerState->HasAuthority()
+        || PlayerState->GetPersistentProfileId().IsEmpty()
+        || EncounterId.IsNone())
+    {
+        return false;
+    }
+
+    FJumanjiWorldEncounterRewardDefinition Definition;
+    if (!GetWorldEncounterRewardDefinition(EncounterId, Definition)
+        || !PlayerState->HasCompletedAdventureChapter(Definition.RequiredChapterId))
+    {
+        return false;
+    }
+
+    const FName TransactionId = BuildWorldEncounterTransactionId(*PlayerState, EncounterId);
+    if (PlayerState->HasProcessedProfileTransaction(TransactionId))
+    {
+        return true;
+    }
+
+    FJumanjiProfileTransaction Transaction;
+    Transaction.TransactionId = TransactionId;
+    Transaction.AccountExperienceDelta = Definition.AccountExperienceReward;
+    Transaction.CharacterId = PlayerState->GetSelectedCharacterId();
+    Transaction.CharacterExperienceDelta = Definition.ActiveCharacterExperienceReward;
+
+    if (Definition.CurrencyAmount > 0)
+    {
+        FJumanjiCurrencyDelta Currency;
+        Currency.CurrencyId = Definition.CurrencyId;
+        Currency.Delta = Definition.CurrencyAmount;
+        Transaction.CurrencyDeltas.Add(Currency);
+    }
+
+    if (Definition.ItemAmount > 0)
+    {
+        FJumanjiItemDelta Item;
+        Item.ItemId = Definition.ItemId;
+        Item.Delta = Definition.ItemAmount;
+        Transaction.ItemDeltas.Add(Item);
+    }
+
+    return PlayerState->ApplyProfileTransaction(Transaction);
 }
 
 FName UJumanjiProgressionRewardSubsystem::BuildTraversalTransactionId(
