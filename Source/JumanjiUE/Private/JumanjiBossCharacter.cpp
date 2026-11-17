@@ -237,16 +237,23 @@ void AJumanjiBossCharacter::HandleTelegraphWarningComplete()
 
     const FName AttackId = BossTelegraphState.AttackId;
     const EJumanjiBossTelegraphPattern Pattern = BossTelegraphState.Pattern;
+    const float ActiveDuration = BossTelegraphState.ActiveDuration;
 
     SetTelegraphStage(EJumanjiBossTelegraphStage::Executing);
     BP_OnBossTelegraphExecutionRequested(AttackId, Pattern);
 
-    GetWorldTimerManager().SetTimer(
-        TelegraphActiveTimerHandle,
-        this,
-        &AJumanjiBossCharacter::HandleTelegraphActiveComplete,
-        BossTelegraphState.ActiveDuration,
-        false);
+    // A Blueprint callback may interrupt or replace the telegraph. Do not let
+    // the previous attack's timer clear a newer attack state.
+    if (BossTelegraphState.Stage == EJumanjiBossTelegraphStage::Executing
+        && BossTelegraphState.AttackId == AttackId)
+    {
+        GetWorldTimerManager().SetTimer(
+            TelegraphActiveTimerHandle,
+            this,
+            &AJumanjiBossCharacter::HandleTelegraphActiveComplete,
+            ActiveDuration,
+            false);
+    }
 }
 
 void AJumanjiBossCharacter::HandleTelegraphActiveComplete()
