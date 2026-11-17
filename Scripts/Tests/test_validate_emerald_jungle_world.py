@@ -43,7 +43,7 @@ class RepositoryDataTests(unittest.TestCase):
     def test_current_repository_world_data_passes(self) -> None:
         project_root = Path(__file__).resolve().parents[2]
         report = MODULE.validate_project(project_root)
-        self.assertTrue(report.passed, "\\n".join(report.errors))
+        self.assertTrue(report.passed, "\n".join(report.errors))
 
     def test_invalid_map_coordinate_is_rejected(self) -> None:
         source_root = Path(__file__).resolve().parents[2]
