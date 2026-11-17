@@ -16,6 +16,12 @@ void UJumanjiAbilityHUDSlotWidget::NativeConstruct()
 {
     Super::NativeConstruct();
 
+    if (AbilityIcon && !bHasCapturedPlaceholderBrush)
+    {
+        DesignerPlaceholderBrush = AbilityIcon->GetBrush();
+        bHasCapturedPlaceholderBrush = true;
+    }
+
     if (SlotButton)
     {
         SlotButton->OnClicked.AddDynamic(this, &UJumanjiAbilityHUDSlotWidget::HandleSlotButtonClicked);
@@ -105,7 +111,7 @@ void UJumanjiAbilityHUDSlotWidget::LoadIconAsync()
     {
         if (AbilityIcon)
         {
-            // Keep the designer-assigned placeholder brush.
+            AbilityIcon->SetBrush(DesignerPlaceholderBrush);
             AbilityIcon->SetOpacity(0.45f);
         }
         return;
@@ -123,7 +129,8 @@ void UJumanjiAbilityHUDSlotWidget::LoadIconAsync()
 
     if (AbilityIcon)
     {
-        // The widget's default brush is the placeholder while the icon streams.
+        // Restore the original designer brush while the icon streams.
+        AbilityIcon->SetBrush(DesignerPlaceholderBrush);
         AbilityIcon->SetOpacity(0.45f);
     }
 
