@@ -1,0 +1,10 @@
+AttackId,DisplayName,Phase,Pattern,WarningSeconds,ActiveSeconds,RadiusCm,LengthCm,WidthCm,Notes
+FROST_P1_RING_PULSE,Krąg Szronu,1,Radial,1.60,0.90,520,0,0,Okrągły obszar ostrzeżenia; właściwy impuls implementuje Blueprint bossa po upływie ostrzeżenia
+FROST_P1_GLACIAL_LANCE,Lodowa Lanca,1,Line,1.35,0.70,140,1150,180,Wąski korytarz ataku; kierunek wyznacza snapshot telegraphu
+FROST_P1_ARC_SWEEP,Łuk Zimy,1,Cone,1.80,1.00,650,900,500,Stożek skierowany przed bossem; gracz może odczytać kierunek i szerokość zagrożenia
+FROST_P2_SHARD_BURST,Salwa Odłamków,2,Radial,1.40,1.10,760,0,0,Szersza strefa ostrzeżenia; wykonanie salwy pozostaje logiką serwerową bossa
+FROST_P2_CROSS_LANCE,Podwójna Lanca,2,Line,1.90,0.85,160,1450,240,Linia z dłuższym ostrzeżeniem; dodatkowy drugi kierunek wymaga osobnego AttackId
+FROST_P2_FOCUSED_MARK,Znak Mrozu,2,Focused,1.25,1.35,260,0,0,Ostrzeżenie skupione na celu; walidacja i wybór celu nie mogą pochodzić z HUD
+FROST_P3_GLACIER_SURGE,Nawałnica Lodowca,3,Radial,2.30,1.25,980,0,0,Duży obszar końcowej fazy; ostrzeżenie powinno być bardzo czytelne na ekranie telefonu
+FROST_P3_FROZEN_CORRIDOR,Korytarz Mrozu,3,Line,2.00,1.00,220,1900,320,Długi korytarz; wykonanie ataku musi użyć serwerowego trace/Gameplay Ability
+FROST_P3_WINTER_CONE,Korona Zimy,3,Cone,2.10,1.40,1100,1300,850,Szeroki stożek; dodaj mocny cue ostrzegawczy bez zasłaniania innych sygnałów
