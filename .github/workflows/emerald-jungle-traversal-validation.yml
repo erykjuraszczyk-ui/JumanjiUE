@@ -1,0 +1,38 @@
+name: Emerald Jungle Traversal World Validation
+
+on:
+  pull_request:
+    paths:
+      - "Data/Traversal/EmeraldJungle_Traversal*.csv"
+      - "Data/Traversal/EmeraldJungle_TraversalManifest.json"
+      - "Data/Traversal/EmeraldJungle_LiftPlatformManifest.csv"
+      - "Data/World/DT_Jumanji_WorldRegions.csv"
+      - "Data/World/EmeraldJungle_GreyboxPlacement.csv"
+      - "Scripts/validate_emerald_jungle_traversal.py"
+      - "Scripts/Tests/test_validate_emerald_jungle_traversal.py"
+      - ".github/workflows/emerald-jungle-traversal-validation.yml"
+  push:
+    branches: [main]
+    paths:
+      - "Data/Traversal/EmeraldJungle_Traversal*.csv"
+      - "Data/Traversal/EmeraldJungle_TraversalManifest.json"
+      - "Data/Traversal/EmeraldJungle_LiftPlatformManifest.csv"
+      - "Data/World/DT_Jumanji_WorldRegions.csv"
+      - "Data/World/EmeraldJungle_GreyboxPlacement.csv"
+      - "Scripts/validate_emerald_jungle_traversal.py"
+      - "Scripts/Tests/test_validate_emerald_jungle_traversal.py"
+      - ".github/workflows/emerald-jungle-traversal-validation.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate-traversal-world:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Validate traversal placement and lift manifests
+        run: python Scripts/validate_emerald_jungle_traversal.py
+      - name: Run traversal world tests
+        run: python -m unittest discover -s Scripts/Tests -p "test_validate_emerald_jungle_traversal.py" -v
