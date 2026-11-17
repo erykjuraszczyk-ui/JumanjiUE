@@ -27,4 +27,4 @@ jobs:
       - name: Validate traversal manifest
         run: python Scripts/validate_traversal_presentation.py
       - name: Run traversal manifest tests
-        run: python -m unittest Scripts/Tests/test_validate_traversal_presentation.py -v
+        run: python -m unittest discover -s Scripts/Tests -p "test_validate_traversal_presentation.py" -v
