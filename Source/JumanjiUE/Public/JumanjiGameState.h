@@ -67,6 +67,10 @@ public:
         int32 TotalWaves,
         int32 ActiveEnemyCount);
 
+    /** Server-only replicated boss reference for local encounter HUDs. Pass null to clear it. */
+    UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "JUMANJI|Encounter")
+    bool SetWorldEncounterBoss(FName EncounterId, AJumanjiBossCharacter* BossActor);
+
     UFUNCTION(BlueprintCallable, Category = "JUMANJI|Encounter")
     bool CompleteWorldEncounter(FName EncounterId);
 

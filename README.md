@@ -30,6 +30,7 @@ Open-world third-person adventure RPG prototype with a shared-world direction an
 - Stage 25 — Traversal World Integration & Multiplayer Validation: local overlap-driven link focus, nearest-candidate prompt selection, server-driven replicated lift platforms with shared passenger attachment, 12-link/2-platform world placement manifests and automated source validation.
 - Stage 26 — World Traversal QA, Lift Recovery & Traversal Rewards: replicated self-contained Zipline paths for World Partition unload resilience, collision-safe blocked-lift recovery, idempotent first-completion rewards for all 12 traversal links and reward-manifest CI validation.
 - Stage 27 — Emerald Jungle World Encounter Integration: server-authoritative progression gate, nine-trial chapter orchestration, configurable enemy waves, boss encounter, replicated phase state and idempotent per-profile completion rewards.
+- Stage 28 — Emerald Jungle Encounter Presentation & Multiplayer QA: replicated boss reference, server-timed attack telegraphs, encounter HUD base, three-phase telegraph manifest, source validator and multiplayer/mobile QA workflow.
 
 ## The nine playable Great Spirits
 1. Great Spirit I — Duch Korzeni (Root / Guardian)
@@ -89,6 +90,8 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - Docs/STAGE_25_TRAVERSAL_WORLD_INTEGRATION_MULTIPLAYER.md — overlap focus registry, replicated lift platform, 12-link world manifest, editor placement, multiplayer and Android acceptance tests.
 - Docs/STAGE_26_TRAVERSAL_QA_LIFT_RECOVERY_REWARDS.md — World Partition unload/load resilience, blocked-lift recovery, one-time traversal rewards, source-data validator and QA matrices.
 - Docs/STAGE_27_EMERALD_JUNGLE_WORLD_ENCOUNTER_INTEGRATION.md — exploration/traversal prerequisites, nine-trial chapter, configurable enemy waves, boss lifecycle, replicated encounter state, one-time reward and Unreal Editor authoring/QA workflow.
+- Docs/STAGE_28_EMERALD_JUNGLE_ENCOUNTER_PRESENTATION_QA.md — encounter HUD, replicated boss telemetry, attack telegraph lifecycle, Blueprint authoring, multiplayer QA and mobile profiling.
+- Data/Encounter/EmeraldJungleBossTelegraphs.csv — nine sample telegraph definitions across the three boss phases.
 - Content/Traversal/README.md — traversal DataTable, prompt widget, montage and spline authoring guide.
 - Data/Traversal/TraversalPresentationManifest.csv — four stable starter presentation records.
 - Data/Traversal/EmeraldJungle_TraversalPlacement.csv — 12 starter contextual traversal links.
@@ -192,6 +195,10 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - UJumanjiAbilityPresentationSubsystem with validated ability presentation DataTable lookup and soft-reference conversion;
 - ability HUD slot snapshots enriched with per-ability palette, icon, cooldown material, audio references and Gameplay Cue tag.
 - PlayerController creation of the configured ability HUD for the local player.
+- replicated encounter snapshot now carries the spawned AJumanjiBossCharacter reference for local presentation;
+- AJumanjiBossCharacter server-timed Warning/Executing telegraph state with replicated pattern geometry, GAS state tags, cancellation on phase change/defeat and a Blueprint execution hook for the actual server-owned attack;
+- UJumanjiWorldEncounterHUDWidget Blueprint base for encounter phase, trial/wave counters, boss Health/phase and synchronized telegraph countdown;
+- local PlayerController creation of the configured Encounter HUD, plus nine-row boss telegraph CSV manifest, Python validator, unit tests and GitHub Actions workflow (Stage 28).
 
 ## Not yet included
 This is a source-code foundation, not a finished game or installable Android build. The repository still needs:
@@ -206,7 +213,8 @@ This is a source-code foundation, not a finished game or installable Android bui
 - final Ability Blueprint HUDAbilityId assignments and binary ability icons/material/audio assets;
 - 45 character-specific ability Blueprint assets and configured Gameplay Effects;
 - configured enemy/boss meshes, animations and initialization effects;
-- final boss attack patterns, authored world encounter actor/map configuration, enemy wave spawn point placements and final Encounter HUD/telegraph presentation;
+- actual boss attack Blueprint graphs, final boss telegraph VFX/audio and WBP_EmeraldJungleEncounterHUD .uasset; Stage 28 provides the native HUD and telegraph runtime contracts only;
+- authored world encounter actor/map configuration and enemy wave spawn point placements;
 - Blueprint children, visuals and playable implementations for all nine Great Spirit trials;
 - the Root Rune trial Blueprint, rune meshes, UI widget, map and presentation assets;
 - trial-specific reward rows and automatic reward orchestration for all nine trial actors;

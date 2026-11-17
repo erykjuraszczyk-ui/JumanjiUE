@@ -209,4 +209,4 @@ Pliki zapisano na osobnej gałęzi i odczytano ponownie przez GitHub API. Walida
 
 ## Następny etap
 
-**Stage 28 — Emerald Jungle Encounter Presentation & Multiplayer QA**: HUD spotkania, pasek zdrowia bossa, telegraphy ataków, komunikaty faz, feedback audio/VFX, testy serwer/klient i profilowanie Android.
+**Stage 28 — Emerald Jungle Encounter Presentation & Multiplayer QA** zostało rozwinięte w osobnej gałęzi. Kolejny planowany etap to **Stage 29 — Encounter Replay & Recovery**: bezpieczny reset nieudanego spotkania, ponowna próba i sprzątanie stanu sesyjnego bez duplikowania trwałych nagród.

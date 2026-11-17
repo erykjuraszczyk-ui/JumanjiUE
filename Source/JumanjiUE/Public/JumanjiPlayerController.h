@@ -7,6 +7,7 @@
 class UJumanjiGreatSpiritSelectionWidget;
 class UJumanjiAdventureHUDWidget;
 class UJumanjiAbilityHUDWidget;
+class UJumanjiWorldEncounterHUDWidget;
 class UJumanjiTraversalPromptWidget;
 class AJumanjiTrialActor;
 class AJumanjiWorldEncounterDirector;
@@ -117,6 +118,9 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "JUMANJI|Abilities|UI")
     TSubclassOf<UJumanjiAbilityHUDWidget> AbilityHUDWidgetClass;
 
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "JUMANJI|Encounter|UI")
+    TSubclassOf<UJumanjiWorldEncounterHUDWidget> WorldEncounterHUDWidgetClass;
+
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "JUMANJI|Traversal|UI")
     TSubclassOf<UJumanjiTraversalPromptWidget> TraversalPromptWidgetClass;
 
@@ -152,6 +156,9 @@ private:
 
     UPROPERTY(Transient)
     TObjectPtr<UJumanjiAbilityHUDWidget> ActiveAbilityHUDWidget;
+
+    UPROPERTY(Transient)
+    TObjectPtr<UJumanjiWorldEncounterHUDWidget> ActiveWorldEncounterHUDWidget;
 
     UPROPERTY(Transient)
     TObjectPtr<UJumanjiTraversalPromptWidget> ActiveTraversalPromptWidget;
