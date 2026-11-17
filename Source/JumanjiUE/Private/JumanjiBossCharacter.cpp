@@ -106,6 +106,11 @@ bool AJumanjiBossCharacter::BeginBossTelegraph(
 
 void AJumanjiBossCharacter::CancelBossTelegraph()
 {
+    if (!HasAuthority())
+    {
+        return;
+    }
+
     if (GetWorld())
     {
         GetWorldTimerManager().ClearTimer(TelegraphWarningTimerHandle);
