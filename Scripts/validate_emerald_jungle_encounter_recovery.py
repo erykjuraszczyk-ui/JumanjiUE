@@ -28,6 +28,8 @@ REQUIRED_TOKENS = {
         "ResetChapterForEncounterRetry",
         "EJumanjiWorldEncounterPhase::Failed",
         "BoardSubsystem->EndBoardEvent(BoardEventId)",
+        "MatchingActor->Get()->GetStepCount() != Objective.RequiredProgress",
+        "ChapterState.ChapterId != ChapterId",
         "TrialActor->ResetForEncounterRetry()",
     ),
     "Source/JumanjiUE/Private/JumanjiWorldEncounterDirector.cpp": (
