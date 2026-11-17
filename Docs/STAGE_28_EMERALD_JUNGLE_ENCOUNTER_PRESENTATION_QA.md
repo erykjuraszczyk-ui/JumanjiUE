@@ -131,7 +131,7 @@ Na `BP_JumanjiPlayerController` przypisz klasę do `WorldEncounterHUDWidgetClass
 
 Implementuj:
 - `OnEncounterHUDPresentationChanged`: status, licznik fal, liczba przeciwników, zdrowie i faza bossa;
-- `OnEncounterPhaseCue`: krótki komunikat/audio po zmianie fazy; zignoruj Inactive, jeśli nie ma pokazywać komunikatu;
+- `OnEncounterPhaseCue`: krótki komunikat/audio po zmianie fazy spotkania; zignoruj Inactive, jeśli nie ma pokazywać komunikatu;\n- `OnBossPhaseCue`: jednorazowy komunikat/audio przy przejściu bossa do fazy 1, 2 lub 3;
 - `OnBossTelegraphPresentationChanged`: pokaż/odśwież/usuń wizualny telegraph.
 
 Widget tylko odczytuje dane. Nie wolno z niego zmieniać fazy spotkania, HP bossa, liczby przeciwników, nagrody ani stanu telegraphu.
