@@ -1,0 +1,49 @@
+name: Emerald Jungle Greybox Data Validation
+
+on:
+  pull_request:
+    paths:
+      - "Data/World/**"
+      - "Scripts/validate_emerald_jungle_world.py"
+      - "Scripts/Tests/**"
+      - ".github/workflows/emerald-jungle-world-validation.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "Data/World/**"
+      - "Scripts/validate_emerald_jungle_world.py"
+      - "Scripts/Tests/**"
+      - ".github/workflows/emerald-jungle-world-validation.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-greybox-source:
+    name: Validate Emerald Jungle source data
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run validator unit tests
+        run: python -m unittest discover -s Scripts/Tests -p "test_*.py" -v
+
+      - name: Validate current world data and write reports
+        run: python Scripts/validate_emerald_jungle_world.py --project-root . --report-dir artifacts/world-validation
+
+      - name: Upload validation reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: emerald-jungle-world-validation
+          path: artifacts/world-validation/
+          if-no-files-found: warn
+          retention-days: 14
