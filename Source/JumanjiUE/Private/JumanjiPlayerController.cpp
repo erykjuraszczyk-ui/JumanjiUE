@@ -15,6 +15,7 @@
 #include "JumanjiWorldNavigationComponent.h"
 #include "JumanjiCharacter.h"
 #include "JumanjiTraversalLink.h"
+#include "JumanjiTraversalPromptWidget.h"
 #include "JumanjiTraversalComponent.h"
 
 AJumanjiPlayerController::AJumanjiPlayerController()
@@ -54,6 +55,19 @@ void AJumanjiPlayerController::BeginPlay()
         if (IsValid(ActiveAbilityHUDWidget))
         {
             ActiveAbilityHUDWidget->AddToViewport(60);
+        }
+    }
+
+    if (TraversalPromptWidgetClass)
+    {
+        ActiveTraversalPromptWidget = CreateWidget<UJumanjiTraversalPromptWidget>(
+            this,
+            TraversalPromptWidgetClass
+        );
+
+        if (IsValid(ActiveTraversalPromptWidget))
+        {
+            ActiveTraversalPromptWidget->AddToViewport(70);
         }
     }
 }
@@ -353,6 +367,24 @@ bool AJumanjiPlayerController::ProcessTrialInteractionOnServer(
     }
 
     return TrialActor->SubmitOption(OptionId, ExpectedRevision);
+}
+
+bool AJumanjiPlayerController::SetTraversalFocus(AJumanjiTraversalLink* TraversalLink)
+{
+    if (!IsLocalController() || !IsValid(ActiveTraversalPromptWidget))
+    {
+        return false;
+    }
+
+    return ActiveTraversalPromptWidget->SetFocusedTraversalLink(TraversalLink);
+}
+
+void AJumanjiPlayerController::ClearTraversalFocus()
+{
+    if (IsLocalController() && IsValid(ActiveTraversalPromptWidget))
+    {
+        ActiveTraversalPromptWidget->ClearFocusedTraversal();
+    }
 }
 
 bool AJumanjiPlayerController::RequestTraversalLink(AJumanjiTraversalLink* TraversalLink)
