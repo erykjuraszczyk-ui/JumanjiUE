@@ -1,5 +1,5 @@
 Name,TraversalType,DisplayName,PromptText,InProgressText,CompletedText,InterruptedText,PromptIcon,StartMontage,LoopMontage,EndMontage,StartSound,EndSound,StartEffect,EndEffect,bAllowCameraLook,bShowProgress,PromptHoldSeconds
-TRAVERSAL_CONTEXT_JUMP,ContextJump,"Skok kontekstowy","Użyj przejścia","W trakcie skoku","Przejście zakończone","Przejście przerwane",,,,,,,,True,True,0.65
-TRAVERSAL_CLIMB,Climb,"Wspinaczka","Rozpocznij wspinaczkę","Wspinanie w toku","Dotarto na górę","Wspinaczka przerwana",,,,,,,,True,True,0.80
-TRAVERSAL_ZIPLINE,Zipline,"Tyrolka","Użyj tyrolki","Przejazd tyrolką","Dotarto na drugi koniec","Przejazd przerwany",,,,,,,,True,True,0.70
-TRAVERSAL_LIFT,Lift,"Winda","Wejdź na platformę","Platforma w ruchu","Platforma dotarła","Przejazd przerwany",,,,,,,,True,True,0.90
+TRAVERSAL_CONTEXT_JUMP,ContextJump,"Skok kontekstowy","Użyj przejścia","W trakcie skoku","Przejście zakończone","Przejście przerwane",,,,,,,,,True,True,0.65
+TRAVERSAL_CLIMB,Climb,"Wspinaczka","Rozpocznij wspinaczkę","Wspinanie w toku","Dotarto na górę","Wspinaczka przerwana",,,,,,,,,True,True,0.80
+TRAVERSAL_ZIPLINE,Zipline,"Tyrolka","Użyj tyrolki","Przejazd tyrolką","Dotarto na drugi koniec","Przejazd przerwany",,,,,,,,,True,True,0.70
+TRAVERSAL_LIFT,Lift,"Winda","Wejdź na platformę","Platforma w ruchu","Platforma dotarła","Przejazd przerwany",,,,,,,,,True,True,0.90
