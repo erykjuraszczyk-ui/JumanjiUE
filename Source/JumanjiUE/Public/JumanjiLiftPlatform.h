@@ -39,6 +39,9 @@ struct JUMANJIUE_API FJumanjiLiftPlatformReplicatedState
 
     UPROPERTY(BlueprintReadOnly, Category = "JUMANJI|Lift")
     int32 Revision = 0;
+
+    UPROPERTY(BlueprintReadOnly, Category = "JUMANJI|Lift")
+    int32 PassengerCount = 0;
 };
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(
@@ -47,7 +50,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(
 );
 
 USTRUCT()
-struct FJumanjiLiftPassenger
+struct JUMANJIUE_API FJumanjiLiftPassenger
 {
     GENERATED_BODY()
 
@@ -84,7 +87,7 @@ public:
     FJumanjiLiftPlatformReplicatedState GetReplicatedLiftState() const { return LiftState; }
 
     UFUNCTION(BlueprintPure, Category = "JUMANJI|Lift")
-    int32 GetPassengerCount() const { return Passengers.Num(); }
+    int32 GetPassengerCount() const { return LiftState.PassengerCount; }
 
     UFUNCTION(BlueprintPure, Category = "JUMANJI|Lift")
     bool CanAcceptPassenger(bool bReverse) const;
