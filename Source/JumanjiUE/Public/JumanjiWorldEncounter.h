@@ -3,6 +3,8 @@
 #include "CoreMinimal.h"
 #include "JumanjiWorldEncounter.generated.h"
 
+class AJumanjiBossCharacter;
+
 UENUM(BlueprintType)
 enum class EJumanjiWorldEncounterPhase : uint8
 {
@@ -36,6 +38,10 @@ struct JUMANJIUE_API FJumanjiWorldEncounterState
 
     UPROPERTY(BlueprintReadOnly, Category = "JUMANJI|Encounter")
     int32 ActiveEnemyCount = 0;
+
+    /** Replicated actor reference for the encounter HUD. Set by the server when the boss spawns. */
+    UPROPERTY(BlueprintReadOnly, Category = "JUMANJI|Encounter")
+    TObjectPtr<AJumanjiBossCharacter> BossActor = nullptr;
 
     UPROPERTY(BlueprintReadOnly, Category = "JUMANJI|Encounter")
     int32 Revision = 0;
