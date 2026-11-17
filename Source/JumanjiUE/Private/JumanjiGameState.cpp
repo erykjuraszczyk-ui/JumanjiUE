@@ -123,8 +123,7 @@ bool AJumanjiGameState::BeginWorldEncounter(FName EncounterId, int32 TotalWaves)
         || EncounterId.ToString().Len() > 64
         || TotalWaves < 1
         || TotalWaves > 16
-        || (WorldEncounterState.Phase != EJumanjiWorldEncounterPhase::Inactive
-            && WorldEncounterState.Phase != EJumanjiWorldEncounterPhase::Failed))
+        || WorldEncounterState.Phase != EJumanjiWorldEncounterPhase::Inactive)
     {
         return false;
     }
