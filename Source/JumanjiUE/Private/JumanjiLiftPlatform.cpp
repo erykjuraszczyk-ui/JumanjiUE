@@ -230,7 +230,10 @@ void AJumanjiLiftPlatform::RemovePassenger(ACharacter* Character, bool bRestoreM
 bool AJumanjiLiftPlatform::IsRecoveryLocationClear(const FVector& CandidateLocation) const
 {
     UWorld* World = GetWorld();
-    if (!World || !PlatformCollision || !IsFinite(CandidateLocation))
+    if (!World || !PlatformCollision
+        || !FMath::IsFinite(CandidateLocation.X)
+        || !FMath::IsFinite(CandidateLocation.Y)
+        || !FMath::IsFinite(CandidateLocation.Z))
     {
         return false;
     }
