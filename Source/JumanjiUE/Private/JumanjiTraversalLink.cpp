@@ -54,6 +54,7 @@ void AJumanjiTraversalLink::BeginPlay()
             this, &AJumanjiTraversalLink::HandleFocusVolumeBeginOverlap);
         FocusVolume->OnComponentEndOverlap.AddDynamic(
             this, &AJumanjiTraversalLink::HandleFocusVolumeEndOverlap);
+        FocusVolume->UpdateOverlaps();
     }
 
     if (TraversalType == EJumanjiTraversalType::Lift && !IsValid(LiftPlatform))
