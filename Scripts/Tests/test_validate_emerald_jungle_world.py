@@ -1,16 +1,14 @@
 from __future__ import annotations
 
-import importlib.util
 import shutil
+import sys
 import tempfile
 import unittest
 from pathlib import Path
 
-SCRIPT_PATH = Path(__file__).resolve().parents[1] / "validate_emerald_jungle_world.py"
-SPEC = importlib.util.spec_from_file_location("validate_emerald_jungle_world", SCRIPT_PATH)
-MODULE = importlib.util.module_from_spec(SPEC)
-assert SPEC and SPEC.loader
-SPEC.loader.exec_module(MODULE)
+SCRIPT_DIR = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(SCRIPT_DIR))
+import validate_emerald_jungle_world as MODULE
 
 
 class VectorParsingTests(unittest.TestCase):
@@ -29,6 +27,10 @@ class VectorParsingTests(unittest.TestCase):
     def test_parse_vector_rejects_missing_axis(self) -> None:
         with self.assertRaises(ValueError):
             MODULE.parse_vector("(X=1,Y=2)", ("X", "Y", "Z"))
+
+    def test_parse_vector_rejects_non_finite(self) -> None:
+        with self.assertRaises(ValueError):
+            MODULE.parse_vector("(X=nan,Y=0)", ("X", "Y"))
 
     def test_parse_bool(self) -> None:
         self.assertTrue(MODULE.parse_bool("True"))
