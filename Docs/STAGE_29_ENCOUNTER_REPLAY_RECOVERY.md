@@ -83,7 +83,7 @@ Etap nie zmienia żadnego kodu przyznawania nagród.
 - Nagrody rozdziału są przyznawane przez istniejący `GrantChapterCompletionReward` i ledger profilu.
 - Nagroda spotkania jest przyznawana dopiero po śmierci bossa i wejściu w Reward.
 - Idempotentne TransactionId w istniejącym profilu pozostaje źródłem ochrony przed podwójnym przyznaniem.
-- Retry nie kasuje receiptów, nie zmienia saldo i nie cofa odblokowań.
+- Retry nie kasuje receiptów, nie zmienia salda i nie cofa odblokowań. Persistent profile snapshot pozostaje nietknięty; `ProcessedTransactionIds` zachowuje idempotency receipts dla nagród rozdziału, traversal i encounteru.
 - Completed spotkanie jest terminalne w tym mechanizmie. Nie jest to farmowalny reset nagrody.
 
 Jeżeli podczas wcześniejszego podejścia rozdział został już oznaczony jako Completed, ten trwały zapis pozostaje. Ponowne zaliczenie rozdziału przechodzi przez dotychczasową idempotentną ścieżkę nagród.
