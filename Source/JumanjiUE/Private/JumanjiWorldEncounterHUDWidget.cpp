@@ -15,6 +15,7 @@ void UJumanjiWorldEncounterHUDWidget::NativeConstruct()
     LastReportedPhase = State.Phase;
     bHasReportedPhase = true;
     OnEncounterPhaseCue(State.Phase);
+    ReportBossPhaseIfChanged();
     RefreshPresentation();
 }
 
@@ -127,6 +128,10 @@ void UJumanjiWorldEncounterHUDWidget::BindBoss()
     {
         OnBossTelegraphPresentationChanged(FJumanjiBossTelegraphState());
     }
+
+    bHasReportedBossPhase = false;
+    LastReportedBossPhase = 0;
+    ReportBossPhaseIfChanged();
 }
 
 FJumanjiWorldEncounterState UJumanjiWorldEncounterHUDWidget::GetEncounterState() const
@@ -308,8 +313,27 @@ void UJumanjiWorldEncounterHUDWidget::HandleBossTelegraphChanged(
     RefreshPresentation();
 }
 
+void UJumanjiWorldEncounterHUDWidget::ReportBossPhaseIfChanged()
+{
+    const uint8 CurrentBossPhase = GetBossPhase();
+    if (CurrentBossPhase == 0)
+    {
+        bHasReportedBossPhase = false;
+        LastReportedBossPhase = 0;
+        return;
+    }
+
+    if (!bHasReportedBossPhase || LastReportedBossPhase != CurrentBossPhase)
+    {
+        bHasReportedBossPhase = true;
+        LastReportedBossPhase = CurrentBossPhase;
+        OnBossPhaseCue(CurrentBossPhase);
+    }
+}
+
 void UJumanjiWorldEncounterHUDWidget::RefreshPresentation()
 {
+    ReportBossPhaseIfChanged();
     const FJumanjiWorldEncounterState State = GetEncounterState();
     OnEncounterHUDPresentationChanged(
         State,
