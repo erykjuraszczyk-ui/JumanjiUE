@@ -79,6 +79,28 @@ void AJumanjiTraversalLink::BeginPlay()
     }
 }
 
+void AJumanjiTraversalLink::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+    if (FocusVolume)
+    {
+        TArray<AActor*> OverlappingActors;
+        FocusVolume->GetOverlappingActors(OverlappingActors, AJumanjiCharacter::StaticClass());
+        for (AActor* OverlappingActor : OverlappingActors)
+        {
+            AJumanjiCharacter* Character = Cast<AJumanjiCharacter>(OverlappingActor);
+            AJumanjiPlayerController* PlayerController = Character
+                ? Cast<AJumanjiPlayerController>(Character->GetController())
+                : nullptr;
+            if (PlayerController && PlayerController->IsLocalController())
+            {
+                PlayerController->UnregisterTraversalCandidate(this);
+            }
+        }
+    }
+
+    Super::EndPlay(EndPlayReason);
+}
+
 void AJumanjiTraversalLink::UpdateSmartLink()
 {
     UpdateFocusVolume();
