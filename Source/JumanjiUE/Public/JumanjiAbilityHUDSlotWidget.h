@@ -14,7 +14,7 @@ class USoundBase;
 class UTextBlock;
 class UTexture2D;
 class UWidgetAnimation;
-struct FStreamableHandle;
+class FStreamableHandle;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(
     FJumanjiAbilitySlotPressedEvent,
@@ -106,5 +106,6 @@ private:
 
     FSoftObjectPath RequestedIconPath;
     FSoftObjectPath RequestedMaterialPath;
+    FSoftObjectPath RequestedAudioPath;
     bool bHasReceivedState = false;
 };
