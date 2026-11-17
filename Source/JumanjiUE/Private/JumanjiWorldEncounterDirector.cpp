@@ -157,8 +157,7 @@ bool AJumanjiWorldEncounterDirector::StartEncounter(AJumanjiPlayerState* Initiat
         ? World->GetGameState<AJumanjiGameState>()
         : nullptr;
 
-    if (!GameState
-        || GameState->GetAdventureChapterState().Phase == EJumanjiAdventureChapterPhase::Active)
+    if (!GameState)
     {
         return false;
     }
@@ -166,6 +165,15 @@ bool AJumanjiWorldEncounterDirector::StartEncounter(AJumanjiPlayerState* Initiat
     const FJumanjiWorldEncounterState PreviousEncounterState =
         GameState->GetWorldEncounterState();
     const bool bIsRetry = PreviousEncounterState.Phase == EJumanjiWorldEncounterPhase::Failed;
+
+    // An active chapter is allowed only when it belongs to the failed encounter
+    // being reset below. Normal duplicate starts remain rejected.
+
+    if (!bIsRetry
+        && GameState->GetAdventureChapterState().Phase == EJumanjiAdventureChapterPhase::Active)
+    {
+        return false;
+    }
 
     if (bIsRetry)
     {
