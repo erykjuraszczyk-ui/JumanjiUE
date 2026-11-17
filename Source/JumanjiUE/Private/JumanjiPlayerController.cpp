@@ -70,6 +70,9 @@ void AJumanjiPlayerController::BeginPlay()
             ActiveTraversalPromptWidget->AddToViewport(70);
         }
     }
+
+    // Some overlap BeginPlay events may run before the prompt widget exists.
+    RefreshTraversalCandidateFocus();
 }
 
 bool AJumanjiPlayerController::OpenWorldAtlas()
@@ -381,7 +384,115 @@ bool AJumanjiPlayerController::SetTraversalFocus(AJumanjiTraversalLink* Traversa
 
 void AJumanjiPlayerController::ClearTraversalFocus()
 {
+    NearbyTraversalCandidates.Reset();
+
     if (IsLocalController() && IsValid(ActiveTraversalPromptWidget))
+    {
+        ActiveTraversalPromptWidget->ClearFocusedTraversal();
+    }
+}
+
+void AJumanjiPlayerController::RegisterTraversalCandidate(AJumanjiTraversalLink* TraversalLink)
+{
+    if (!IsLocalController() || !IsValid(TraversalLink))
+    {
+        return;
+    }
+
+    NearbyTraversalCandidates.RemoveAll(
+        [](const TObjectPtr<AJumanjiTraversalLink>& Candidate)
+        {
+            return !IsValid(Candidate);
+        });
+
+    if (!NearbyTraversalCandidates.Contains(TraversalLink))
+    {
+        NearbyTraversalCandidates.Add(TraversalLink);
+    }
+
+    RefreshTraversalCandidateFocus();
+}
+
+void AJumanjiPlayerController::UnregisterTraversalCandidate(AJumanjiTraversalLink* TraversalLink)
+{
+    if (!IsLocalController() || !IsValid(TraversalLink))
+    {
+        return;
+    }
+
+    NearbyTraversalCandidates.Remove(TraversalLink);
+    RefreshTraversalCandidateFocus();
+}
+
+void AJumanjiPlayerController::RefreshTraversalCandidateFocus()
+{
+    if (!IsLocalController() || !IsValid(ActiveTraversalPromptWidget))
+    {
+        return;
+    }
+
+    AJumanjiCharacter* Character = Cast<AJumanjiCharacter>(GetPawn());
+    if (!Character)
+    {
+        ActiveTraversalPromptWidget->ClearFocusedTraversal();
+        return;
+    }
+
+    UJumanjiTraversalComponent* TraversalComponent = Character->GetTraversalComponent();
+    if (TraversalComponent && TraversalComponent->IsTraversing())
+    {
+        // Keep the active link bound so the widget receives its server-confirmed
+        // completion/interruption event even after the overlap volume is exited.
+        const FJumanjiTraversalReplicatedState State = TraversalComponent->GetTraversalState();
+        if (State.bActive && State.TraversalId == ActiveTraversalPromptWidget->GetPromptViewModel().TraversalId)
+        {
+            return;
+        }
+
+        ActiveTraversalPromptWidget->ClearFocusedTraversal();
+        return;
+    }
+
+    NearbyTraversalCandidates.RemoveAll(
+        [Character](const TObjectPtr<AJumanjiTraversalLink>& Candidate)
+        {
+            return !IsValid(Candidate) || !Candidate->CanBeUsedBy(Character);
+        });
+
+    AJumanjiTraversalLink* BestCandidate = nullptr;
+    float BestDistanceSquared = TNumericLimits<float>::Max();
+    const FVector PlayerLocation = Character->GetActorLocation();
+
+    for (const TObjectPtr<AJumanjiTraversalLink>& Candidate : NearbyTraversalCandidates)
+    {
+        if (!IsValid(Candidate))
+        {
+            continue;
+        }
+
+        const float EntryDistance = FVector::DistSquared(PlayerLocation, Candidate->GetEntryLocation());
+        const float ExitDistance = FVector::DistSquared(PlayerLocation, Candidate->GetExitLocation());
+        const float CandidateDistance = FMath::Min(EntryDistance, ExitDistance);
+
+        if (CandidateDistance < BestDistanceSquared)
+        {
+            BestDistanceSquared = CandidateDistance;
+            BestCandidate = Candidate;
+        }
+    }
+
+    if (IsValid(BestCandidate))
+    {
+        const FJumanjiTraversalPromptViewModel CurrentModel =
+            ActiveTraversalPromptWidget->GetPromptViewModel();
+
+        if (CurrentModel.TraversalId != BestCandidate->GetTraversalId()
+            || CurrentModel.Status == EJumanjiTraversalPromptStatus::Hidden)
+        {
+            ActiveTraversalPromptWidget->SetFocusedTraversalLink(BestCandidate);
+        }
+    }
+    else
     {
         ActiveTraversalPromptWidget->ClearFocusedTraversal();
     }

@@ -7,7 +7,10 @@
 class APawn;
 class USceneComponent;
 class USplineComponent;
+class USphereComponent;
+class UPrimitiveComponent;
 class UAnimMontage;
+class AJumanjiLiftPlatform;
 
 UENUM(BlueprintType)
 enum class EJumanjiTraversalType : uint8
@@ -30,6 +33,7 @@ public:
 
     virtual void OnConstruction(const FTransform& Transform) override;
     virtual void BeginPlay() override;
+    virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
     UFUNCTION(BlueprintPure, Category = "JUMANJI|Traversal")
@@ -60,6 +64,9 @@ public:
     bool HasAuthoredTraversalSpline() const;
 
     UFUNCTION(BlueprintPure, Category = "JUMANJI|Traversal")
+    AJumanjiLiftPlatform* GetLiftPlatform() const { return LiftPlatform; }
+
+    UFUNCTION(BlueprintPure, Category = "JUMANJI|Traversal")
     bool CanBeUsedBy(const APawn* Pawn) const;
 
     bool GetTraversalEndpoints(
@@ -85,6 +92,10 @@ protected:
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "JUMANJI|Traversal")
     TObjectPtr<USceneComponent> ExitAnchor;
+
+    /** Query-only sphere used to register nearby links with the local controller. */
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "JUMANJI|Traversal")
+    TObjectPtr<USphereComponent> FocusVolume;
 
     /** Optional authored path for Zipline. Add/edit points in the link Blueprint. */
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "JUMANJI|Traversal")
@@ -128,5 +139,24 @@ private:
     UFUNCTION()
     void OnRep_TraversalEnabled();
 
+    UFUNCTION()
+    void HandleFocusVolumeBeginOverlap(
+        UPrimitiveComponent* OverlappedComponent,
+        AActor* OtherActor,
+        UPrimitiveComponent* OtherComp,
+        int32 OtherBodyIndex,
+        bool bFromSweep,
+        const FHitResult& SweepResult
+    );
+
+    UFUNCTION()
+    void HandleFocusVolumeEndOverlap(
+        UPrimitiveComponent* OverlappedComponent,
+        AActor* OtherActor,
+        UPrimitiveComponent* OtherComp,
+        int32 OtherBodyIndex
+    );
+
     void UpdateSmartLink();
+    void UpdateFocusVolume();
 };

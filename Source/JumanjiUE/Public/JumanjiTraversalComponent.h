@@ -87,6 +87,9 @@ public:
     UFUNCTION(BlueprintCallable, Category = "JUMANJI|Traversal")
     void CancelTraversal();
 
+    /** Called by the replicated lift platform after it detaches this rider. */
+    void CompleteLiftPlatformRide(bool bCompleted);
+
     UPROPERTY(BlueprintAssignable, Category = "JUMANJI|Traversal")
     FJumanjiTraversalStateChanged OnTraversalStateChanged;
 

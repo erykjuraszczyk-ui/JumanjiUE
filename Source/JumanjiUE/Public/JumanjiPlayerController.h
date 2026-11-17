@@ -42,6 +42,11 @@ public:
     UFUNCTION(BlueprintCallable, Category = "JUMANJI|Traversal|UI")
     void ClearTraversalFocus();
 
+    /** Called by link overlap volumes on each local player. */
+    void RegisterTraversalCandidate(AJumanjiTraversalLink* TraversalLink);
+    void UnregisterTraversalCandidate(AJumanjiTraversalLink* TraversalLink);
+    void RefreshTraversalCandidateFocus();
+
     UFUNCTION(BlueprintCallable, Category = "JUMANJI|Character")
     void RequestSelectCharacter(FName CharacterId);
 
@@ -137,6 +142,9 @@ private:
 
     UPROPERTY(Transient)
     TObjectPtr<UJumanjiTraversalPromptWidget> ActiveTraversalPromptWidget;
+
+    UPROPERTY(Transient)
+    TArray<TObjectPtr<AJumanjiTraversalLink>> NearbyTraversalCandidates;
 
     UPROPERTY(Transient)
     TObjectPtr<UJumanjiWorldAtlasWidget> ActiveWorldAtlasWidget;
