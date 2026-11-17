@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "Styling/SlateBrush.h"
 #include "JumanjiAbilityHUDWidget.h"
 #include "JumanjiAbilityHUDSlotWidget.generated.h"
 
