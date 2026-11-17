@@ -84,6 +84,8 @@ bool UJumanjiTraversalPresentationSubsystem::GetPresentationDefinition(
         return false;
     }
 
+    // Per-link rows take priority. If the map actor has a unique TraversalId
+    // but no custom row, use the canonical row for its traversal type.
     if (!TraversalId.IsNone())
     {
         if (const FJumanjiTraversalPresentationDefinition* Found = Definitions.Find(TraversalId))
@@ -96,6 +98,37 @@ bool UJumanjiTraversalPresentationSubsystem::GetPresentationDefinition(
             OutDefinition = *Found;
             return true;
         }
+    }
+
+    FName CanonicalRowName = NAME_None;
+    switch (TraversalType)
+    {
+    case EJumanjiTraversalType::ContextJump:
+        CanonicalRowName = TEXT("TRAVERSAL_CONTEXT_JUMP");
+        break;
+    case EJumanjiTraversalType::Climb:
+        CanonicalRowName = TEXT("TRAVERSAL_CLIMB");
+        break;
+    case EJumanjiTraversalType::Zipline:
+        CanonicalRowName = TEXT("TRAVERSAL_ZIPLINE");
+        break;
+    case EJumanjiTraversalType::Lift:
+        CanonicalRowName = TEXT("TRAVERSAL_LIFT");
+        break;
+    default:
+        break;
+    }
+
+    if (const FJumanjiTraversalPresentationDefinition* DefaultDefinition =
+        Definitions.Find(CanonicalRowName))
+    {
+        if (DefaultDefinition->TraversalType != TraversalType)
+        {
+            return false;
+        }
+
+        OutDefinition = *DefaultDefinition;
+        return true;
     }
 
     BuildFallbackDefinition(TraversalType, OutDefinition);
