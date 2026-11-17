@@ -67,6 +67,9 @@ public:
     UFUNCTION(BlueprintPure, Category = "JUMANJI|Encounter")
     bool IsEncounterActive() const { return bEncounterActive; }
 
+    UFUNCTION(BlueprintPure, Category = "JUMANJI|Encounter")
+    bool CanRetryEncounter() const;
+
 protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "JUMANJI|Encounter")
     FName EncounterId = FName(TEXT("ENCOUNTER_EMERALD_JUNGLE_CITADEL"));
@@ -129,6 +132,10 @@ private:
 
     UPROPERTY(Transient)
     TObjectPtr<AJumanjiBossCharacter> ActiveBoss;
+
+    /** Every actor spawned by this encounter, including defeated actors in their cleanup lifespan. */
+    UPROPERTY(Transient)
+    TArray<TObjectPtr<AActor>> SpawnedEncounterActors;
 
     int32 ActiveWaveIndex = INDEX_NONE;
     bool bEncounterActive = false;

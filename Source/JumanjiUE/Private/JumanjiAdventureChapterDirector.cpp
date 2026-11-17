@@ -121,6 +121,117 @@ bool AJumanjiAdventureChapterDirector::StartChapter()
     return true;
 }
 
+bool AJumanjiAdventureChapterDirector::ResetChapterForEncounterRetry(FName EncounterId)
+{
+    if (!HasAuthority()
+        || EncounterId.IsNone()
+        || ChapterId.IsNone()
+        || BoardEventId.IsNone()
+        || ChapterObjectives.IsEmpty()
+        || ChapterObjectives.Num() != TrialActors.Num())
+    {
+        return false;
+    }
+
+    UWorld* World = GetWorld();
+    AJumanjiGameState* BoardGameState = World
+        ? World->GetGameState<AJumanjiGameState>()
+        : nullptr;
+    UJumanjiBoardWorldSubsystem* BoardSubsystem = World
+        ? World->GetSubsystem<UJumanjiBoardWorldSubsystem>()
+        : nullptr;
+
+    if (!BoardGameState || !BoardSubsystem)
+    {
+        return false;
+    }
+
+    const FJumanjiWorldEncounterState EncounterState =
+        BoardGameState->GetWorldEncounterState();
+    const FJumanjiAdventureChapterState ChapterState =
+        BoardGameState->GetAdventureChapterState();
+
+    if (EncounterState.EncounterId != EncounterId
+        || EncounterState.Phase != EJumanjiWorldEncounterPhase::Failed
+        || (!ChapterState.ChapterId.IsNone() && ChapterState.ChapterId != ChapterId)
+        || (!ChapterState.BoardEventId.IsNone() && ChapterState.BoardEventId != BoardEventId))
+    {
+        return false;
+    }
+
+    if (BoardGameState->IsBoardEventActive()
+        && BoardGameState->GetActiveBoardEventId() != BoardEventId)
+    {
+        return false;
+    }
+
+    TSet<FName> SeenObjectiveIds;
+    TSet<const AJumanjiTrialActor*> SeenTrialActors;
+
+    for (const FJumanjiAdventureObjectiveState& Objective : ChapterObjectives)
+    {
+        if (Objective.ObjectiveId.IsNone()
+            || SeenObjectiveIds.Contains(Objective.ObjectiveId))
+        {
+            return false;
+        }
+
+        SeenObjectiveIds.Add(Objective.ObjectiveId);
+
+        const TObjectPtr<AJumanjiTrialActor>* MatchingActor = TrialActors.FindByPredicate(
+            [&Objective](const TObjectPtr<AJumanjiTrialActor>& Candidate)
+            {
+                return IsValid(Candidate) && Candidate->GetObjectiveId() == Objective.ObjectiveId;
+            });
+
+        if (!MatchingActor
+            || !IsValid(MatchingActor->Get())
+            || MatchingActor->Get()->GetWorld() != World
+            || MatchingActor->Get()->GetStepCount() != Objective.RequiredProgress
+            || SeenTrialActors.Contains(MatchingActor->Get())
+            || !MatchingActor->Get()->CanResetForEncounterRetry())
+        {
+            return false;
+        }
+
+        SeenTrialActors.Add(MatchingActor->Get());
+    }
+
+    if (SeenTrialActors.Num() != ChapterObjectives.Num())
+    {
+        return false;
+    }
+
+    if (bListeningForObjectiveChanges)
+    {
+        BoardGameState->OnAdventureObjectivesChanged.RemoveDynamic(
+            this,
+            &AJumanjiAdventureChapterDirector::HandleAdventureObjectivesChanged
+        );
+        bListeningForObjectiveChanges = false;
+    }
+
+    if (BoardGameState->IsBoardEventActive()
+        && !BoardSubsystem->EndBoardEvent(BoardEventId))
+    {
+        return false;
+    }
+
+    for (AJumanjiTrialActor* TrialActor : TrialActors)
+    {
+        if (!IsValid(TrialActor) || !TrialActor->ResetForEncounterRetry())
+        {
+            return false;
+        }
+    }
+
+    return BoardGameState->ResetAdventureChapterForEncounterRetry(
+        EncounterId,
+        ChapterId,
+        BoardEventId
+    );
+}
+
 bool AJumanjiAdventureChapterDirector::IsChapterComplete() const
 {
     const UWorld* World = GetWorld();

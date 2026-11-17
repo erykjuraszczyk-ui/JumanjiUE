@@ -125,7 +125,9 @@ bool AJumanjiGameState::BeginWorldEncounter(FName EncounterId, int32 TotalWaves)
         || EncounterId.ToString().Len() > 64
         || TotalWaves < 1
         || TotalWaves > 16
-        || WorldEncounterState.Phase != EJumanjiWorldEncounterPhase::Inactive)
+        || (WorldEncounterState.Phase != EJumanjiWorldEncounterPhase::Inactive
+            && !(WorldEncounterState.Phase == EJumanjiWorldEncounterPhase::Failed
+                && WorldEncounterState.EncounterId == EncounterId)))
     {
         return false;
     }
@@ -258,6 +260,47 @@ bool AJumanjiGameState::FailWorldEncounter(FName EncounterId)
 
     OnWorldEncounterChanged.Broadcast(WorldEncounterState);
     ForceNetUpdate();
+    return true;
+}
+
+bool AJumanjiGameState::ResetAdventureChapterForEncounterRetry(
+    FName EncounterId,
+    FName ChapterId,
+    FName BoardEventId)
+{
+    if (!HasAuthority()
+        || EncounterId.IsNone()
+        || ChapterId.IsNone()
+        || BoardEventId.IsNone()
+        || WorldEncounterState.EncounterId != EncounterId
+        || WorldEncounterState.Phase != EJumanjiWorldEncounterPhase::Failed
+        || (!AdventureChapterState.ChapterId.IsNone()
+            && AdventureChapterState.ChapterId != ChapterId)
+        || (!AdventureChapterState.BoardEventId.IsNone()
+            && AdventureChapterState.BoardEventId != BoardEventId)
+        || bBoardEventActive)
+    {
+        return false;
+    }
+
+    AdventureChapterState.ChapterId = ChapterId;
+    AdventureChapterState.BoardEventId = BoardEventId;
+    AdventureChapterState.Phase = EJumanjiAdventureChapterPhase::Inactive;
+    AdventureChapterState.Revision = AdventureChapterState.Revision < MAX_int32
+        ? AdventureChapterState.Revision + 1
+        : 1;
+
+    AdventureObjectiveSet.Objectives.Reset();
+    AdventureObjectiveSet.Revision = AdventureObjectiveSet.Revision < MAX_int32
+        ? AdventureObjectiveSet.Revision + 1
+        : 1;
+
+    OnAdventureChapterChanged.Broadcast(AdventureChapterState);
+    OnAdventureObjectivesChanged.Broadcast(AdventureObjectiveSet.Revision);
+    ForceNetUpdate();
+
+    // Deliberately do not modify PlayerState profile snapshots, chapter receipts,
+    // inventory, currencies or ProcessedTransactionIds. Retry resets session state only.
     return true;
 }
 

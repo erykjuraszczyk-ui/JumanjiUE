@@ -26,6 +26,9 @@ public:
     UFUNCTION(BlueprintPure, Category = "JUMANJI|Adventure")
     bool IsChapterComplete() const;
 
+    /** Server-only preparation for retrying the matching failed world encounter. */
+    bool ResetChapterForEncounterRetry(FName EncounterId);
+
     UFUNCTION(BlueprintPure, Category = "JUMANJI|Adventure")
     FName GetChapterId() const { return ChapterId; }
 
