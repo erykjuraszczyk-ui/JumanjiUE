@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "JumanjiAdventureChapter.h"
 #include "JumanjiWorldEncounter.h"
 #include "JumanjiWorldEncounterDirector.generated.h"
 
@@ -10,7 +11,6 @@ class AJumanjiAdventureChapterDirector;
 class AJumanjiBossCharacter;
 class AJumanjiEnemyCharacter;
 class AJumanjiPlayerState;
-struct FJumanjiAdventureChapterState;
 
 USTRUCT(BlueprintType)
 struct JUMANJIUE_API FJumanjiEncounterEnemySpawn
