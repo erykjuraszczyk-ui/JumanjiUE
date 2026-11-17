@@ -185,15 +185,31 @@ void UJumanjiProgressionRewardSubsystem::LoadOptionalDataTableOverrides()
 bool UJumanjiProgressionRewardSubsystem::IsValidTraversalReward(
     const FJumanjiTraversalRewardDefinition& Definition) const
 {
+    static const TSet<FName> AllowedCurrencyIds = {
+        FName(TEXT("CURRENCY_EXPLORER_COINS"))
+    };
+    static const TSet<FName> AllowedItemIds = {
+        FName(TEXT("MAT_ROOT_RESIN")),
+        FName(TEXT("MAT_TIDE_PEARL")),
+        FName(TEXT("MAT_STONE_CORE")),
+        FName(TEXT("MAT_STORM_ESSENCE")),
+        FName(TEXT("MAT_EMBER_ASH")),
+        FName(TEXT("MAT_DAWN_SHARD")),
+        FName(TEXT("MAT_SHADOW_SILK")),
+        FName(TEXT("MAT_LIFE_BLOOM")),
+        FName(TEXT("MAT_FROST_CRYSTAL")),
+        FName(TEXT("MAT_SPIRIT_MEMORY"))
+    };
+
     if (Definition.TraversalId.IsNone()
         || Definition.TraversalId.ToString().Len() > 64
-        || Definition.CurrencyId.IsNone()
+        || !AllowedCurrencyIds.Contains(Definition.CurrencyId)
         || Definition.CurrencyAmount < 1
         || Definition.CurrencyAmount > 5000
         || Definition.ItemAmount < 0
         || Definition.ItemAmount > JumanjiRewards::MaxItemCost
         || (Definition.ItemAmount == 0 && !Definition.ItemId.IsNone())
-        || (Definition.ItemAmount > 0 && Definition.ItemId.IsNone()))
+        || (Definition.ItemAmount > 0 && !AllowedItemIds.Contains(Definition.ItemId)))
     {
         return false;
     }
