@@ -70,6 +70,7 @@ bool UJumanjiTraversalComponent::TryStartTraversal(AJumanjiTraversalLink* Link)
         return false;
     }
 
+    (void)bReverse; // Direction is already reflected in the resolved start/end transforms.
     const FVector StartLocation = Character->GetActorLocation();
     const FVector EndLocation = EndTransform.GetLocation();
     if (!IsFiniteVector(StartLocation) || !IsFiniteVector(EndLocation)
@@ -89,7 +90,7 @@ bool UJumanjiTraversalComponent::TryStartTraversal(AJumanjiTraversalLink* Link)
     TraversalState.TraversalType = Link->GetTraversalType();
     TraversalState.StartLocation = StartLocation;
     TraversalState.EndLocation = EndLocation;
-    TraversalState.StartRotation = Character->GetActorRotation();
+    TraversalState.StartRotation = StartTransform.Rotator();
     TraversalState.EndRotation = EndTransform.Rotator();
     TraversalState.ServerStartTime = World->GetTimeSeconds();
     TraversalState.Duration = Link->GetTraversalDuration();

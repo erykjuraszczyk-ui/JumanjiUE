@@ -25,6 +25,7 @@ Open-world third-person adventure RPG prototype with a shared-world direction an
 - Stage 20 — Ability Presentation Runtime Integration: validated manifest DataTable reader, stable AbilityId binding, soft-reference presentation data and HUD integration without changing GAS authority.
 - Stage 21 — Emerald Jungle World Authoring Pack: import-ready region/landmark DataTable CSVs, 29-row greybox placement ledger and World Partition assembly manifest.
 - Stage 22 — Emerald Jungle Greybox Validation & Mobile Performance: source-data validator, unit/integration tests, GitHub Actions quality gate and Android profiling run template.
+- Stage 23 — Emerald Jungle Traversal Interactions & Off-Mesh Links: Smart Link traversal actors, four contextual movement types, server-authoritative traversal component and client request validation.
 
 ## The nine playable Great Spirits
 1. Great Spirit I — Duch Korzeni (Root / Guardian)
@@ -79,6 +80,7 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - Docs/STAGE_11_EMERALD_JUNGLE_WORLD_ASSEMBLY.md — World Partition map layout, ten-region atlas, Data Layers, discovery/landmark setup and acceptance checklist.
 - Docs/STAGE_21_EMERALD_JUNGLE_WORLD_AUTHORING_PACK.md — DataTable import, greybox coordinates, actor placement and validation workflow.
 - Docs/STAGE_22_EMERALD_JUNGLE_GREYBOX_VALIDATION.md — automated source validation, Unreal Editor/World Partition test plan and Android performance profiling.
+- Docs/STAGE_23_EMERALD_JUNGLE_TRAVERSAL_INTERACTIONS.md — Smart Link setup, contextual traversal types, server validation, animation hooks and acceptance checklist.
 - Content/World/README.md — world atlas, navigation and profile-persistence setup.
 - Content/Adventure/Trials/README.md — Blueprint trial and UMG authoring guide.
 - Content/UI/README.md — Widget Blueprint asset setup.
@@ -128,7 +130,10 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - server-authoritative region volume and landmark discovery;
 - per-player replicated exploration snapshot on AJumanjiPlayerState;
 - UJumanjiWorldAtlasWidget base and PlayerController OpenWorldAtlas/CloseWorldAtlas API;
-- UJumanjiWorldNavigationComponent on the local PlayerController, with discovery-validated region/landmark targets and local NavMesh route data.
+- UJumanjiWorldNavigationComponent on the local PlayerController, with discovery-validated region/landmark targets and local NavMesh route data;
+- AJumanjiTraversalLink based on ANavLinkProxy, with authored entry/exit anchors and dynamically enabled Smart Links;
+- UJumanjiTraversalComponent on AJumanjiCharacter, with replicated server-authoritative traversal state, swept movement and Blueprint presentation callbacks;
+- PlayerController RequestTraversalLink RPC with server-side range, grounded-state and active-traversal validation.
 - UJumanjiPlayerProfileSubsystem with versioned asynchronous SaveGame profile slots for the current single-server prototype.
 - profile restore on PostLogin using server-bound platform identity where available.
 - versioned Player Profile schema v2 with automatic in-memory migration from Stage 13 schema v1;
@@ -175,7 +180,7 @@ This is a source-code foundation, not a finished game or installable Android bui
 - trial-specific reward rows and automatic reward orchestration for all nine trial actors;
 - persistent in-progress objective state;
 - a production profile backend, account authentication, cross-shard synchronization and profile conflict handling;
-- authored NavMesh data, world-space DataTable anchors and traversal link actors/animations;
+- authored NavMesh data, world-space DataTable anchors, placed traversal link actors, Blueprint children and traversal montage assets;
 - asynchronous asset preloading and device profiling;
 - production account authentication, secure economy backend and cross-shard transaction processing;
 - dedicated-server deployment;

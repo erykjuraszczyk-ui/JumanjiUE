@@ -1,6 +1,7 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "JumanjiTraversalLink.h"
 #include "JumanjiTraversalComponent.generated.h"
 
