@@ -37,6 +37,8 @@ REQUIRED_TOKENS = {
         "SessionSubsystem->MarkPlayerDisconnected(JumanjiPlayerState)",
         "SessionSubsystem->TryRejoinPlayer(JumanjiPlayerState, ReconnectState)",
         "JumanjiPlayerState->SetEncounterReconnectState(ReconnectState)",
+        "ReconnectState.Phase == EJumanjiWorldEncounterPhase::Reward",
+        "RewardSubsystem->GrantWorldEncounterCompletionReward(",
     ),
     "Source/JumanjiUE/Private/JumanjiWorldEncounterDirector.cpp": (
         "SessionSubsystem->BeginEncounterSession(EncounterId, InitiatingPlayer)",
