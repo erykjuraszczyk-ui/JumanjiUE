@@ -16,6 +16,7 @@ REQUIRED_TOKENS = {
         "BeginEncounterSession",
         "MarkPlayerDisconnected",
         "TryRejoinPlayer",
+        "RegisterConnectedParticipant",
         "EndEncounterSession",
         "ReconnectGraceWindowSeconds = 300.0f",
     ),
@@ -30,6 +31,7 @@ REQUIRED_TOKENS = {
         "EJumanjiWorldEncounterPhase::Reward",
         "OutReconnectState.EncounterRevision = EncounterState.Revision",
         "ConnectedProfileIds.Add(ProfileId)",
+        "bool UJumanjiWorldEncounterSessionSubsystem::RegisterConnectedParticipant(",
     ),
     "Source/JumanjiUE/Private/JumanjiGameMode.cpp": (
         "SessionSubsystem->MarkPlayerDisconnected(JumanjiPlayerState)",
@@ -77,7 +79,6 @@ REQUIRED_TOKENS = {
         "ReconnectGraceWindowSeconds",
         "Completed",
         "Failed",
-        "no live actor",
         "server/shard migration",
     ),
 }
@@ -99,6 +100,8 @@ def _function_slice(content: str, start_token: str, next_token: str) -> str:
     start = content.find(start_token)
     if start < 0:
         return ""
+    if not next_token:
+        return content[start:]
     end = content.find(next_token, start + len(start_token))
     return content[start:] if end < 0 else content[start:end]
 
