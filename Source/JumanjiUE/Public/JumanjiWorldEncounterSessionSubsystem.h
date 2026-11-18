@@ -26,6 +26,9 @@ public:
     /** Starts a new in-memory session and registers its initiating profile. */
     bool BeginEncounterSession(FName EncounterId, AJumanjiPlayerState* InitiatingPlayer);
 
+    /** Server-registers another already-connected world participant for reconnect. */
+    bool RegisterConnectedParticipant(AJumanjiPlayerState* PlayerState);
+
     /** Marks a registered participant disconnected during the active encounter. */
     bool MarkPlayerDisconnected(const AJumanjiPlayerState* PlayerState);
 
