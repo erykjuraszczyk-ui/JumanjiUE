@@ -7,6 +7,7 @@
 #include "JumanjiWorldEncounterHUDWidget.generated.h"
 
 class AJumanjiGameState;
+class AJumanjiPlayerState;
 
 /**
  * Local presentation adapter for the replicated world-encounter snapshot.
@@ -21,6 +22,9 @@ class JUMANJIUE_API UJumanjiWorldEncounterHUDWidget : public UUserWidget
 public:
     UFUNCTION(BlueprintPure, Category = "JUMANJI|Encounter HUD")
     FJumanjiWorldEncounterState GetEncounterState() const;
+
+    UFUNCTION(BlueprintPure, Category = "JUMANJI|Encounter HUD|Reconnect")
+    FJumanjiEncounterReconnectState GetReconnectState() const;
 
     UFUNCTION(BlueprintPure, Category = "JUMANJI|Encounter HUD")
     FText GetEncounterStatusText() const;
@@ -90,9 +94,14 @@ protected:
     UFUNCTION(BlueprintImplementableEvent, Category = "JUMANJI|Encounter HUD")
     void OnBossTelegraphPresentationChanged(const FJumanjiBossTelegraphState& TelegraphState);
 
+    /** Fires when this local player rejoins an active same-server encounter. */
+    UFUNCTION(BlueprintImplementableEvent, Category = "JUMANJI|Encounter HUD|Reconnect")
+    void OnEncounterReconnectNotice(const FJumanjiEncounterReconnectState& ReconnectState);
+
 private:
     void BindGameState();
     void BindBoss();
+    void BindPlayerState();
     void ReportBossPhaseIfChanged();
     void RefreshPresentation();
     float GetSynchronizedWorldTime() const;
@@ -103,11 +112,17 @@ private:
     UFUNCTION()
     void HandleBossTelegraphChanged(const FJumanjiBossTelegraphState& NewState);
 
+    UFUNCTION()
+    void HandleEncounterReconnectChanged(const FJumanjiEncounterReconnectState& NewState);
+
     UPROPERTY(Transient)
     TObjectPtr<AJumanjiGameState> CachedGameState;
 
     UPROPERTY(Transient)
     TObjectPtr<AJumanjiBossCharacter> CachedBoss;
+
+    UPROPERTY(Transient)
+    TObjectPtr<AJumanjiPlayerState> CachedPlayerState;
 
     float RefreshAccumulator = 0.0f;
     bool bHasReportedPhase = false;
