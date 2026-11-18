@@ -6,6 +6,7 @@
 #include "JumanjiAdventureChapter.h"
 #include "JumanjiBossCharacter.h"
 #include "JumanjiEnemyCharacter.h"
+#include "GameFramework/PlayerState.h"
 #include "JumanjiGameState.h"
 #include "JumanjiPlayerState.h"
 #include "JumanjiProgressionRewardSubsystem.h"
@@ -203,6 +204,19 @@ bool AJumanjiWorldEncounterDirector::StartEncounter(AJumanjiPlayerState* Initiat
         || !SessionSubsystem->BeginEncounterSession(EncounterId, InitiatingPlayer))
     {
         return false;
+    }
+
+    // The world encounter is shared by the players currently connected to this
+    // server. Register only server-known PlayerStates with a bound profile key.
+    for (APlayerState* BasePlayerState : GameState->PlayerArray)
+    {
+        if (AJumanjiPlayerState* Participant = Cast<AJumanjiPlayerState>(BasePlayerState))
+        {
+            if (Participant != InitiatingPlayer)
+            {
+                SessionSubsystem->RegisterConnectedParticipant(Participant);
+            }
+        }
     }
 
     if (!GameState->BeginWorldEncounter(EncounterId, Waves.Num()))
