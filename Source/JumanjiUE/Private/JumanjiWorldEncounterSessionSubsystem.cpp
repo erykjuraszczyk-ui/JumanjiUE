@@ -1,6 +1,7 @@
 #include "JumanjiWorldEncounterSessionSubsystem.h"
 
 #include "Engine/World.h"
+#include "Engine/GameInstance.h"
 #include "JumanjiGameState.h"
 #include "JumanjiPlayerState.h"
 
@@ -123,7 +124,8 @@ bool UJumanjiWorldEncounterSessionSubsystem::TryRejoinPlayer(
         return false;
     }
 
-    const UWorld* World = GetWorld();
+    const UGameInstance* GameInstance = GetGameInstance();
+    const UWorld* World = GameInstance ? GameInstance->GetWorld() : nullptr;
     const AJumanjiGameState* GameState = World
         ? World->GetGameState<AJumanjiGameState>()
         : nullptr;
