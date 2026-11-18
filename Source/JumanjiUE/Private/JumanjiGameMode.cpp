@@ -6,6 +6,7 @@
 #include "JumanjiPlayerProfileSaveGame.h"
 #include "JumanjiPlayerProfileSubsystem.h"
 #include "JumanjiPlayerState.h"
+#include "JumanjiWorldEncounterSessionSubsystem.h"
 #include "Engine/GameInstance.h"
 #include "GameFramework/OnlineReplStructs.h"
 
@@ -103,6 +104,27 @@ void AJumanjiGameMode::PostLogin(APlayerController* NewPlayer)
         JumanjiPlayerState->InitializeNewProfileProgression();
         JumanjiPlayerState->RequestProfileSave();
     }
+
+    // Restore only volatile participation in an encounter that is still active
+    // on this same server process. The profile snapshot contains progression,
+    // never live encounter actors or phase state.
+    if (UGameInstance* GameInstance = GetGameInstance())
+    {
+        if (UJumanjiWorldEncounterSessionSubsystem* SessionSubsystem =
+            GameInstance->GetSubsystem<UJumanjiWorldEncounterSessionSubsystem>())
+        {
+            FJumanjiEncounterReconnectState ReconnectState;
+            if (SessionSubsystem->TryRejoinPlayer(JumanjiPlayerState, ReconnectState)
+                && JumanjiPlayerState->SetEncounterReconnectState(ReconnectState))
+            {
+                UE_LOG(LogTemp, Log,
+                    TEXT("JUMANJI encounter: profile '%s' rejoined encounter '%s' at revision %d."),
+                    *ProfileId,
+                    *ReconnectState.EncounterId.ToString(),
+                    ReconnectState.EncounterRevision);
+            }
+        }
+    }
 }
 
 void AJumanjiGameMode::Logout(AController* Exiting)
@@ -114,6 +136,15 @@ void AJumanjiGameMode::Logout(AController* Exiting)
             if (AJumanjiPlayerState* JumanjiPlayerState =
                 PlayerController->GetPlayerState<AJumanjiPlayerState>())
             {
+                if (UGameInstance* GameInstance = GetGameInstance())
+                {
+                    if (UJumanjiWorldEncounterSessionSubsystem* SessionSubsystem =
+                        GameInstance->GetSubsystem<UJumanjiWorldEncounterSessionSubsystem>())
+                    {
+                        SessionSubsystem->MarkPlayerDisconnected(JumanjiPlayerState);
+                    }
+                }
+
                 JumanjiPlayerState->RequestProfileSave();
             }
         }
