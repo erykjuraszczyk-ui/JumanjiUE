@@ -57,6 +57,28 @@ bool UJumanjiWorldEncounterSessionSubsystem::BeginEncounterSession(
     return true;
 }
 
+bool UJumanjiWorldEncounterSessionSubsystem::RegisterConnectedParticipant(
+    AJumanjiPlayerState* PlayerState)
+{
+    if (!IsValid(PlayerState)
+        || !PlayerState->HasAuthority()
+        || ActiveEncounterId.IsNone())
+    {
+        return false;
+    }
+
+    const FString ProfileId = PlayerState->GetPersistentProfileId();
+    if (!IsValidProfileKey(ProfileId)
+        || DisconnectedAtUtc.Contains(ProfileId))
+    {
+        return false;
+    }
+
+    ParticipantProfileIds.Add(ProfileId);
+    ConnectedProfileIds.Add(ProfileId);
+    return true;
+}
+
 bool UJumanjiWorldEncounterSessionSubsystem::MarkPlayerDisconnected(
     const AJumanjiPlayerState* PlayerState)
 {
