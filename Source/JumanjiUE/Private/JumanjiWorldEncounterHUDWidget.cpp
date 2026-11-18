@@ -1,6 +1,7 @@
 #include "JumanjiWorldEncounterHUDWidget.h"
 
 #include "JumanjiGameState.h"
+#include "JumanjiPlayerState.h"
 #include "JumanjiAttributeSet.h"
 #include "Engine/World.h"
 #include "GameFramework/GameStateBase.h"
@@ -10,6 +11,7 @@ void UJumanjiWorldEncounterHUDWidget::NativeConstruct()
     Super::NativeConstruct();
     BindGameState();
     BindBoss();
+    BindPlayerState();
 
     const FJumanjiWorldEncounterState State = GetEncounterState();
     LastReportedPhase = State.Phase;
@@ -35,6 +37,14 @@ void UJumanjiWorldEncounterHUDWidget::NativeDestruct()
             &UJumanjiWorldEncounterHUDWidget::HandleBossTelegraphChanged);
     }
 
+    if (IsValid(CachedPlayerState))
+    {
+        CachedPlayerState->OnEncounterReconnectChanged.RemoveDynamic(
+            this,
+            &UJumanjiWorldEncounterHUDWidget::HandleEncounterReconnectChanged);
+    }
+
+    CachedPlayerState = nullptr;
     CachedBoss = nullptr;
     CachedGameState = nullptr;
     Super::NativeDestruct();
@@ -49,6 +59,11 @@ void UJumanjiWorldEncounterHUDWidget::NativeTick(
     if (!IsValid(CachedGameState))
     {
         BindGameState();
+    }
+
+    if (!IsValid(CachedPlayerState))
+    {
+        BindPlayerState();
     }
 
     const FJumanjiWorldEncounterState State = GetEncounterState();
@@ -97,6 +112,42 @@ void UJumanjiWorldEncounterHUDWidget::BindGameState()
     BindBoss();
 }
 
+void UJumanjiWorldEncounterHUDWidget::BindPlayerState()
+{
+    APlayerController* PlayerController = GetOwningPlayer();
+    AJumanjiPlayerState* NewPlayerState = PlayerController
+        ? PlayerController->GetPlayerState<AJumanjiPlayerState>()
+        : nullptr;
+
+    if (CachedPlayerState == NewPlayerState)
+    {
+        return;
+    }
+
+    if (IsValid(CachedPlayerState))
+    {
+        CachedPlayerState->OnEncounterReconnectChanged.RemoveDynamic(
+            this,
+            &UJumanjiWorldEncounterHUDWidget::HandleEncounterReconnectChanged);
+    }
+
+    CachedPlayerState = NewPlayerState;
+
+    if (IsValid(CachedPlayerState))
+    {
+        CachedPlayerState->OnEncounterReconnectChanged.AddUniqueDynamic(
+            this,
+            &UJumanjiWorldEncounterHUDWidget::HandleEncounterReconnectChanged);
+
+        const FJumanjiEncounterReconnectState ReconnectState =
+            CachedPlayerState->GetEncounterReconnectState();
+        if (ReconnectState.bWasReconnected)
+        {
+            OnEncounterReconnectNotice(ReconnectState);
+        }
+    }
+}
+
 void UJumanjiWorldEncounterHUDWidget::BindBoss()
 {
     AJumanjiBossCharacter* NewBoss = IsValid(CachedGameState)
@@ -139,6 +190,13 @@ FJumanjiWorldEncounterState UJumanjiWorldEncounterHUDWidget::GetEncounterState()
     return IsValid(CachedGameState)
         ? CachedGameState->GetWorldEncounterState()
         : FJumanjiWorldEncounterState();
+}
+
+FJumanjiEncounterReconnectState UJumanjiWorldEncounterHUDWidget::GetReconnectState() const
+{
+    return IsValid(CachedPlayerState)
+        ? CachedPlayerState->GetEncounterReconnectState()
+        : FJumanjiEncounterReconnectState();
 }
 
 FText UJumanjiWorldEncounterHUDWidget::GetEncounterStatusText() const
@@ -310,6 +368,17 @@ void UJumanjiWorldEncounterHUDWidget::HandleBossTelegraphChanged(
     const FJumanjiBossTelegraphState& NewState)
 {
     OnBossTelegraphPresentationChanged(NewState);
+    RefreshPresentation();
+}
+
+void UJumanjiWorldEncounterHUDWidget::HandleEncounterReconnectChanged(
+    const FJumanjiEncounterReconnectState& NewState)
+{
+    if (NewState.bWasReconnected)
+    {
+        OnEncounterReconnectNotice(NewState);
+    }
+
     RefreshPresentation();
 }
 
