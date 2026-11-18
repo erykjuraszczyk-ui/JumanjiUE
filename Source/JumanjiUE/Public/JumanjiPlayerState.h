@@ -5,6 +5,7 @@
 #include "GameFramework/PlayerState.h"
 #include "JumanjiWorldExploration.h"
 #include "JumanjiPlayerProfileSaveGame.h"
+#include "JumanjiWorldEncounter.h"
 #include "JumanjiProgressionTypes.h"
 #include "JumanjiPlayerState.generated.h"
 
@@ -29,6 +30,11 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(
     FJumanjiProgressionChanged,
     const FJumanjiPlayerProgressionState&, ProgressionState
+);
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(
+    FJumanjiEncounterReconnectChanged,
+    const FJumanjiEncounterReconnectState&, ReconnectState
 );
 
 /**
@@ -136,6 +142,15 @@ public:
         return WorldExplorationState;
     }
 
+    /** Server-only one-shot presentation state for same-server encounter rejoin. */
+    bool SetEncounterReconnectState(const FJumanjiEncounterReconnectState& NewState);
+
+    UFUNCTION(BlueprintPure, Category = "JUMANJI|Encounter|Reconnect")
+    FJumanjiEncounterReconnectState GetEncounterReconnectState() const
+    {
+        return EncounterReconnectState;
+    }
+
     UPROPERTY(BlueprintAssignable, Category = "JUMANJI|Character")
     FJumanjiSelectedCharacterChanged OnSelectedCharacterChanged;
 
@@ -147,6 +162,9 @@ public:
 
     UPROPERTY(BlueprintAssignable, Category = "JUMANJI|Progression")
     FJumanjiProgressionChanged OnProgressionChanged;
+
+    UPROPERTY(BlueprintAssignable, Category = "JUMANJI|Encounter|Reconnect")
+    FJumanjiEncounterReconnectChanged OnEncounterReconnectChanged;
 
 protected:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "JUMANJI|Abilities", meta = (AllowPrivateAccess = "true"))
@@ -167,6 +185,10 @@ protected:
     UPROPERTY(ReplicatedUsing = OnRep_ProgressionState, BlueprintReadOnly, Category = "JUMANJI|Progression")
     FJumanjiPlayerProgressionState ProgressionState;
 
+    /** Volatile reconnect notice; deliberately excluded from profile snapshots. */
+    UPROPERTY(ReplicatedUsing = OnRep_EncounterReconnectState, BlueprintReadOnly, Category = "JUMANJI|Encounter|Reconnect")
+    FJumanjiEncounterReconnectState EncounterReconnectState;
+
     UFUNCTION()
     void OnRep_SelectedCharacterId();
 
@@ -178,6 +200,9 @@ protected:
 
     UFUNCTION()
     void OnRep_ProgressionState();
+
+    UFUNCTION()
+    void OnRep_EncounterReconnectState();
 
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
