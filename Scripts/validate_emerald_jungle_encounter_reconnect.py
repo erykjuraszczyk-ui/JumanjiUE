@@ -55,6 +55,8 @@ REQUIRED_TOKENS = {
         "bool AJumanjiPlayerState::SetEncounterReconnectState(",
         "OnEncounterReconnectChanged.Broadcast(EncounterReconnectState)",
         "DOREPLIFETIME(AJumanjiPlayerState, EncounterReconnectState)",
+        "FJumanjiPlayerProfileSnapshot AJumanjiPlayerState::BuildProfileSnapshot() const",
+        "Snapshot.ProcessedTransactionIds = ProcessedTransactionIds",
     ),
     "Source/JumanjiUE/Public/JumanjiWorldEncounterHUDWidget.h": (
         "GetReconnectState() const",
@@ -70,16 +72,13 @@ REQUIRED_TOKENS = {
         "LoadProfile",
         "SaveProfile",
     ),
-    "Source/JumanjiUE/Private/JumanjiPlayerState.cpp": (
-        "FJumanjiPlayerProfileSnapshot AJumanjiPlayerState::BuildProfileSnapshot() const",
-        "Snapshot.ProcessedTransactionIds = ProcessedTransactionIds",
-    ),
+
     "Docs/STAGE_30_ENCOUNTER_SESSION_RECONNECT_RECOVERY.md": (
         "same-server",
         "ReconnectGraceWindowSeconds",
         "Completed",
         "Failed",
-        "server/shard migration",
+        "cross-shard handoff",
     ),
 }
 
@@ -168,7 +167,7 @@ def validate_sources(project_root: Path) -> list[str]:
     logout = _function_slice(
         game_mode,
         "void AJumanjiGameMode::Logout(AController* Exiting)",
-        "",
+        "\\n",
     )
     mark_position = logout.find("MarkPlayerDisconnected")
     save_position = logout.find("RequestProfileSave")
