@@ -76,7 +76,7 @@ AJumanjiPlayerState otrzymuje replikowany FJumanjiEncounterReconnectState:
 
 To jest wyłącznie jednorazowa informacja prezentacyjna dla nowego PlayerState. Nie jest dodana do FJumanjiPlayerProfileSnapshot, nie jest częścią schema v2 i nie jest zapisywana przez BuildProfileSnapshot().
 
-Serwer ustawia snapshot dopiero po zaakceptowanym reconnect. Klient otrzymuje go przez normalną replikację PlayerState.
+Serwer ustawia snapshot dopiero po zaakceptowanym reconnect. Klient otrzymuje go przez normalną replikację PlayerState. Jeżeli gracz wraca w fazie Reward, GameMode wywołuje istniejące GrantWorldEncounterCompletionReward dla jego profilu. Ta sama transakcja ma stabilne TransactionId i jest idempotentna, więc nie duplikuje nagrody, jeśli profil otrzymał ją już wcześniej.
 
 ## 5. Encounter HUD
 
