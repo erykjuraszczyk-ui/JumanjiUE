@@ -6,6 +6,7 @@
 #include "JumanjiPlayerProfileSaveGame.h"
 #include "JumanjiPlayerProfileSubsystem.h"
 #include "JumanjiPlayerState.h"
+#include "JumanjiProgressionRewardSubsystem.h"
 #include "JumanjiWorldEncounterSessionSubsystem.h"
 #include "Engine/GameInstance.h"
 #include "GameFramework/OnlineReplStructs.h"
@@ -122,6 +123,26 @@ void AJumanjiGameMode::PostLogin(APlayerController* NewPlayer)
                     *ProfileId,
                     *ReconnectState.EncounterId.ToString(),
                     ReconnectState.EncounterRevision);
+
+                // If the participant reconnects during Reward, the director may
+                // already have iterated GameState::PlayerArray. Use the same
+                // idempotent completion transaction to catch up this profile.
+                if (ReconnectState.Phase == EJumanjiWorldEncounterPhase::Reward)
+                {
+                    if (UJumanjiProgressionRewardSubsystem* RewardSubsystem =
+                        GameInstance->GetSubsystem<UJumanjiProgressionRewardSubsystem>())
+                    {
+                        if (!RewardSubsystem->GrantWorldEncounterCompletionReward(
+                            JumanjiPlayerState,
+                            ReconnectState.EncounterId))
+                        {
+                            UE_LOG(LogTemp, Warning,
+                                TEXT("JUMANJI encounter: reconnect reward was not applied for profile '%s' in encounter '%s'."),
+                                *ProfileId,
+                                *ReconnectState.EncounterId.ToString());
+                        }
+                    }
+                }
             }
         }
     }
