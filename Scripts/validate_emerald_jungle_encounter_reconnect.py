@@ -167,7 +167,7 @@ def validate_sources(project_root: Path) -> list[str]:
     logout = _function_slice(
         game_mode,
         "void AJumanjiGameMode::Logout(AController* Exiting)",
-        "\\n",
+        "Super::Logout(Exiting);",
     )
     mark_position = logout.find("MarkPlayerDisconnected")
     save_position = logout.find("RequestProfileSave")
