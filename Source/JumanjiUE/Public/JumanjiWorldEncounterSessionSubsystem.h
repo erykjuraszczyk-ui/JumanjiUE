@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Subsystems/GameInstanceSubsystem.h"
+#include "JumanjiWorldEncounter.h"
 #include "JumanjiWorldEncounterSessionSubsystem.generated.h"
 
 class AJumanjiPlayerState;
