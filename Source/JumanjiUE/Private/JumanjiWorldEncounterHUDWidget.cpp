@@ -5,6 +5,7 @@
 #include "JumanjiAttributeSet.h"
 #include "Engine/World.h"
 #include "GameFramework/GameStateBase.h"
+#include "GameFramework/PlayerController.h"
 
 void UJumanjiWorldEncounterHUDWidget::NativeConstruct()
 {
