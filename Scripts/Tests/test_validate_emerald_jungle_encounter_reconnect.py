@@ -96,7 +96,8 @@ class EncounterReconnectValidationTests(unittest.TestCase):
             content = path.read_text(encoding="utf-8")
             content = content.replace(
                 "ProfileSubsystem->LoadProfile(ProfileId, Snapshot);\n SessionSubsystem->TryRejoinPlayer",
-                "SessionSubsystem->TryRejoinPlayer(JumanjiPlayerState, ReconnectState);\n ProfileSubsystem->LoadProfile(ProfileId, Snapshot);",
+                "FJumanjiEncounterReconnectFeedbackState FeedbackState;\\n"
+                    "SessionSubsystem->TryRejoinPlayer(JumanjiPlayerState, ReconnectState, FeedbackState);\n ProfileSubsystem->LoadProfile(ProfileId, Snapshot);",
             )
             path.write_text(content, encoding="utf-8")
             errors = MODULE.validate_sources(root)
