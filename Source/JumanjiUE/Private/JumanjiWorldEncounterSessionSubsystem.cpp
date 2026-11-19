@@ -370,6 +370,7 @@ void UJumanjiWorldEncounterSessionSubsystem::EndEncounterSession(FName Encounter
     }
 
     ActiveEncounterId = NAME_None;
+    ActiveSessionId.Invalidate();
     ParticipantProfileIds.Reset();
     ConnectedProfileIds.Reset();
     DisconnectedAtUtc.Reset();
