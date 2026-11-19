@@ -243,7 +243,7 @@ def validate_project(root: Path) -> list[str]:
     ordered_markers = (
         "SetReplicates(false)",
         "BeginRestoredEncounterSession(",
-        "ApplyCheckpointTrialStates(",
+        "->ApplyCheckpointTrialStates(",
         "ApplyEncounterCheckpointRestore(",
         "SetReplicates(true)",
     )
