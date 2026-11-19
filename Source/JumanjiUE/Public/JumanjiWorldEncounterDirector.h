@@ -11,6 +11,7 @@ class AJumanjiAdventureChapterDirector;
 class AJumanjiBossCharacter;
 class AJumanjiEnemyCharacter;
 class AJumanjiPlayerState;
+class AJumanjiBossCharacter;
 
 USTRUCT(BlueprintType)
 struct JUMANJIUE_API FJumanjiEncounterEnemySpawn
@@ -70,6 +71,12 @@ public:
     UFUNCTION(BlueprintPure, Category = "JUMANJI|Encounter")
     bool CanRetryEncounter() const;
 
+    UFUNCTION(BlueprintPure, Category = "JUMANJI|Encounter|Checkpoint")
+    FName GetCheckpointSpawnSetId() const { return CheckpointSpawnSetId; }
+
+    UFUNCTION(BlueprintPure, Category = "JUMANJI|Encounter|Checkpoint")
+    FName GetCheckpointBossDefinitionId() const { return CheckpointBossDefinitionId; }
+
 protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "JUMANJI|Encounter")
     FName EncounterId = FName(TEXT("ENCOUNTER_EMERALD_JUNGLE_CITADEL"));
@@ -94,6 +101,12 @@ protected:
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "JUMANJI|Encounter|Boss")
     TSubclassOf<AJumanjiBossCharacter> BossClass;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "JUMANJI|Encounter|Checkpoint")
+    FName CheckpointSpawnSetId = FName(TEXT("EMERALD_CITADEL_WAVESET_A"));
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "JUMANJI|Encounter|Checkpoint")
+    FName CheckpointBossDefinitionId = FName(TEXT("BOSS_EMERALD_JUNGLE_GUARDIAN"));
 
     UPROPERTY(EditInstanceOnly, BlueprintReadOnly, Category = "JUMANJI|Encounter|Boss")
     TObjectPtr<AActor> BossSpawnPoint;
@@ -121,6 +134,10 @@ private:
     void SpawnBoss();
     UFUNCTION()
     void HandleEnemyDefeated(AJumanjiEnemyCharacter* Enemy);
+
+    void HandleBossCheckpointBoundaryReady(uint8 Phase, float HealthFraction, uint32 PhaseRevision);
+    void RequestCheckpointCapture(EJumanjiWorldEncounterPhase Phase, int32 CurrentWave);
+    void ReleaseCheckpointLease();
     void PublishEncounterState(EJumanjiWorldEncounterPhase Phase, int32 WaveIndex, int32 ActiveEnemyCount);
     void CompleteEncounter();
     void FailEncounter(FName ReasonId);
@@ -138,6 +155,9 @@ private:
     TArray<TObjectPtr<AActor>> SpawnedEncounterActors;
 
     int32 ActiveWaveIndex = INDEX_NONE;
+    FGuid EncounterSessionId;
+    uint32 EncounterSeed = 0;
+    FDelegateHandle BossCheckpointDelegateHandle;
     bool bEncounterActive = false;
     bool bListeningForChapterChanges = false;
 };
