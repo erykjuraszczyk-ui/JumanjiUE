@@ -173,9 +173,9 @@ class EncounterCheckpointBackendTests(unittest.TestCase):
         server = ThreadingHTTPServer(("127.0.0.1", 0), handler)
         thread = threading.Thread(target=server.serve_forever, daemon=True)
         thread.start()
+        self.addCleanup(thread.join)
         self.addCleanup(server.server_close)
         self.addCleanup(server.shutdown)
-        self.addCleanup(thread.join)
 
         url = f"http://127.0.0.1:{server.server_port}/v1/encounters/ENCOUNTER_HTTP_TEST/leases"
         request = Request(
