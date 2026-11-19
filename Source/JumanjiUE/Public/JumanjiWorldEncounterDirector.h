@@ -74,6 +74,7 @@ public:
     FName GetBossDefinitionId() const { return BossDefinitionId; }
     FName GetSpawnSetId() const { return SpawnSetId; }
     uint32 GetEncounterSeed() const { return EncounterSeed; }
+    int32 GetTotalWaveCount() const { return Waves.Num(); }
 
 protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "JUMANJI|Encounter")
