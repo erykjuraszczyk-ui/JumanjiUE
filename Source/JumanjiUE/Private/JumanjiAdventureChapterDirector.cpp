@@ -337,12 +337,9 @@ TArray<FName> AJumanjiAdventureChapterDirector::GetConfiguredTrialIds() const
     Result.Reserve(TrialActors.Num());
     for (const AJumanjiTrialActor* Trial : TrialActors)
     {
-        if (IsValid(Trial) && !Trial->GetObjectiveId().IsNone())
+        if (IsValid(Trial) && !Trial->GetCheckpointTrialId().IsNone())
         {
-            // Schema v1 has a TrialId slot but the runtime trial contract is keyed
-            // by ObjectiveId. Until a separately versioned TrialId is authored,
-            // this stable objective key is the canonical checkpoint trial key.
-            Result.AddUnique(Trial->GetObjectiveId());
+            Result.AddUnique(Trial->GetCheckpointTrialId());
         }
     }
     return Result;
@@ -350,6 +347,22 @@ TArray<FName> AJumanjiAdventureChapterDirector::GetConfiguredTrialIds() const
 
 
 TArray<FName> AJumanjiAdventureChapterDirector::GetCompletedTrialIds() const
+{
+    TArray<FName> Result;
+    Result.Reserve(TrialActors.Num());
+    for (const AJumanjiTrialActor* Trial : TrialActors)
+    {
+        if (IsValid(Trial)
+            && Trial->GetTrialState() == EJumanjiTrialState::Completed
+            && !Trial->GetCheckpointTrialId().IsNone())
+        {
+            Result.AddUnique(Trial->GetCheckpointTrialId());
+        }
+    }
+    return Result;
+}
+
+TArray<FName> AJumanjiAdventureChapterDirector::GetCompletedTrialObjectiveIds() const
 {
     TArray<FName> Result;
     Result.Reserve(TrialActors.Num());
@@ -365,6 +378,57 @@ TArray<FName> AJumanjiAdventureChapterDirector::GetCompletedTrialIds() const
     return Result;
 }
 
+bool AJumanjiAdventureChapterDirector::AreCheckpointTrialIdsConsistent(
+    const TArray<FName>& CompletedTrialIds,
+    const TArray<FName>& CompletedObjectiveIds) const
+{
+    TSet<FName> CompletedTrialSet;
+    TSet<FName> CompletedObjectiveSet;
+    for (const FName Id : CompletedTrialIds)
+    {
+        if (Id.IsNone() || CompletedTrialSet.Contains(Id))
+        {
+            return false;
+        }
+        CompletedTrialSet.Add(Id);
+    }
+    for (const FName Id : CompletedObjectiveIds)
+    {
+        if (Id.IsNone() || CompletedObjectiveSet.Contains(Id))
+        {
+            return false;
+        }
+        CompletedObjectiveSet.Add(Id);
+    }
+
+    TSet<FName> ExpectedTrialIds;
+    TSet<FName> ExpectedObjectiveIds;
+    for (const AJumanjiTrialActor* Trial : TrialActors)
+    {
+        if (!IsValid(Trial)
+            || Trial->GetCheckpointTrialId().IsNone()
+            || Trial->GetObjectiveId().IsNone()
+            || ExpectedTrialIds.Contains(Trial->GetCheckpointTrialId())
+            || ExpectedObjectiveIds.Contains(Trial->GetObjectiveId()))
+        {
+            return false;
+        }
+
+        ExpectedTrialIds.Add(Trial->GetCheckpointTrialId());
+        ExpectedObjectiveIds.Add(Trial->GetObjectiveId());
+
+        const bool bTrialCompleted = CompletedTrialSet.Contains(Trial->GetCheckpointTrialId());
+        const bool bObjectiveCompleted = CompletedObjectiveSet.Contains(Trial->GetObjectiveId());
+        if (bTrialCompleted != bObjectiveCompleted)
+        {
+            return false;
+        }
+    }
+
+    return ExpectedTrialIds.Num() == CompletedTrialSet.Num()
+        ? ExpectedObjectiveIds.Num() == CompletedObjectiveSet.Num()
+        : false;
+}
 
 bool AJumanjiAdventureChapterDirector::HasNoTrialsInProgress() const
 {
