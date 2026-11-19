@@ -1126,9 +1126,7 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::ReadAndStageRestorePlan(
 {
     if (!IsServerRuntime() || !bLeaseReady || Expectations.EncounterId != ActiveEncounterId
         || Expectations.ChapterId.IsNone() || Expectations.BoardEventId.IsNone()
-        || Expectations.SpawnSetId.IsNone() || Expectations.BossDefinitionId.IsNone()
-        || Expectations.AllowedRewardDefinitionId.IsNone()
-        || Expectations.ExpectedRewardTransactionId.IsNone()
+        || Expectations.SpawnSetId.IsNone()
         || Expectations.AllowedObjectiveIds.IsEmpty() || Expectations.AllowedTrialIds.IsEmpty()
         || Expectations.ServerBuildId.IsEmpty() || Expectations.RulesetVersion.IsEmpty()
         || Expectations.WorldContentVersion.IsEmpty())
