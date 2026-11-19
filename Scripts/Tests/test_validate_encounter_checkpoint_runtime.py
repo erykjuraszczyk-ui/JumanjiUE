@@ -67,7 +67,7 @@ class RepositoryIntegrationTests(unittest.TestCase):
     def test_current_repository_passes(self) -> None:
         root = Path(__file__).resolve().parents[2]
         errors = MODULE.validate_project(root)
-        self.assertEqual(errors, "\n".join(errors) if False else [])
+        self.assertEqual(errors, [])
 
     def test_runtime_header_is_native_only(self) -> None:
         root = Path(__file__).resolve().parents[2]
