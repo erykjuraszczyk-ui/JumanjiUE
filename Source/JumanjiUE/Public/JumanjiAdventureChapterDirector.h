@@ -38,6 +38,7 @@ public:
     /** Stable designer IDs only; no trial UObject references leave this director. */
     TArray<FName> GetConfiguredObjectiveIds() const;
     TArray<FName> GetConfiguredTrialIds() const;
+    TArray<FName> GetCompletedTrialIds() const;
 
 protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "JUMANJI|Adventure")
