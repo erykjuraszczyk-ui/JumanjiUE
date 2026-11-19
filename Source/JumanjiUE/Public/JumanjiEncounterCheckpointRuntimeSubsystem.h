@@ -138,6 +138,7 @@ private:
     bool bReadInFlight = false;
     bool bCheckpointWriteBlockedUntilResync = false;
     bool bRestoreStagingRequested = false;
+    bool bReleaseLeaseWhenIdle = false;
     bool bHasStagedRestoreCandidate = false;
 
     TWeakObjectPtr<AJumanjiWorldEncounterDirector> PendingRestoreDirector;
