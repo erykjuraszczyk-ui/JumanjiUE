@@ -347,3 +347,20 @@ TArray<FName> AJumanjiAdventureChapterDirector::GetConfiguredTrialIds() const
     }
     return Result;
 }
+
+
+TArray<FName> AJumanjiAdventureChapterDirector::GetCompletedTrialIds() const
+{
+    TArray<FName> Result;
+    Result.Reserve(TrialActors.Num());
+    for (const AJumanjiTrialActor* Trial : TrialActors)
+    {
+        if (IsValid(Trial)
+            && Trial->GetTrialState() == EJumanjiTrialState::Completed
+            && !Trial->GetObjectiveId().IsNone())
+        {
+            Result.AddUnique(Trial->GetObjectiveId());
+        }
+    }
+    return Result;
+}
