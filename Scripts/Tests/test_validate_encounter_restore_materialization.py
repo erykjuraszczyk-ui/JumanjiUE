@@ -39,7 +39,17 @@ class EncounterRestoreMaterializationTests(unittest.TestCase):
             )
             path.write_text(source, encoding="utf-8")
             errors = MODULE.validate_project(root)
-            self.assertTrue(any("CurrentProfileRevision" in error.lower() for error in errors))
+            self.assertTrue(any("CurrentProfileRevision" in error for error in errors))
+
+    def test_profile_persistence_must_be_enabled(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = self._copy_fixture(temp_dir)
+            path = root / "Source/JumanjiUE/Private/JumanjiEncounterCheckpointRuntimeSubsystem.cpp"
+            source = path.read_text(encoding="utf-8")
+            source = source.replace("|| !PlayerState->IsProfilePersistenceEnabled()", "", 1)
+            path.write_text(source, encoding="utf-8")
+            errors = MODULE.validate_project(root)
+            self.assertTrue(any("IsProfilePersistenceEnabled" in error for error in errors))
 
     def test_reward_ledger_check_is_required(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
