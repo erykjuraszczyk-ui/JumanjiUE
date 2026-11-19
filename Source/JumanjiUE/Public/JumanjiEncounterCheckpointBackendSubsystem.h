@@ -4,6 +4,8 @@
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "JumanjiEncounterCheckpointBackendSubsystem.generated.h"
 
+class FJsonObject;
+
 struct FJumanjiCheckpointBackendResponse
 {
     bool bTransportSucceeded = false;
