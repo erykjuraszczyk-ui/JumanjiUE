@@ -14,7 +14,7 @@
 #include "Dom/JsonObject.h"
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
-#include "Misc/SecureHash.h"
+#include "IO/IoHash.h"
 #include "HAL/PlatformMisc.h"
 #include "Engine/GameInstance.h"
 #include "Engine/World.h"
@@ -420,17 +420,13 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::BuildOpaqueParticipantKey(
 
     const FString Material = Salt + TEXT("|") + PersistentProfileId;
     FTCHARToUTF8 Utf8Material(*Material);
-    uint8 Hash[32] = {};
-    FSHA256::HashBuffer(Utf8Material.Get(), static_cast<uint64>(Utf8Material.Length()), Hash);
+    const FIoHash Hash = FIoHash::HashBuffer(
+        Utf8Material.Get(),
+        static_cast<uint64>(Utf8Material.Length()));
 
-    FString HexDigest;
-    HexDigest.Reserve(64);
-    for (const uint8 Byte : Hash)
-    {
-        HexDigest += FString::Printf(TEXT("%02x"), Byte);
-    }
-
-    OutParticipantKey = TEXT("pk_") + HexDigest;
+    // FIoHash is Unreal's BLAKE3-160 content hash. The high-entropy server
+    // salt makes this a stable opaque pseudonymous participant key.
+    OutParticipantKey = TEXT("pk_") + LexToString(Hash);
     return JumanjiCheckpointRuntime::IsParticipantKeyFormatValid(OutParticipantKey);
 }
 
@@ -642,8 +638,8 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::BuildPayloadJson(
 
     const FDateTime Now = FDateTime::UtcNow();
     const FDateTime Expires = Now + FTimespan::FromMinutes(JumanjiCheckpointRuntime::CheckpointLifetimeMinutes);
-    Payload->SetStringField(TEXT("createdAtUtc"), Now.ToString(TEXT("%Y-%m-%dT%H:%M:%SZ")));
-    Payload->SetStringField(TEXT("expiresAtUtc"), Expires.ToString(TEXT("%Y-%m-%dT%H:%M:%SZ")));
+    Payload->SetStringField(TEXT("createdAtUtc"), Now.ToIso8601());
+    Payload->SetStringField(TEXT("expiresAtUtc"), Expires.ToIso8601());
 
     TSharedRef<FJsonObject> Authority = MakeShared<FJsonObject>();
     Authority->SetStringField(TEXT("serverInstanceId"), ServerInstanceId);
