@@ -481,13 +481,24 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::BuildPayloadJson(
     const FJumanjiWorldEncounterState EncounterState = GameState->GetWorldEncounterState();
     const FJumanjiAdventureChapterState ChapterState = GameState->GetAdventureChapterState();
 
+    const bool bTrialBoundary = SafePoint == EJumanjiEncounterCheckpointSafePoint::TrialBoundary;
+    const bool bExpectedChapterPhase = bTrialBoundary
+        ? ChapterState.Phase == EJumanjiAdventureChapterPhase::Active
+        : ChapterState.Phase == EJumanjiAdventureChapterPhase::Completed;
+    const bool bBoardEventStateValid = bTrialBoundary
+        ? (GameState->IsBoardEventActive()
+            && GameState->GetActiveBoardEventId() == ChapterDirector->GetBoardEventId())
+        : !GameState->IsBoardEventActive();
+
     if (EncounterState.EncounterId != ActiveEncounterId
         || ChapterState.ChapterId != ChapterDirector->GetChapterId()
         || ChapterState.BoardEventId != ChapterDirector->GetBoardEventId()
-        || ChapterState.Phase != EJumanjiAdventureChapterPhase::Completed
-        || !GameState->AreAdventureObjectivesComplete())
+        || !bExpectedChapterPhase
+        || !bBoardEventStateValid
+        || !ChapterDirector->HasNoTrialsInProgress()
+        || (!bTrialBoundary && !GameState->AreAdventureObjectivesComplete()))
     {
-        OutError = TEXT("CHECKPOINT_CHAPTER_NOT_STABLE");
+        OutError = TEXT("CHECKPOINT_CHAPTER_NOT_AT_SAFE_BOUNDARY");
         return false;
     }
 
@@ -564,10 +575,35 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::BuildPayloadJson(
         CompletedTrialNames.Add(TrialId.ToString());
     }
 
-    if (CompletedObjectiveNames.Num() != ConfiguredObjectiveIds.Num()
-        || CompletedTrialNames.Num() != ConfiguredTrialIds.Num()
-        || ConfiguredObjectiveIds.IsEmpty()
-        || ConfiguredTrialIds.IsEmpty())
+    if (ConfiguredObjectiveIds.IsEmpty()
+        || ConfiguredTrialIds.IsEmpty()
+        || CompletedObjectiveNames.Num() != CompletedTrialNames.Num())
+    {
+        OutError = TEXT("CHECKPOINT_CHAPTER_CONTENT_INCOMPLETE");
+        return false;
+    }
+
+    TSet<FName> CompletedObjectiveSet;
+    TSet<FName> CompletedTrialSet;
+    for (const FString& Id : CompletedObjectiveNames) { CompletedObjectiveSet.Add(FName(*Id)); }
+    for (const FString& Id : CompletedTrialNames) { CompletedTrialSet.Add(FName(*Id)); }
+    if (CompletedObjectiveSet.Num() != CompletedTrialSet.Num())
+    {
+        OutError = TEXT("CHECKPOINT_TRIAL_OBJECTIVE_STATE_MISMATCH");
+        return false;
+    }
+    for (const FName Id : CompletedObjectiveSet)
+    {
+        if (!CompletedTrialSet.Contains(Id))
+        {
+            OutError = TEXT("CHECKPOINT_TRIAL_OBJECTIVE_STATE_MISMATCH");
+            return false;
+        }
+    }
+
+    if (!bTrialBoundary
+        && (CompletedObjectiveSet.Num() != ConfiguredObjectives.Num()
+            || CompletedTrialSet.Num() != ConfiguredTrials.Num()))
     {
         OutError = TEXT("CHECKPOINT_CHAPTER_CONTENT_INCOMPLETE");
         return false;
@@ -1038,8 +1074,10 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::StageVerifiedBackendResponse(
 
     const TArray<FName> AllowedObjectives = ChapterDirector->GetConfiguredObjectiveIds();
     const TArray<FName> AllowedTrials = ChapterDirector->GetConfiguredTrialIds();
-    const TSet<FName> AllowedObjectiveSet(AllowedObjectives);
-    const TSet<FName> AllowedTrialSet(AllowedTrials);
+    TSet<FName> AllowedObjectiveSet;
+    TSet<FName> AllowedTrialSet;
+    for (const FName Id : AllowedObjectives) { AllowedObjectiveSet.Add(Id); }
+    for (const FName Id : AllowedTrials) { AllowedTrialSet.Add(Id); }
 
     const TArray<TSharedPtr<FJsonValue>>* ObjectiveValues = nullptr;
     const TArray<TSharedPtr<FJsonValue>>* TrialValues = nullptr;
@@ -1088,8 +1126,23 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::StageVerifiedBackendResponse(
         Candidate.CompletedTrialIds.Add(Id);
     }
 
-    if (SeenObjectiveIds.Num() != AllowedObjectives.Num()
-        || SeenTrialIds.Num() != AllowedTrials.Num())
+    if (SeenObjectiveIds.Num() != SeenTrialIds.Num())
+    {
+        OutError = TEXT("CHECKPOINT_TRIAL_OBJECTIVE_STATE_MISMATCH");
+        return false;
+    }
+    for (const FName Id : SeenObjectiveIds)
+    {
+        if (!SeenTrialIds.Contains(Id))
+        {
+            OutError = TEXT("CHECKPOINT_TRIAL_OBJECTIVE_STATE_MISMATCH");
+            return false;
+        }
+    }
+
+    if (PhaseString != TEXT("Trials")
+        && (SeenObjectiveIds.Num() != AllowedObjectives.Num()
+            || SeenTrialIds.Num() != AllowedTrials.Num()))
     {
         OutError = TEXT("CHECKPOINT_CHAPTER_NOT_COMPLETE");
         return false;
