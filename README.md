@@ -33,7 +33,7 @@ Open-world third-person adventure RPG prototype with a shared-world direction an
 - Stage 27 — Emerald Jungle World Encounter Integration: server-authoritative progression gate, nine-trial chapter orchestration, configurable enemy waves, boss encounter, replicated phase state and idempotent per-profile completion rewards.
 - Stage 28 — Emerald Jungle Encounter Presentation & Multiplayer QA: replicated boss reference, server-timed attack telegraphs, encounter HUD base, three-phase telegraph manifest, source validator and multiplayer/mobile QA workflow.
 - Stage 29 — Encounter Replay & Recovery: server-only retry of a matching Failed encounter, Living Board trial/objective reset, cleanup of all encounter-spawned actors and preservation of persistent profile/economy receipts.
-- Stage 30 — Encounter Session Persistence & Reconnect Recovery: in-memory same-server participant registry, a bounded reconnect grace window, profile-restored rejoin validation and transient PlayerState reconnect state.
+- Stage 30 — Encounter Session Persistence & Reconnect Recovery: in-memory same-server participant registry, bounded reconnect grace window, profile-restored rejoin validation and transient PlayerState reconnect notice.
 - Stage 31 — Encounter Reconnect UX & Session QA: replicated success/expired/ended feedback, a non-persistent local HUD banner contract, bounded terminal notices and a 13-scenario network QA matrix.
 
 ## The nine playable Great Spirits
@@ -62,15 +62,198 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 5. Press Play to test the initial third-person character.
 
 ## Stage documentation
-- Docs/STAGE_30_ENCOUNTER_SESSION_RECONNECT_RECOVERY.md — same-server disconnect/reconnect lifecycle, grace window, transient PlayerState notice and profile separation.
-- Docs/STAGE_31_ENCOUNTER_RECONNECT_UX_SESSION_QA.md — success/expired/ended feedback, UMG banner wiring, terminal notice retention and multiplayer/Android QA matrix.
-- Data/Encounter/EncounterReconnectSessionQAMatrix.csv — 13 reconnect outcome and network-interruption scenarios.
+- Docs/STAGE_01_FOUNDATION.md — project setup and first prototype checklist.
+- Docs/STAGE_02_GREAT_SPIRIT_ROSTER.md — nine-character roster, selection flow and acceptance criteria.
+- Docs/STAGE_03_GREAT_SPIRIT_PRESENTATION.md — runtime mesh presentation and UMG integration contract.
+- Docs/STAGE_04_GREAT_SPIRIT_SELECT_UI.md — selection layout, Blueprint wiring and acceptance criteria.
+- Docs/STAGE_05_GREAT_SPIRIT_ABILITY_CORE.md — GAS architecture, slots, input tags and acceptance checklist.
+- Docs/Design/GreatSpiritAbilityDesign.md — proposed five-slot ability kits for each spirit.
+- Content/Abilities/README.md — Blueprint ability and Gameplay Effect asset authoring guide, including the Stage 16 AbilityId catalog and saved-loadout integration.
+- Docs/STAGE_16_SAVED_ABILITY_LOADOUT_RUNTIME.md — allowlisted ability resolver, profile restoration, server equipment RPC, ASC grant lifecycle and acceptance checklist.
+- Docs/STAGE_17_GREAT_SPIRIT_ABILITY_CONTENT_PACK.md — configured ability runtime, costs/cooldowns, Blueprint/Gameplay Effect authoring and acceptance checklist.
+- Docs/STAGE_18_ABILITY_HUD_INPUT_FEEDBACK.md — mobile ability HUD, slot input, Energy/Resonance indicators, cooldown feedback and local target focus.
+- Docs/STAGE_19_ABILITY_PRESENTATION_ASSET_PACK.md — 45 ability icon definitions, palettes, cooldown material, feedback audio/VFX contract and Unreal Editor acceptance checklist.
+- Docs/STAGE_20_ABILITY_PRESENTATION_RUNTIME.md — manifest DataTable import, AbilityId class binding, HUD presentation metadata and acceptance checklist.
+- Docs/STAGE_21_ABILITY_PRESENTATION_BLUEPRINT_INTEGRATION.md — WBP_AbilityHUD/WBP_AbilitySlot hierarchy, mobile layout, asynchronous assets and Blueprint acceptance checklist.
+- Content/UI/AbilityPresentation/README.md — asset import, naming and per-ability assignment workflow.
+- Content/UI/AbilityHUD/README.md — WBP_AbilityHUD/WBP_AbilitySlot asset hierarchy and exact BindWidget names.
+- Content/UI/AbilityPresentation/AbilityPresentationManifest.csv — 45 stable ability presentation records.
+- Content/UI/AbilityPresentation/AbilityPresentationDataTable.csv — DataTable import copy with Name row keys and 45 stable IDs.
+- Docs/Design/GreatSpiritAbilityProductionMatrix.md — production specification for all 45 Great Spirit ability slots.
+- Docs/STAGE_06_GREAT_SPIRIT_COMBAT_SYSTEM.md — combat runtime, asset setup, flow and acceptance tests.
+- Docs/Design/FirstCombatEncounter.md — first three-phase boss encounter design.
+- Content/Combat/README.md — damage effect, enemy, boss and AI setup.
+- Docs/STAGE_07_LIVING_BOARD_ADVENTURE_CORE.md — objective replication, server validation, nine elemental trial concepts and acceptance checklist.
+- Content/Adventure/README.md — adventure asset layout and Blueprint integration contract.
+- Docs/STAGE_08_EMERALD_JUNGLE_TRIAL_ACTORS.md — native trial runtime, Root Rune Sequence, multiplayer interaction and acceptance checklist.
+- Docs/STAGE_09_EMERALD_JUNGLE_CHAPTER_FLOW.md — chapter director, replicated chapter state, HUD integration and nine-trial authoring contract.
+- Docs/STAGE_10_GREAT_SPIRIT_TRIAL_CONTENT_PACK.md — nine trial definitions, puzzle sequences, presentation hooks and Blueprint authoring workflow.
+- Docs/STAGE_11_EMERALD_JUNGLE_WORLD_ASSEMBLY.md — World Partition map layout, ten-region atlas, Data Layers, discovery/landmark setup and acceptance checklist.
+- Docs/STAGE_21_EMERALD_JUNGLE_WORLD_AUTHORING_PACK.md — DataTable import, greybox coordinates, actor placement and validation workflow.
+- Docs/STAGE_22_EMERALD_JUNGLE_GREYBOX_VALIDATION.md — automated source validation, Unreal Editor/World Partition test plan and Android performance profiling.
+- Docs/STAGE_23_EMERALD_JUNGLE_TRAVERSAL_INTERACTIONS.md — Smart Link setup, contextual traversal types, server validation and acceptance checklist.
+- Docs/STAGE_24_TRAVERSAL_ANIMATION_INTERACTION_PRESENTATION.md — traversal presentation manifest, async montage/audio/VFX workflow, contextual mobile prompt, zipline spline setup and acceptance tests.
+- Docs/STAGE_25_TRAVERSAL_WORLD_INTEGRATION_MULTIPLAYER.md — overlap focus registry, replicated lift platform, 12-link world manifest, editor placement, multiplayer and Android acceptance tests.
+- Docs/STAGE_26_TRAVERSAL_QA_LIFT_RECOVERY_REWARDS.md — World Partition unload/load resilience, blocked-lift recovery, one-time traversal rewards, source-data validator and QA matrices.
+- Docs/STAGE_27_EMERALD_JUNGLE_WORLD_ENCOUNTER_INTEGRATION.md — exploration/traversal prerequisites, nine-trial chapter, configurable enemy waves, boss lifecycle, replicated encounter state, one-time reward and Unreal Editor authoring/QA workflow.
+- Docs/STAGE_28_EMERALD_JUNGLE_ENCOUNTER_PRESENTATION_QA.md — encounter HUD, replicated boss telemetry, attack telegraph lifecycle, Blueprint authoring, multiplayer QA and mobile profiling.
+- Docs/STAGE_29_ENCOUNTER_REPLAY_RECOVERY.md — failed encounter retry, session-only chapter/trial reset, encounter-owned actor cleanup, profile/economy invariants and QA workflow.
+- Docs/STAGE_30_ENCOUNTER_SESSION_RECONNECT_RECOVERY.md — same-server disconnect/reconnect lifecycle, grace window, transient PlayerState notice, profile separation and QA checklist.
+- Docs/STAGE_31_ENCOUNTER_RECONNECT_UX_SESSION_QA.md — reconnect success/expired/ended outcomes, UMG banner wiring, bounded terminal notice retention and multiplayer/Android QA.
+- Data/Encounter/EncounterReconnectSessionQAMatrix.csv — 13 reconnect outcome and network interruption scenarios.
 - Scripts/validate_emerald_jungle_encounter_reconnect.py — Stage 30 server reconnect source validator.
 - Scripts/validate_emerald_jungle_encounter_reconnect_ux.py — Stage 31 reconnect UX contract and QA matrix validator.
+- Data/Encounter/EmeraldJungleBossTelegraphs.csv — nine sample telegraph definitions across the three boss phases.
+- Content/Traversal/README.md — traversal DataTable, prompt widget, montage and spline authoring guide.
+- Data/Traversal/TraversalPresentationManifest.csv — four stable starter presentation records.
+- Data/Traversal/EmeraldJungle_TraversalPlacement.csv — 12 starter contextual traversal links.
+- Data/Traversal/EmeraldJungle_LiftPlatformManifest.csv — two starter replicated lift platforms.
+- Data/Traversal/EmeraldJungle_TraversalManifest.json — link counts, lift settings and World Partition authoring rules.
+- Data/Traversal/EmeraldJungle_TraversalRewards.csv — one-time reward for each of the 12 traversal links.
+- Content/World/README.md — world atlas, navigation and profile-persistence setup.
+- Content/Adventure/Trials/README.md — Blueprint trial and UMG authoring guide.
+- Content/UI/README.md — Widget Blueprint asset setup.
+- Docs/Art/GreatSpiritCharacterArtBrief.md — individual visual targets and character art requirements.
+- Content/Characters/README.md — Unreal character asset naming and import plan.
+- Docs/STAGE_12_EMERALD_JUNGLE_TRAVERSAL_NAVIGATION.md — NavMesh, World Partition navigation, route guidance, POI targeting and mobile map integration.
+- Docs/STAGE_13_PLAYER_PROFILE_EXPLORATION_PERSISTENCE.md — initial profile schema v1, trusted identity binding, exploration/chapter persistence and acceptance tests.
+- Docs/STAGE_14_PROFILE_PROGRESSION_INVENTORY.md — schema v2 migration, account/character levels, currency, inventory, logical loadouts, transaction validation and acceptance tests.
+- Docs/STAGE_15_PROGRESSION_GAMEPLAY_REWARDS.md — GAS attribute progression, chapter reward transactions, Great Spirit upgrade recipes, DataTable paths and acceptance tests.
+- Content/Progression/README.md — reward and upgrade DataTable authoring guide.
+- Content/Inventory/README.md — catalog IDs, material stacks and reward transaction integration.
 - [Docs/UE5_BUILD_PIPELINE.md](Docs/UE5_BUILD_PIPELINE.md) — GitHub Actions workflow, Windows self-hosted runner and Android toolchain setup.
 
 ## Current implementation
-The source project contains native Unreal Engine 5.8 gameplay systems and Blueprint-facing widget bases. It is not yet a finished game or a packaged Android build. Binary maps, imported DataTables, final meshes/animations/VFX/audio and actual Widget Blueprint assets must still be authored in Unreal Editor and committed through Git LFS.
+- native Unreal Engine 5.8 C++ project descriptor and targets;
+- third-person character with camera and starter movement input;
+- GameMode and replicated GameState;
+- server-authoritative Living Board event state;
+- nine Great Spirit definitions in UJumanjiCharacterRosterSubsystem;
+- server-validated player selection replicated through AJumanjiPlayerState;
+- pawn presentation binding that resolves the selected definition and applies its skeletal mesh when a soft asset reference is configured;
+- UJumanjiGreatSpiritSelectionWidget base with roster population, preview/confirm/cancel flow and PlayerState confirmation updates;
+- PlayerController methods to open and close the configured selection Widget Blueprint;
+- PlayerState-owned replicated GAS ASC and AttributeSet;
+- Great Spirit loadout grants validated by slot and input tag;
+- primary, active, ultimate and dodge input routing;
+- optional nine-row DataTable override for designer-assigned ability and character assets;
+- server-only melee sweep ability with Defense-aware damage calculation and Data.Damage SetByCaller effect;
+- hit Gameplay Event dispatch to target ASC;
+- GAS-enabled enemy base with damage/defeat callbacks;
+- perception-based enemy AI pursuit and attack ability requests;
+- three-phase boss health thresholds and replicated phase tags;
+- replicated Living Board adventure objective snapshots with a monotonically increasing revision;
+- server-side validation for objective definitions, progress increments and completion gates;
+- adventure lifecycle API in UJumanjiBoardWorldSubsystem, including StartBoardAdventure, AdvanceBoardAdventureObjective and CompleteBoardAdventure;
+- abstract AJumanjiTrialActor with replicated state, step index and revision;
+- eight additional Great Spirit trial classes with three server-validated puzzle steps each;
+- Blueprint-readable soft-reference hooks for trial meshes, activation/step/completion audio and Niagara completion effects;
+- AJumanjiRootRuneTrial with a three-step Seed → Sprout → Tree example;
+- PlayerController-owned server RPC for trial requests, with server-side range, option and stale-revision validation;
+- server-side AJumanjiAdventureChapterDirector for chapter startup, trial actor preflight and completion orchestration;
+- replicated FJumanjiAdventureChapterState with Active/Completed phases and revision;
+- UJumanjiAdventureHUDWidget Blueprint base with objective/chapter event subscriptions and progress getters;
+- local PlayerController creation of the configured adventure HUD widget;
+- UJumanjiWorldAtlasSubsystem with a built-in 10-region/10-landmark catalog and validated DataTable overrides;
+- source CSVs for 10 atlas region rows and 10 landmark rows, plus a 29-actor Emerald Jungle greybox placement ledger (Stage 21);
+- server-authoritative region volume and landmark discovery;
+- per-player replicated exploration snapshot on AJumanjiPlayerState;
+- UJumanjiWorldAtlasWidget base and PlayerController OpenWorldAtlas/CloseWorldAtlas API;
+- UJumanjiWorldNavigationComponent on the local PlayerController, with discovery-validated region/landmark targets and local NavMesh route data;
+- AJumanjiTraversalLink based on ANavLinkProxy, with authored entry/exit anchors and dynamically enabled Smart Links;
+- UJumanjiTraversalComponent on AJumanjiCharacter, with replicated server-authoritative traversal state, swept movement and Blueprint presentation callbacks;
+- PlayerController RequestTraversalLink RPC with server-side range, grounded-state and active-traversal validation.
+- UJumanjiTraversalPresentationSubsystem with validated DataTable lookup, per-link overrides, type defaults and Polish fallback prompts.
+- UJumanjiTraversalPromptWidget with a Blueprint view model, request timeout and server-confirmed active/completed/interrupted states.
+- PlayerController creation and focus/clear API for the local traversal prompt;
+- overlap-volume candidate registry on AJumanjiTraversalLink with nearest valid link selection in AJumanjiPlayerController;
+- AJumanjiLiftPlatform with server-authoritative swept movement, replicated transform/state, passenger limit and shared rider attachment;
+- server-only TryRecoverBlockedPlatform with no-passenger gating and collision checks at both authored stops before moving a blocked lift to the nearest safe stop;
+- Lift traversal integration through UJumanjiTraversalComponent, with riders restored after the platform completes or is blocked;
+- source manifests for 12 Emerald Jungle traversal links and two lift platforms, plus Python validator, unit tests and GitHub Actions workflow.
+- Optional server-sampled Zipline spline path with collision sweep and bidirectional direction handling;
+- 17-point FVector_NetQuantize10 Zipline path snapshot in the replicated traversal state so a ride can finish when its World Partition link actor unloads;
+- one-time server-side exploration reward per stable TraversalId through UJumanjiProgressionRewardSubsystem and the existing PlayerState transaction ledger;
+- 12 traversal reward definitions with optional DT_TraversalRewards override, source CSV, Python validator, unit tests and GitHub Actions quality gate;
+- AJumanjiWorldEncounterDirector with server-side Frost Gate exploration/traversal receipt checks, existing nine-trial chapter integration, configurable bounded enemy waves and an AJumanjiBossCharacter finale;
+- replicated FJumanjiWorldEncounterState with Trials/Combat/Boss/Reward/Completed/Failed phases and server-authoritative GameState lifecycle;
+- PlayerController server RPC for starting encounters with a server-checked interaction distance;
+- AJumanjiEnemyCharacter::OnEnemyDefeated event for server-side wave advancement and boss defeat sequencing;
+- idempotent per-profile encounter completion reward through the existing progression transaction ledger, with optional DT_WorldEncounterRewards and source CSV validator/CI.
+- CSV validator, unit tests and GitHub Actions quality gate for traversal presentation data.
+- UJumanjiPlayerProfileSubsystem with versioned asynchronous SaveGame profile slots for the current single-server prototype.
+- profile restore on PostLogin using server-bound platform identity where available.
+- versioned Player Profile schema v2 with automatic in-memory migration from Stage 13 schema v1;
+- asynchronous persistence of selected Great Spirit, exploration, completed chapters, account progression and character progression;
+- source-controlled currency catalog and ten upgrade-material item definitions;
+- server-authoritative inventory/currency transaction validation with duplicate TransactionId rejection;
+- replicated account level/XP, inventory stacks, wallet balances, nine Great Spirit progression entries and logical ability loadout slots;
+- profile-level transaction ledger persisted with the balances it protects;
+- level-derived MaxHealth, MaxEnergy, MaxResonance, AttackPower and Defense base values applied to the selected Great Spirit's GAS AttributeSet;
+- health, energy and resonance percentage preserved when the selected spirit's level changes its maximum values;
+- UJumanjiProgressionRewardSubsystem with validated chapter reward definitions and nine spirit-specific upgrade recipes;
+- optional DT_ChapterRewards and DT_SpiritUpgradeRecipes DataTable overrides with native starter catalog fallback;
+- idempotent chapter completion reward transactions and retry of configured missing rewards after profile restoration;
+- server-routed Great Spirit upgrade RPC using all-or-nothing currency/material/XP profile transactions;
+- UJumanjiAbilityCatalogSubsystem with 45 stable Great Spirit/slot identifiers and optional validated DT_GreatSpiritAbilityCatalog override;
+- server-side validation of saved AbilityId values against CharacterId, SlotId, UJumanjiGameplayAbility class, AbilitySlot and InputTag;
+- restore-time filtering of unknown or incompatible saved ability slots;
+- server RPC to equip catalog-approved abilities into profile schema v2;
+- runtime resolution of saved ability IDs into approved soft Gameplay Ability classes;
+- UJumanjiConfiguredEffectAbility base with server-only Self/ForwardSweep/RadialPulse/Dash execution, PvE target filtering, SetByCaller target/self Gameplay Effects, AttackPower scaling and Gameplay Cue/Animation Montage hooks;
+- PlayerState-owned ASC replacement of the Great Spirit loadout, tracking and clearing only the previous granted ability handles, and avoiding duplicate grants when the same loadout is reapplied;
+- UJumanjiAbilityHUDWidget with five-slot snapshots, GAS cooldown timing, Energy/Resonance values, activation feedback and local target-focus indicator;
+- HUD presentation metadata on UJumanjiGameplayAbility for display name, description, icon, stable HUDAbilityId and matching resource-cost display;
+- UJumanjiAbilityPresentationSubsystem with validated ability presentation DataTable lookup and soft-reference conversion;
+- UJumanjiAbilityHUDSlotWidget reusable slot base with async icon/material/audio loading, cooldown MID parameters, placeholder fallback and slot touch event;
+- five optional child-slot bindings in UJumanjiAbilityHUDWidget with per-slot feedback routing and delegate cleanup;
+- ability HUD slot snapshots enriched with per-ability palette, icon, cooldown material, audio references and Gameplay Cue tag.
+- PlayerController creation of the configured ability HUD for the local player.
+- replicated encounter snapshot now carries the spawned AJumanjiBossCharacter reference for local presentation;
+- AJumanjiBossCharacter server-timed Warning/Executing telegraph state with replicated pattern geometry, GAS state tags, cancellation on phase change/defeat and a Blueprint execution hook for the actual server-owned attack;
+- UJumanjiWorldEncounterHUDWidget Blueprint base for encounter phase, trial/wave counters, boss Health/phase and synchronized telegraph countdown;
+- local PlayerController creation of the configured Encounter HUD, plus nine-row boss telegraph CSV manifest, Python validator, unit tests and GitHub Actions workflow (Stage 28);
+- server-authoritative encounter retry from Failed for the same EncounterId, chapter/trial reset and revision increments;
+- tracking and cleanup of all spawned encounter actors, including defeated actors awaiting cosmetic lifespan expiry;
+- static source validator, unit tests and GitHub Actions quality gate for encounter recovery (Stage 29);
+- UJumanjiWorldEncounterSessionSubsystem for in-memory, profile-keyed encounter participant membership and a configurable reconnect grace window;
+- server-side disconnect tracking in GameMode::Logout and profile-restored rejoin validation in GameMode::PostLogin;
+- transient replicated PlayerState reconnect notice and Encounter HUD Blueprint callback;
+- session registry cleanup on encounter completion, failure, director EndPlay and start rollback;
+- static source validator, unit tests and GitHub Actions quality gate for same-server reconnect (Stage 30).
+
+## Not yet included
+This is a source-code foundation, not a finished game or installable Android build. The repository still needs:
+- saved Unreal maps, including Content/Maps/L_EmeraldJungle_World.umap;
+- imported DT_Jumanji_WorldRegions and DT_Jumanji_WorldLandmarks DataTable .uasset files (CSV source files are now present);
+- final portrait textures and 3D character models;
+- rigs, animation blueprints and facial animation;
+- final touch-first Widget Blueprint assets, icons, UI materials and Enhanced Input mapping assets;
+- actual UMG Widget Blueprint .uasset files and card layout, including WBP_AbilityHUD and WBP_AbilitySlot;
+- the configured Emerald Jungle chapter director instance and nine placed trial actors;
+- imported DT_AbilityPresentation DataTable and configured subsystem path;
+- final Ability Blueprint HUDAbilityId assignments and binary ability icons/material/audio assets;
+- 45 character-specific ability Blueprint assets and configured Gameplay Effects;
+- configured enemy/boss meshes, animations and initialization effects;
+- actual boss attack Blueprint graphs, final boss telegraph VFX/audio and WBP_EmeraldJungleEncounterHUD .uasset; Stage 28 provides the native HUD and telegraph runtime contracts only;
+- authored world encounter actor/map configuration and enemy wave spawn point placements;
+- Blueprint children, visuals and playable implementations for all nine Great Spirit trials;
+- the Root Rune trial Blueprint, rune meshes, UI widget, map and presentation assets;
+- trial-specific reward rows and automatic reward orchestration for all nine trial actors;
+- persistent in-progress objective state;
+- a production profile backend, account authentication, cross-shard synchronization and profile conflict handling;
+- authored NavMesh data, world-space DataTable anchors, placed traversal link actors and Blueprint children;
+- imported DT_TraversalPresentation and DT_TraversalRewards DataTables, WBP_TraversalPrompt, authored animation montages, traversal icons/sounds/Niagara effects and spline mesh cable visuals;
+- server-side operator/admin UI that invokes TryRecoverBlockedPlatform after manual obstruction checks;
+- authored BP_EmeraldJungleWorldEncounter, enemy Blueprint classes, boss Blueprint, persistent-level spawn markers, nine-trial chapter director instance and DT_WorldEncounterRewards .uasset;
+- placed traversal link actors and lift platforms in the saved Emerald Jungle .umap, with final landscape/NavMesh anchor alignment;
+- asynchronous asset preloading and device profiling;
+- production account authentication, secure economy backend and cross-shard transaction processing;
+- dedicated-server deployment;
+- automated resume of an in-progress encounter after server/shard migration or process restart; Stage 30 only supports same-server reconnect while the GameInstance/world remain alive and deliberately does not serialize live actors;
+- a packaged and device-tested APK/AAB.
+
+The supplied reference image is used as an art direction source. The binary image itself and Unreal binary assets are not added by the text-file GitHub workflow; add them through Git LFS with provenance/license notes.
 
 ## Build verification
-Unreal Engine 5.8 compilation and device packaging must be run on an environment with the matching UE installation and Android toolchain. Source validators and GitHub Actions Python tests do not prove C++ compilation, PIE multiplayer correctness or mobile performance.
+The source has not yet been compiled in an Unreal Engine 5.8 environment during these repository changes. The GitHub Actions workflow and `Scripts/Build-UE5.ps1` are included. The workflow requires a configured Windows self-hosted runner with a local UE 5.8 installation before it can execute. Complete the stage acceptance checklists locally before treating the project as build-verified. A successful C++ build alone does not prove that the game is playable or produce an installable Android package.
