@@ -29,6 +29,12 @@ REQUIRED: dict[str, tuple[str, ...]] = {
         "ActiveSessionId = Candidate.SessionId",
         "RESTORE_REWARD_RECEIPT_NOT_COMMITTED",
         "bRestoreCommitInProgress",
+        "!PlayerState->IsProfilePersistenceEnabled()",
+        "ProfileRevision > MAX_int32",
+        "EncounterRevision > MAX_int32",
+    ),
+    "Source/JumanjiUE/Public/JumanjiPlayerState.h": (
+        "IsProfilePersistenceEnabled() const",
     ),
     "Source/JumanjiUE/Public/JumanjiWorldEncounterDirector.h": (
         "BeginCheckpointRestore()",
@@ -82,6 +88,8 @@ REQUIRED: dict[str, tuple[str, ...]] = {
         "PublishCheckpointTrialStates()",
         "BindForCheckpointRestoredActiveChapter()",
         "CompletedTrialSet.Num() == CompletedObjectiveSet.Num()",
+        "TrialObjectiveIds.Contains(ObjectiveId)",
+        "MatchingObjective->RequiredProgress != Trial->GetStepCount()",
         "partial TrialBoundary",
     ),
     "Source/JumanjiUE/Public/JumanjiGameState.h": (
