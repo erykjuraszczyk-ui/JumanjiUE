@@ -72,6 +72,13 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(
     const FJumanjiBossTelegraphState&, TelegraphState
 );
 
+DECLARE_MULTICAST_DELEGATE_ThreeParams(
+    FJumanjiBossCheckpointBoundaryReady,
+    uint8,
+    float,
+    uint32
+);
+
 /** Three-phase boss foundation with replicated health phases and attack telegraph snapshots. */
 UCLASS(Blueprintable)
 class JUMANJIUE_API AJumanjiBossCharacter : public AJumanjiEnemyCharacter
@@ -86,6 +93,19 @@ public:
 
     UFUNCTION(BlueprintPure, Category = "JUMANJI|Boss|Telegraph")
     FJumanjiBossTelegraphState GetBossTelegraphState() const { return BossTelegraphState; }
+
+    uint32 GetBossPhaseRevision() const { return BossPhaseRevision; }
+    float GetBossHealthFraction() const;
+    bool IsCheckpointQuiescent() const
+    {
+        return bCheckpointQuiescent
+            && !bBossPhaseBoundaryPending
+            && BossTelegraphState.Stage == EJumanjiBossTelegraphStage::None;
+    }
+
+    /** Call from the boss Blueprint only after the phase transition and its presentation/effects have settled. */
+    UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "JUMANJI|Boss|Checkpoint")
+    bool ConfirmBossPhaseCheckpointBoundary();
 
     /** Server-only warning window. Blueprint attack logic begins when the execution event fires. */
     UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "JUMANJI|Boss|Telegraph")
@@ -124,6 +144,11 @@ protected:
     UPROPERTY(ReplicatedUsing = OnRep_BossTelegraphState, BlueprintReadOnly, Category = "JUMANJI|Boss|Telegraph")
     FJumanjiBossTelegraphState BossTelegraphState;
 
+    UPROPERTY(Replicated, BlueprintReadOnly, Category = "JUMANJI|Boss|Checkpoint")
+    uint32 BossPhaseRevision = 0;
+
+    FJumanjiBossCheckpointBoundaryReady OnBossCheckpointBoundaryReady;
+
     UFUNCTION()
     void OnRep_BossPhase();
 
@@ -159,4 +184,7 @@ private:
 
     FTimerHandle TelegraphWarningTimerHandle;
     FTimerHandle TelegraphActiveTimerHandle;
+
+    bool bBossPhaseBoundaryPending = false;
+    bool bCheckpointQuiescent = true;
 };
