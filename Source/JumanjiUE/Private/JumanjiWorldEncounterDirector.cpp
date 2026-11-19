@@ -925,5 +925,6 @@ void AJumanjiWorldEncounterDirector::EndPlay(const EEndPlayReason::Type EndPlayR
     }
 
     UnbindActiveEnemies();
+    ReleaseCheckpointLease();
     Super::EndPlay(EndPlayReason);
 }
