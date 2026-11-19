@@ -101,6 +101,37 @@ bool AJumanjiTrialActor::ResetForEncounterRetry()
     return true;
 }
 
+bool AJumanjiTrialActor::CanApplyCheckpointRestoreState() const
+{
+    return HasAuthority()
+        && ValidateStepDefinitions()
+        && TrialState != EJumanjiTrialState::InProgress;
+}
+
+bool AJumanjiTrialActor::ApplyCheckpointRestoreState(bool bCompleted)
+{
+    if (!CanApplyCheckpointRestoreState())
+    {
+        return false;
+    }
+
+    TrialState = bCompleted ? EJumanjiTrialState::Completed : EJumanjiTrialState::Available;
+    CurrentStepIndex = bCompleted ? Steps.Num() : 0;
+    TrialRevision = TrialRevision < MAX_int32 ? TrialRevision + 1 : 1;
+    return true;
+}
+
+void AJumanjiTrialActor::PublishCheckpointRestoreState()
+{
+    if (!HasAuthority())
+    {
+        return;
+    }
+
+    BroadcastTrialStateChanged();
+    ForceNetUpdate();
+}
+
 bool AJumanjiTrialActor::ActivateTrial()
 {
     if (!HasAuthority()
