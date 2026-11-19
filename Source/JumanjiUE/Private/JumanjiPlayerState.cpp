@@ -56,6 +56,46 @@ void AJumanjiPlayerState::SetSelectedCharacterId(FName CharacterId)
     PersistProfileSnapshot();
 }
 
+bool AJumanjiPlayerState::SetCheckpointParticipantIdentity(
+    const FString& OpaqueParticipantKey,
+    int64 ProfileRevision)
+{
+    if (!HasAuthority()
+        || OpaqueParticipantKey.Len() < 23
+        || OpaqueParticipantKey.Len() > 99
+        || !OpaqueParticipantKey.StartsWith(TEXT("pk_"))
+        || ProfileRevision < 0)
+    {
+        return false;
+    }
+
+    for (int32 Index = 3; Index < OpaqueParticipantKey.Len(); ++Index)
+    {
+        const TCHAR Character = OpaqueParticipantKey[Index];
+        const bool bAllowed =
+            (Character >= TEXT('A') && Character <= TEXT('Z'))
+            || (Character >= TEXT('a') && Character <= TEXT('z'))
+            || (Character >= TEXT('0') && Character <= TEXT('9'))
+            || Character == TEXT('_')
+            || Character == TEXT('-');
+        if (!bAllowed)
+        {
+            return false;
+        }
+    }
+
+    if (!CheckpointParticipantKey.IsEmpty()
+        && (CheckpointParticipantKey != OpaqueParticipantKey
+            || ProfileRevision < CheckpointProfileRevision))
+    {
+        return false;
+    }
+
+    CheckpointParticipantKey = OpaqueParticipantKey;
+    CheckpointProfileRevision = ProfileRevision;
+    return true;
+}
+
 void AJumanjiPlayerState::SetPersistentProfileId(const FString& InProfileId)
 {
     if (!HasAuthority())
