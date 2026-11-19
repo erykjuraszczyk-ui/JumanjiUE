@@ -208,7 +208,7 @@ def validate_project(root: Path) -> list[str]:
         if f"bool {name}" not in director_header:
             errors.append(f"{name} declaration is missing")
         reflected_declaration = re.search(
-            rf"UFUNCTION\\s*\\([^)]*\\)\\s*bool\\s+{re.escape(name)}\\s*\\(",
+            rf"UFUNCTION\s*\([^)]*\)\s*bool\s+{re.escape(name)}\s*\(",
             director_header,
         )
         if reflected_declaration:
