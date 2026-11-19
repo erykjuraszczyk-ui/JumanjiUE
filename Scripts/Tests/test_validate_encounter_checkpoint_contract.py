@@ -60,10 +60,10 @@ class EncounterCheckpointContractTests(unittest.TestCase):
         candidate = copy.deepcopy(self.example)
         candidate["payload"]["runtimeActorRef"] = "NetGUID:123"
         errors = MODULE.validate_envelope(candidate)
-        self.assertTrue(any("unsupported fields" in error or "forbidden field" in error for error in errors))
+        self.assertTrue(any("forbidden field" in error for error in errors))
 
         candidate = copy.deepcopy(self.example)
-        candidate["payload"]["profileId"] = "raw-profile-id"
+        candidate["payload"]["runtimeProfileId"] = "raw-profile-id"
         errors = MODULE.validate_envelope(candidate)
         self.assertTrue(any("forbidden field" in error for error in errors))
 
