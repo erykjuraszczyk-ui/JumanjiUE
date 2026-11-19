@@ -165,7 +165,8 @@ bool AJumanjiBossCharacter::ApplyCheckpointRestoreState(
         || RestoredPhaseRevision < 1
         || BossTelegraphState.Stage != EJumanjiBossTelegraphStage::None
         || (RestoredPhase == 2
-            && HealthFraction <= PhaseThreeHealthThreshold)
+            && (HealthFraction > PhaseTwoHealthThreshold
+                || HealthFraction <= PhaseThreeHealthThreshold))
         || (RestoredPhase == 3
             && HealthFraction > PhaseThreeHealthThreshold))
     {
