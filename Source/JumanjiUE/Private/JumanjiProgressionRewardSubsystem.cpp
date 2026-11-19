@@ -445,6 +445,24 @@ FName UJumanjiProgressionRewardSubsystem::BuildWorldEncounterTransactionId(
         *SafeEncounterId));
 }
 
+FName UJumanjiProgressionRewardSubsystem::GetWorldEncounterRewardTransactionId(
+    const AJumanjiPlayerState* PlayerState,
+    FName EncounterId) const
+{
+    if (!IsValid(PlayerState)
+        || !PlayerState->HasAuthority()
+        || PlayerState->GetPersistentProfileId().IsEmpty()
+        || EncounterId.IsNone())
+    {
+        return NAME_None;
+    }
+
+    FJumanjiWorldEncounterRewardDefinition Definition;
+    return GetWorldEncounterRewardDefinition(EncounterId, Definition)
+        ? BuildWorldEncounterTransactionId(*PlayerState, EncounterId)
+        : NAME_None;
+}
+
 bool UJumanjiProgressionRewardSubsystem::HasCompletedTraversalReward(
     const AJumanjiPlayerState* PlayerState,
     FName TraversalId) const
