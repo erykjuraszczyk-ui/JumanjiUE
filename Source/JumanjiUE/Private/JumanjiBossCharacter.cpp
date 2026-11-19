@@ -73,6 +73,7 @@ bool AJumanjiBossCharacter::BeginBossTelegraph(
     }
 
     CancelBossTelegraph();
+    bCheckpointQuiescent = false;
 
     if (!GetWorld())
     {
@@ -184,6 +185,9 @@ void AJumanjiBossCharacter::SetBossPhase(uint8 NewPhase)
 
     CancelBossTelegraph();
     BossPhase = NewPhase;
+    BossPhaseRevision = BossPhaseRevision < MAX_uint32 ? BossPhaseRevision + 1 : 1;
+    bBossPhaseBoundaryPending = true;
+    bCheckpointQuiescent = false;
 
     if (UJumanjiAbilitySystemComponent* ASC = GetEnemyAbilitySystemComponent())
     {
@@ -217,6 +221,36 @@ void AJumanjiBossCharacter::SetBossPhase(uint8 NewPhase)
 
     BP_OnBossPhaseChanged(BossPhase);
     ForceNetUpdate();
+}
+
+float AJumanjiBossCharacter::GetBossHealthFraction() const
+{
+    const UJumanjiAttributeSet* Attributes = GetEnemyAttributeSet();
+    if (!Attributes || Attributes->GetMaxHealth() <= 0.0f)
+    {
+        return 0.0f;
+    }
+    return FMath::Clamp(Attributes->GetHealth() / Attributes->GetMaxHealth(), 0.0f, 1.0f);
+}
+
+bool AJumanjiBossCharacter::ConfirmBossPhaseCheckpointBoundary()
+{
+    if (!HasAuthority()
+        || IsDefeated()
+        || !bBossPhaseBoundaryPending
+        || BossPhaseRevision == 0
+        || BossTelegraphState.Stage != EJumanjiBossTelegraphStage::None)
+    {
+        return false;
+    }
+
+    bBossPhaseBoundaryPending = false;
+    bCheckpointQuiescent = true;
+    OnBossCheckpointBoundaryReady.Broadcast(
+        BossPhase,
+        GetBossHealthFraction(),
+        BossPhaseRevision);
+    return true;
 }
 
 void AJumanjiBossCharacter::SetTelegraphStage(EJumanjiBossTelegraphStage NewStage)
@@ -333,4 +367,5 @@ void AJumanjiBossCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
     Super::GetLifetimeReplicatedProps(OutLifetimeReplicatedProps);
     DOREPLIFETIME(AJumanjiBossCharacter, BossPhase);
     DOREPLIFETIME(AJumanjiBossCharacter, BossTelegraphState);
+    DOREPLIFETIME(AJumanjiBossCharacter, BossPhaseRevision);
 }
