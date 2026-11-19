@@ -1,4 +1,5 @@
 #include "JumanjiAdventureChapterDirector.h"
+#include "JumanjiTrialActor.h"
 
 #include "JumanjiBoardWorldSubsystem.h"
 #include "JumanjiGameState.h"
@@ -313,4 +314,36 @@ void AJumanjiAdventureChapterDirector::EndPlay(const EEndPlayReason::Type EndPla
     }
 
     Super::EndPlay(EndPlayReason);
+}
+
+
+TArray<FName> AJumanjiAdventureChapterDirector::GetConfiguredObjectiveIds() const
+{
+    TArray<FName> Result;
+    Result.Reserve(ChapterObjectives.Num());
+    for (const FJumanjiAdventureObjectiveState& Objective : ChapterObjectives)
+    {
+        if (!Objective.ObjectiveId.IsNone())
+        {
+            Result.AddUnique(Objective.ObjectiveId);
+        }
+    }
+    return Result;
+}
+
+TArray<FName> AJumanjiAdventureChapterDirector::GetConfiguredTrialIds() const
+{
+    TArray<FName> Result;
+    Result.Reserve(TrialActors.Num());
+    for (const AJumanjiTrialActor* Trial : TrialActors)
+    {
+        if (IsValid(Trial) && !Trial->GetObjectiveId().IsNone())
+        {
+            // Schema v1 has a TrialId slot but the runtime trial contract is keyed
+            // by ObjectiveId. Until a separately versioned TrialId is authored,
+            // this stable objective key is the canonical checkpoint trial key.
+            Result.AddUnique(Trial->GetObjectiveId());
+        }
+    }
+    return Result;
 }
