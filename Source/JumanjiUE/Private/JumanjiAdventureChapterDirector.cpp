@@ -364,3 +364,21 @@ TArray<FName> AJumanjiAdventureChapterDirector::GetCompletedTrialIds() const
     }
     return Result;
 }
+
+
+bool AJumanjiAdventureChapterDirector::HasNoTrialsInProgress() const
+{
+    if (TrialActors.IsEmpty())
+    {
+        return false;
+    }
+
+    for (const AJumanjiTrialActor* Trial : TrialActors)
+    {
+        if (!IsValid(Trial) || Trial->GetTrialState() == EJumanjiTrialState::InProgress)
+        {
+            return false;
+        }
+    }
+    return true;
+}
