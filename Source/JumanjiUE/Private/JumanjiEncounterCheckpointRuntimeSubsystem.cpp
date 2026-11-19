@@ -304,6 +304,7 @@ void UJumanjiEncounterCheckpointRuntimeSubsystem::ClearLeaseState()
     bCheckpointWriteBlockedUntilResync = false;
     bRestoreStagingRequested = false;
     bReleaseLeaseWhenIdle = false;
+    bRestoreCommitInProgress = false;
     PendingRestoreDirector.Reset();
     bHasStagedRestoreCandidate = false;
     StagedRestoreCandidate = FJumanjiEncounterCheckpointRestoreCandidate();
