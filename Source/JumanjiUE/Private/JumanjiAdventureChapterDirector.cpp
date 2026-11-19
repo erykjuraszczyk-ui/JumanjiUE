@@ -339,7 +339,7 @@ TArray<FName> AJumanjiAdventureChapterDirector::GetConfiguredTrialIds() const
     {
         if (IsValid(Trial) && !Trial->GetCheckpointTrialId().IsNone())
         {
-            Result.AddUnique(Trial->GetCheckpointTrialId());
+            Result.Add(Trial->GetCheckpointTrialId());
         }
     }
     return Result;
@@ -356,7 +356,7 @@ TArray<FName> AJumanjiAdventureChapterDirector::GetCompletedTrialIds() const
             && Trial->GetTrialState() == EJumanjiTrialState::Completed
             && !Trial->GetCheckpointTrialId().IsNone())
         {
-            Result.AddUnique(Trial->GetCheckpointTrialId());
+            Result.Add(Trial->GetCheckpointTrialId());
         }
     }
     return Result;
