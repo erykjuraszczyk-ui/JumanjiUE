@@ -37,6 +37,11 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(
     const FJumanjiEncounterReconnectState&, ReconnectState
 );
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(
+    FJumanjiEncounterReconnectFeedbackChanged,
+    const FJumanjiEncounterReconnectFeedbackState&, FeedbackState
+);
+
 /**
  * Player-owned GAS, exploration and profile-progress owner.
  * Persistent profile and progression mutations are server-authoritative.
@@ -151,6 +156,15 @@ public:
         return EncounterReconnectState;
     }
 
+    /** Server-only, transient feedback for a reconnect attempt; never saved to profile. */
+    bool SetEncounterReconnectFeedback(const FJumanjiEncounterReconnectFeedbackState& NewState);
+
+    UFUNCTION(BlueprintPure, Category = "JUMANJI|Encounter|Reconnect")
+    FJumanjiEncounterReconnectFeedbackState GetEncounterReconnectFeedbackState() const
+    {
+        return EncounterReconnectFeedbackState;
+    }
+
     UPROPERTY(BlueprintAssignable, Category = "JUMANJI|Character")
     FJumanjiSelectedCharacterChanged OnSelectedCharacterChanged;
 
@@ -165,6 +179,9 @@ public:
 
     UPROPERTY(BlueprintAssignable, Category = "JUMANJI|Encounter|Reconnect")
     FJumanjiEncounterReconnectChanged OnEncounterReconnectChanged;
+
+    UPROPERTY(BlueprintAssignable, Category = "JUMANJI|Encounter|Reconnect")
+    FJumanjiEncounterReconnectFeedbackChanged OnEncounterReconnectFeedbackChanged;
 
 protected:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "JUMANJI|Abilities", meta = (AllowPrivateAccess = "true"))
@@ -189,6 +206,10 @@ protected:
     UPROPERTY(ReplicatedUsing = OnRep_EncounterReconnectState, BlueprintReadOnly, Category = "JUMANJI|Encounter|Reconnect")
     FJumanjiEncounterReconnectState EncounterReconnectState;
 
+    /** Transient replicated reconnect UX state; excluded from profile snapshots. */
+    UPROPERTY(ReplicatedUsing = OnRep_EncounterReconnectFeedbackState, BlueprintReadOnly, Category = "JUMANJI|Encounter|Reconnect")
+    FJumanjiEncounterReconnectFeedbackState EncounterReconnectFeedbackState;
+
     UFUNCTION()
     void OnRep_SelectedCharacterId();
 
@@ -203,6 +224,9 @@ protected:
 
     UFUNCTION()
     void OnRep_EncounterReconnectState();
+
+    UFUNCTION()
+    void OnRep_EncounterReconnectFeedbackState();
 
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 

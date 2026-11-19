@@ -35,8 +35,9 @@ REQUIRED_TOKENS = {
     ),
     "Source/JumanjiUE/Private/JumanjiGameMode.cpp": (
         "SessionSubsystem->MarkPlayerDisconnected(JumanjiPlayerState)",
-        "SessionSubsystem->TryRejoinPlayer(JumanjiPlayerState, ReconnectState)",
+        "SessionSubsystem->TryRejoinPlayer(JumanjiPlayerState, ReconnectState, FeedbackState)",
         "JumanjiPlayerState->SetEncounterReconnectState(ReconnectState)",
+        "JumanjiPlayerState->SetEncounterReconnectFeedback(FeedbackState)",
         "ReconnectState.Phase == EJumanjiWorldEncounterPhase::Reward",
         "RewardSubsystem->GrantWorldEncounterCompletionReward(",
     ),

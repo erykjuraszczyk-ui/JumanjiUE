@@ -105,6 +105,26 @@ bool AJumanjiPlayerState::SetEncounterReconnectState(
     return true;
 }
 
+bool AJumanjiPlayerState::SetEncounterReconnectFeedback(
+    const FJumanjiEncounterReconnectFeedbackState& NewState)
+{
+    if (!HasAuthority()
+        || NewState.Outcome == EJumanjiEncounterReconnectOutcome::None
+        || NewState.EncounterId.IsNone()
+        || NewState.Revision <= EncounterReconnectFeedbackState.Revision
+        || !FMath::IsFinite(NewState.DisplayDurationSeconds)
+        || NewState.DisplayDurationSeconds < 0.0f
+        || NewState.DisplayDurationSeconds > 30.0f)
+    {
+        return false;
+    }
+
+    EncounterReconnectFeedbackState = NewState;
+    OnEncounterReconnectFeedbackChanged.Broadcast(EncounterReconnectFeedbackState);
+    ForceNetUpdate();
+    return true;
+}
+
 void AJumanjiPlayerState::RequestProfileSave()
 {
     PersistProfileSnapshot();
@@ -1053,6 +1073,11 @@ void AJumanjiPlayerState::OnRep_EncounterReconnectState()
     OnEncounterReconnectChanged.Broadcast(EncounterReconnectState);
 }
 
+void AJumanjiPlayerState::OnRep_EncounterReconnectFeedbackState()
+{
+    OnEncounterReconnectFeedbackChanged.Broadcast(EncounterReconnectFeedbackState);
+}
+
 void AJumanjiPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
@@ -1061,4 +1086,5 @@ void AJumanjiPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& 
     DOREPLIFETIME(AJumanjiPlayerState, CompletedAdventureChapterIds);
     DOREPLIFETIME(AJumanjiPlayerState, ProgressionState);
     DOREPLIFETIME(AJumanjiPlayerState, EncounterReconnectState);
+    DOREPLIFETIME(AJumanjiPlayerState, EncounterReconnectFeedbackState);
 }

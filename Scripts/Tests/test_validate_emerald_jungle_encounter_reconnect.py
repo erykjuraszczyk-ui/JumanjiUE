@@ -29,7 +29,9 @@ class EncounterReconnectValidationTests(unittest.TestCase):
                 content += (
                     "void AJumanjiGameMode::PostLogin(APlayerController* NewPlayer) {\n"
                     " ProfileSubsystem->LoadProfile(ProfileId, Snapshot);\n"
-                    " SessionSubsystem->TryRejoinPlayer(JumanjiPlayerState, ReconnectState);\n"
+                    " FJumanjiEncounterReconnectFeedbackState FeedbackState;\n"
+                    " SessionSubsystem->TryRejoinPlayer(JumanjiPlayerState, ReconnectState, FeedbackState);\n"
+                    " JumanjiPlayerState->SetEncounterReconnectFeedback(FeedbackState);\n"
                     " if (ReconnectState.Phase == EJumanjiWorldEncounterPhase::Reward) {\n"
                     "  RewardSubsystem->GrantWorldEncounterCompletionReward(JumanjiPlayerState, ReconnectState.EncounterId);\n"
                     " }\n"
@@ -93,14 +95,36 @@ class EncounterReconnectValidationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = self._fixture(Path(tmp))
             path = root / "Source/JumanjiUE/Private/JumanjiGameMode.cpp"
-            content = path.read_text(encoding="utf-8")
-            content = content.replace(
-                "ProfileSubsystem->LoadProfile(ProfileId, Snapshot);\n SessionSubsystem->TryRejoinPlayer",
-                "SessionSubsystem->TryRejoinPlayer(JumanjiPlayerState, ReconnectState);\n ProfileSubsystem->LoadProfile(ProfileId, Snapshot);",
+            lines = path.read_text(encoding="utf-8").splitlines()
+
+            post_login_start = next(
+                i for i, line in enumerate(lines)
+                if "void AJumanjiGameMode::PostLogin" in line
             )
-            path.write_text(content, encoding="utf-8")
+            logout_start = next(
+                i for i, line in enumerate(lines[post_login_start + 1:], post_login_start + 1)
+                if "void AJumanjiGameMode::Logout" in line
+            )
+            load_index = next(
+                i for i in range(post_login_start, logout_start)
+                if "ProfileSubsystem->LoadProfile(ProfileId, Snapshot);" in lines[i]
+            )
+            reconnect_index = next(
+                i for i in range(post_login_start, logout_start)
+                if "TryRejoinPlayer(JumanjiPlayerState, ReconnectState, FeedbackState);" in lines[i]
+            )
+
+            self.assertLess(load_index, reconnect_index)
+            load_line = lines.pop(load_index)
+            reconnect_index -= 1
+            lines.insert(reconnect_index + 1, load_line)
+            path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
             errors = MODULE.validate_sources(root)
-            self.assertTrue(any("restore the persistent profile before attempting encounter rejoin" in e for e in errors))
+            self.assertTrue(
+                any("restore the persistent profile before attempting encounter rejoin" in error for error in errors),
+                "\n".join(errors),
+            )
 
 
 if __name__ == "__main__":

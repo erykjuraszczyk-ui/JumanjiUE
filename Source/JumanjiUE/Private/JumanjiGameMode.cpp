@@ -115,34 +115,51 @@ void AJumanjiGameMode::PostLogin(APlayerController* NewPlayer)
             GameInstance->GetSubsystem<UJumanjiWorldEncounterSessionSubsystem>())
         {
             FJumanjiEncounterReconnectState ReconnectState;
-            if (SessionSubsystem->TryRejoinPlayer(JumanjiPlayerState, ReconnectState)
-                && JumanjiPlayerState->SetEncounterReconnectState(ReconnectState))
-            {
-                UE_LOG(LogTemp, Log,
-                    TEXT("JUMANJI encounter: profile '%s' rejoined encounter '%s' at revision %d."),
-                    *ProfileId,
-                    *ReconnectState.EncounterId.ToString(),
-                    ReconnectState.EncounterRevision);
+            FJumanjiEncounterReconnectFeedbackState FeedbackState;
+            const bool bRejoined = SessionSubsystem->TryRejoinPlayer(JumanjiPlayerState, ReconnectState, FeedbackState);
 
-                // If the participant reconnects during Reward, the director may
-                // already have iterated GameState::PlayerArray. Use the same
-                // idempotent completion transaction to catch up this profile.
-                if (ReconnectState.Phase == EJumanjiWorldEncounterPhase::Reward)
+            if (bRejoined)
+            {
+                if (JumanjiPlayerState->SetEncounterReconnectState(ReconnectState))
                 {
-                    if (UJumanjiProgressionRewardSubsystem* RewardSubsystem =
-                        GameInstance->GetSubsystem<UJumanjiProgressionRewardSubsystem>())
+                    FeedbackState.Outcome = EJumanjiEncounterReconnectOutcome::Reconnected;
+                    JumanjiPlayerState->SetEncounterReconnectFeedback(FeedbackState);
+
+                    UE_LOG(LogTemp, Log,
+                        TEXT("JUMANJI encounter: profile '%s' rejoined encounter '%s' at revision %d."),
+                        *ProfileId,
+                        *ReconnectState.EncounterId.ToString(),
+                        ReconnectState.EncounterRevision);
+
+                    // If the participant reconnects during Reward, the director may
+                    // already have iterated GameState::PlayerArray. Use the same
+                    // idempotent completion transaction to catch up this profile.
+                    if (ReconnectState.Phase == EJumanjiWorldEncounterPhase::Reward)
                     {
-                        if (!RewardSubsystem->GrantWorldEncounterCompletionReward(
-                            JumanjiPlayerState,
-                            ReconnectState.EncounterId))
+                        if (UJumanjiProgressionRewardSubsystem* RewardSubsystem =
+                            GameInstance->GetSubsystem<UJumanjiProgressionRewardSubsystem>())
                         {
-                            UE_LOG(LogTemp, Warning,
-                                TEXT("JUMANJI encounter: reconnect reward was not applied for profile '%s' in encounter '%s'."),
-                                *ProfileId,
-                                *ReconnectState.EncounterId.ToString());
+                            if (!RewardSubsystem->GrantWorldEncounterCompletionReward(
+                                JumanjiPlayerState,
+                                ReconnectState.EncounterId))
+                            {
+                                UE_LOG(LogTemp, Warning,
+                                    TEXT("JUMANJI encounter: reconnect reward was not applied for profile '%s' in encounter '%s'."),
+                                    *ProfileId,
+                                    *ReconnectState.EncounterId.ToString());
+                            }
                         }
                     }
                 }
+            }
+            else if (FeedbackState.Outcome != EJumanjiEncounterReconnectOutcome::None)
+            {
+                JumanjiPlayerState->SetEncounterReconnectFeedback(FeedbackState);
+                UE_LOG(LogTemp, Log,
+                    TEXT("JUMANJI encounter: reconnect UX outcome %d for profile '%s', encounter '%s'."),
+                    static_cast<int32>(FeedbackState.Outcome),
+                    *ProfileId,
+                    *FeedbackState.EncounterId.ToString());
             }
         }
     }

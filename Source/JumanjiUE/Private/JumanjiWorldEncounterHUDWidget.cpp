@@ -43,6 +43,9 @@ void UJumanjiWorldEncounterHUDWidget::NativeDestruct()
         CachedPlayerState->OnEncounterReconnectChanged.RemoveDynamic(
             this,
             &UJumanjiWorldEncounterHUDWidget::HandleEncounterReconnectChanged);
+        CachedPlayerState->OnEncounterReconnectFeedbackChanged.RemoveDynamic(
+            this,
+            &UJumanjiWorldEncounterHUDWidget::HandleEncounterReconnectFeedbackChanged);
     }
 
     CachedPlayerState = nullptr;
@@ -130,6 +133,9 @@ void UJumanjiWorldEncounterHUDWidget::BindPlayerState()
         CachedPlayerState->OnEncounterReconnectChanged.RemoveDynamic(
             this,
             &UJumanjiWorldEncounterHUDWidget::HandleEncounterReconnectChanged);
+        CachedPlayerState->OnEncounterReconnectFeedbackChanged.RemoveDynamic(
+            this,
+            &UJumanjiWorldEncounterHUDWidget::HandleEncounterReconnectFeedbackChanged);
     }
 
     CachedPlayerState = NewPlayerState;
@@ -139,6 +145,9 @@ void UJumanjiWorldEncounterHUDWidget::BindPlayerState()
         CachedPlayerState->OnEncounterReconnectChanged.AddUniqueDynamic(
             this,
             &UJumanjiWorldEncounterHUDWidget::HandleEncounterReconnectChanged);
+        CachedPlayerState->OnEncounterReconnectFeedbackChanged.AddUniqueDynamic(
+            this,
+            &UJumanjiWorldEncounterHUDWidget::HandleEncounterReconnectFeedbackChanged);
 
         const FJumanjiEncounterReconnectState ReconnectState =
             CachedPlayerState->GetEncounterReconnectState();
@@ -146,6 +155,8 @@ void UJumanjiWorldEncounterHUDWidget::BindPlayerState()
         {
             OnEncounterReconnectNotice(ReconnectState);
         }
+
+        PresentReconnectFeedback();
     }
 }
 
@@ -198,6 +209,74 @@ FJumanjiEncounterReconnectState UJumanjiWorldEncounterHUDWidget::GetReconnectSta
     return IsValid(CachedPlayerState)
         ? CachedPlayerState->GetEncounterReconnectState()
         : FJumanjiEncounterReconnectState();
+}
+
+FJumanjiEncounterReconnectFeedbackState UJumanjiWorldEncounterHUDWidget::GetReconnectFeedbackState() const
+{
+    return IsValid(CachedPlayerState)
+        ? CachedPlayerState->GetEncounterReconnectFeedbackState()
+        : FJumanjiEncounterReconnectFeedbackState();
+}
+
+FText UJumanjiWorldEncounterHUDWidget::GetReconnectFeedbackText() const
+{
+    switch (GetReconnectFeedbackState().Outcome)
+    {
+    case EJumanjiEncounterReconnectOutcome::Reconnected:
+        return NSLOCTEXT(
+            "JUMANJIEncounterHUD",
+            "ReconnectSuccess",
+            "Połączono ponownie — wróciłeś do aktywnego spotkania."
+        );
+
+    case EJumanjiEncounterReconnectOutcome::GraceWindowExpired:
+        return NSLOCTEXT(
+            "JUMANJIEncounterHUD",
+            "ReconnectGraceExpired",
+            "Minął czas na powrót do spotkania. To spotkanie nie jest już dostępne."
+        );
+
+    case EJumanjiEncounterReconnectOutcome::EncounterEnded:
+        return NSLOCTEXT(
+            "JUMANJIEncounterHUD",
+            "ReconnectEncounterEnded",
+            "Spotkanie zakończyło się podczas Twojej nieobecności."
+        );
+
+    case EJumanjiEncounterReconnectOutcome::None:
+    default:
+        return FText::GetEmpty();
+    }
+}
+
+bool UJumanjiWorldEncounterHUDWidget::IsReconnectFeedbackSuccess() const
+{
+    return GetReconnectFeedbackState().Outcome == EJumanjiEncounterReconnectOutcome::Reconnected;
+}
+
+float UJumanjiWorldEncounterHUDWidget::GetReconnectFeedbackDisplayDuration() const
+{
+    return FMath::Clamp(
+        GetReconnectFeedbackState().DisplayDurationSeconds,
+        1.0f,
+        12.0f
+    );
+}
+
+void UJumanjiWorldEncounterHUDWidget::PresentReconnectFeedback()
+{
+    const FJumanjiEncounterReconnectFeedbackState FeedbackState = GetReconnectFeedbackState();
+    if (FeedbackState.Outcome == EJumanjiEncounterReconnectOutcome::None)
+    {
+        return;
+    }
+
+    OnEncounterReconnectFeedbackPresentationChanged(
+        FeedbackState,
+        GetReconnectFeedbackText(),
+        IsReconnectFeedbackSuccess(),
+        GetReconnectFeedbackDisplayDuration()
+    );
 }
 
 FText UJumanjiWorldEncounterHUDWidget::GetEncounterStatusText() const
@@ -380,6 +459,13 @@ void UJumanjiWorldEncounterHUDWidget::HandleEncounterReconnectChanged(
         OnEncounterReconnectNotice(NewState);
     }
 
+    RefreshPresentation();
+}
+
+void UJumanjiWorldEncounterHUDWidget::HandleEncounterReconnectFeedbackChanged(
+    const FJumanjiEncounterReconnectFeedbackState& NewState)
+{
+    PresentReconnectFeedback();
     RefreshPresentation();
 }
 

@@ -26,6 +26,18 @@ public:
     UFUNCTION(BlueprintPure, Category = "JUMANJI|Encounter HUD|Reconnect")
     FJumanjiEncounterReconnectState GetReconnectState() const;
 
+    UFUNCTION(BlueprintPure, Category = "JUMANJI|Encounter HUD|Reconnect")
+    FJumanjiEncounterReconnectFeedbackState GetReconnectFeedbackState() const;
+
+    UFUNCTION(BlueprintPure, Category = "JUMANJI|Encounter HUD|Reconnect")
+    FText GetReconnectFeedbackText() const;
+
+    UFUNCTION(BlueprintPure, Category = "JUMANJI|Encounter HUD|Reconnect")
+    bool IsReconnectFeedbackSuccess() const;
+
+    UFUNCTION(BlueprintPure, Category = "JUMANJI|Encounter HUD|Reconnect")
+    float GetReconnectFeedbackDisplayDuration() const;
+
     UFUNCTION(BlueprintPure, Category = "JUMANJI|Encounter HUD")
     FText GetEncounterStatusText() const;
 
@@ -98,6 +110,15 @@ protected:
     UFUNCTION(BlueprintImplementableEvent, Category = "JUMANJI|Encounter HUD|Reconnect")
     void OnEncounterReconnectNotice(const FJumanjiEncounterReconnectState& ReconnectState);
 
+    /** Present this transient success/warning notice in a local banner; auto-hide after DisplayDurationSeconds. */
+    UFUNCTION(BlueprintImplementableEvent, Category = "JUMANJI|Encounter HUD|Reconnect")
+    void OnEncounterReconnectFeedbackPresentationChanged(
+        const FJumanjiEncounterReconnectFeedbackState& FeedbackState,
+        const FText& Message,
+        bool bIsSuccess,
+        float DisplayDurationSeconds
+    );
+
 private:
     void BindGameState();
     void BindBoss();
@@ -114,6 +135,13 @@ private:
 
     UFUNCTION()
     void HandleEncounterReconnectChanged(const FJumanjiEncounterReconnectState& NewState);
+
+    UFUNCTION()
+    void HandleEncounterReconnectFeedbackChanged(
+        const FJumanjiEncounterReconnectFeedbackState& NewState
+    );
+
+    void PresentReconnectFeedback();
 
     UPROPERTY(Transient)
     TObjectPtr<AJumanjiGameState> CachedGameState;
