@@ -37,6 +37,7 @@ Open-world third-person adventure RPG prototype with a shared-world direction an
 - Stage 31 — Encounter Reconnect UX & Session QA: replicated success/expired/ended feedback, a non-persistent local HUD banner contract, bounded terminal notices and a 13-scenario network QA matrix.
 - Stage 32 — Encounter Session Checkpoint Contract & Server Recovery Design: strict versioned checkpoint envelope, signed logical payload contract, safe recovery barriers, anti-rollback/fencing requirements and recovery QA matrix; no backend or runtime resume is claimed.
 - Stage 33 — Encounter Checkpoint Backend Adapter & Lease Service Prototype: trusted server-to-server checkpoint API, Ed25519/RFC 8785 signatures, SQLite CAS/lease fencing, server-only Unreal HTTP adapter and concurrency/security tests; no live-world snapshot builder or runtime restore is claimed.
+- Stage 34 — Safe-Point Snapshot Builder & Restore Staging: server-only logical snapshots at Trials/Wave/Boss/Reward barriers, opaque participant identity gate, lease/sequence/CAS checks, strict content/version preflight and private value-only restore plan; no actor hydration or GameState publication is claimed.
 
 ## The nine playable Great Spirits
 1. Great Spirit I — Duch Korzeni (Root / Guardian)
@@ -104,6 +105,10 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - Docs/STAGE_31_ENCOUNTER_RECONNECT_UX_SESSION_QA.md — reconnect success/expired/ended outcomes, UMG banner wiring, bounded terminal notice retention and multiplayer/Android QA.
 - Docs/STAGE_32_ENCOUNTER_SESSION_CHECKPOINT_CONTRACT.md — versioned checkpoint schema, safe-point rules, Ed25519 envelope, identity/privacy boundaries, anti-rollback lease design and recovery acceptance matrix.
 - Docs/STAGE_33_ENCOUNTER_CHECKPOINT_BACKEND_LEASE_SERVICE.md — trusted backend, lease/CAS/fencing, Ed25519 signing, Unreal adapter, local runbook and limitations.
+- Docs/STAGE_34_SAFE_POINT_SNAPSHOT_BUILDER_RESTORE_STAGING.md — four safe-point barriers, logical-only snapshot fields, opaque participant identity integration, CAS write path, restore preflight and private staging limitations.
+- Data/Encounter/EncounterCheckpointStage34Manifest.json — Stage 34 phase/kind, runtime environment, restore preflight, privacy exclusions and non-mutation contract.
+- Scripts/validate_encounter_checkpoint_runtime.py — Stage 34 manifest/C++ contract validator.
+- Scripts/Tests/test_validate_encounter_checkpoint_runtime.py — Stage 34 barrier, restore-boundary, opaque identity and logical-only structure tests.
 - Backend/EncounterCheckpointService/README.md — local checkpoint backend setup and server environment.
 - Scripts/validate_encounter_checkpoint_backend.py — Stage 33 backend integration contract validator.
 - Data/Encounter/EncounterReconnectSessionQAMatrix.csv — 13 reconnect outcome and network interruption scenarios.
@@ -216,6 +221,14 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - ability HUD slot snapshots enriched with per-ability palette, icon, cooldown material, audio references and Gameplay Cue tag.
 - PlayerController creation of the configured ability HUD for the local player.
 - replicated encounter snapshot now carries the spawned AJumanjiBossCharacter reference for local presentation;
+- UJumanjiEncounterCheckpointRuntimeSubsystem with server-only lease acquisition/renew/release, sequence reconciliation, allowlisted safe-point payload builder, CAS receipt checks and private restore staging;
+- logical-only FJumanjiEncounterCheckpointCaptureInput/RestoreExpectations/RestorePlan types, with no actor/object/transform/AI/timer/profile-wallet inventory values;
+- Trials checkpoint boundary after AJumanjiTrialActor commits Completed and its objective progress agrees; partial completed-trial subsets are supported only when no trial is InProgress;
+- WaveBoundary capture after the last wave enemy is defeated and before the next wave/boss is spawned;
+- explicit boss phase quiescence confirmation before BossPhaseBoundary capture;
+- RewardPending capture before encounter reward transactions, carrying only a stable reward intent ID;
+- server-only, transient opaque participant key/revision binding on AJumanjiPlayerState and required trusted revision validator;
+- restore parser checks schema, expiry, source fencing epoch, build/ruleset/world versions, content allowlists, participant revisions and reward intent, then stages a private value-only plan without changing the live world;
 - AJumanjiBossCharacter server-timed Warning/Executing telegraph state with replicated pattern geometry, GAS state tags, cancellation on phase change/defeat and a Blueprint execution hook for the actual server-owned attack;
 - UJumanjiWorldEncounterHUDWidget Blueprint base for encounter phase, trial/wave counters, boss Health/phase and synchronized telegraph countdown;
 - local PlayerController creation of the configured Encounter HUD, plus nine-row boss telegraph CSV manifest, Python validator, unit tests and GitHub Actions workflow (Stage 28);
@@ -260,6 +273,8 @@ This is a source-code foundation, not a finished game or installable Android bui
 - asynchronous asset preloading and device profiling;
 - production account authentication, secure economy backend and cross-shard transaction processing;
 - dedicated-server deployment;
+- trusted profile-service integration that supplies opaque participant keys/revisions and registers the Stage 34 profile revision validator;
+- automatic hydration/publication of the Stage 34 restore plan, actor respawn, wave/boss reconstruction, ledger reconciliation and atomic GameState recovery commit; Stage 34 only stages a validated value-only plan;
 - automated resume of an in-progress encounter after server/shard migration or process restart; Stage 30 only supports same-server reconnect while the GameInstance/world remain alive and deliberately does not serialize live actors;
 - a packaged and device-tested APK/AAB.
 
