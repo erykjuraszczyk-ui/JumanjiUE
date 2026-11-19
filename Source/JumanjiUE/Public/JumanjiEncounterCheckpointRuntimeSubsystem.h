@@ -145,6 +145,7 @@ private:
     bool bRestoreStagingRequested = false;
     bool bReleaseLeaseWhenIdle = false;
     bool bHasStagedRestoreCandidate = false;
+    bool bRestoreCommitInProgress = false;
 
     TWeakObjectPtr<AJumanjiWorldEncounterDirector> PendingRestoreDirector;
     FTimerHandle LeaseRenewalTimerHandle;
