@@ -107,7 +107,8 @@
     "automaticServerMigration": false
   },
   "serializationExclusions": [
-    "AActor/UObject references, NetGUID, object paths",
+    "AActor/UObject references",
+    "NetGUID and object paths",
     "FTransform/FVector/FRotator world-space positions",
     "velocity and movement mode",
     "AI controller/perception/behavior-tree state",
