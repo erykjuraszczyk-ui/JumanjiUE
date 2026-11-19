@@ -272,7 +272,7 @@ void UJumanjiEncounterCheckpointRuntimeSubsystem::EndEncounterCheckpointSession(
         World->GetTimerManager().ClearTimer(LeaseRenewalTimerHandle);
     }
 
-    if (bWriteInFlight || bLeaseAcquiring)
+    if (bWriteInFlight || bLeaseAcquiring || bReadInFlight)
     {
         bReleaseLeaseWhenIdle = true;
         return;
@@ -333,6 +333,10 @@ void UJumanjiEncounterCheckpointRuntimeSubsystem::HandleLeaseAcquired(
         UE_LOG(LogTemp, Warning,
             TEXT("JUMANJI checkpoint: backend lease acquisition failed; snapshot writes remain disabled."));
         bLeaseReady = false;
+        if (bRestoreStagingRequested || bReleaseLeaseWhenIdle)
+        {
+            ClearLeaseState();
+        }
         return;
     }
 
@@ -372,6 +376,7 @@ void UJumanjiEncounterCheckpointRuntimeSubsystem::HandleLeaseAcquired(
         {
             bReadInFlight = false;
             bRestoreStagingRequested = false;
+            EndEncounterCheckpointSession(ActiveEncounterId);
         }
     }
 }
@@ -878,8 +883,7 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::BeginRestoreStaging(
 
     if (!bStarted)
     {
-        bLeaseAcquiring = false;
-        bRestoreStagingRequested = false;
+        ClearLeaseState();
     }
     return bStarted;
 }
@@ -897,6 +901,8 @@ void UJumanjiEncounterCheckpointRuntimeSubsystem::HandleCheckpointRead(
             TEXT("JUMANJI checkpoint restore staging read failed (HTTP %d)."),
             Response.HttpStatusCode);
         bRestoreStagingRequested = false;
+        PendingRestoreDirector.Reset();
+        EndEncounterCheckpointSession(ActiveEncounterId);
         return;
     }
 
@@ -905,7 +911,9 @@ void UJumanjiEncounterCheckpointRuntimeSubsystem::HandleCheckpointRead(
     {
         UE_LOG(LogTemp, Error, TEXT("JUMANJI checkpoint restore preflight rejected: %s"), *Error);
         bRestoreStagingRequested = false;
+        PendingRestoreDirector.Reset();
         bHasStagedRestoreCandidate = false;
+        EndEncounterCheckpointSession(ActiveEncounterId);
         return;
     }
 
