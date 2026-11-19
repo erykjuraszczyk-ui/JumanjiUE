@@ -115,9 +115,19 @@ void AJumanjiGameMode::PostLogin(APlayerController* NewPlayer)
             GameInstance->GetSubsystem<UJumanjiWorldEncounterSessionSubsystem>())
         {
             FJumanjiEncounterReconnectState ReconnectState;
-            if (SessionSubsystem->TryRejoinPlayer(JumanjiPlayerState, ReconnectState)
+            FJumanjiEncounterReconnectFeedbackState FeedbackState;
+            const bool bRejoined = SessionSubsystem->TryRejoinPlayer(
+                JumanjiPlayerState,
+                ReconnectState,
+                FeedbackState
+            );
+
+            if (bRejoined
                 && JumanjiPlayerState->SetEncounterReconnectState(ReconnectState))
             {
+                FeedbackState.Outcome = EJumanjiEncounterReconnectOutcome::Reconnected;
+                JumanjiPlayerState->SetEncounterReconnectFeedback(FeedbackState);
+
                 UE_LOG(LogTemp, Log,
                     TEXT("JUMANJI encounter: profile '%s' rejoined encounter '%s' at revision %d."),
                     *ProfileId,
@@ -143,6 +153,15 @@ void AJumanjiGameMode::PostLogin(APlayerController* NewPlayer)
                         }
                     }
                 }
+            }
+            else if (FeedbackState.Outcome != EJumanjiEncounterReconnectOutcome::None)
+            {
+                JumanjiPlayerState->SetEncounterReconnectFeedback(FeedbackState);
+                UE_LOG(LogTemp, Log,
+                    TEXT("JUMANJI encounter: reconnect UX outcome %d for profile '%s', encounter '%s'."),
+                    static_cast<int32>(FeedbackState.Outcome),
+                    *ProfileId,
+                    *FeedbackState.EncounterId.ToString());
             }
         }
     }
