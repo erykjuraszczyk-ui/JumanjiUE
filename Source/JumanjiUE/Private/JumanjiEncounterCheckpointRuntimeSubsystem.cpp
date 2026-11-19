@@ -509,7 +509,9 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::BuildPayloadJson(
 
     const FString PhaseName = JumanjiCheckpointRuntime::EncounterPhaseName(EncounterState.Phase);
     const FString KindName = JumanjiCheckpointRuntime::SafePointName(SafePoint);
-    if (PhaseName.IsEmpty() || KindName.IsEmpty())
+    if (!JumanjiCheckpointRuntime::IsStableId(EncounterDirector->GetBossDefinitionId().ToString(), 64)
+        || !JumanjiCheckpointRuntime::IsStableId(EncounterDirector->GetSpawnSetId().ToString(), 64)
+        || PhaseName.IsEmpty() || KindName.IsEmpty())
     {
         OutError = TEXT("CHECKPOINT_SAFE_POINT_UNKNOWN");
         return false;
@@ -952,16 +954,25 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::StageVerifiedBackendResponse(
     int64 EnvelopeVersion = 0;
     TSharedPtr<FJsonObject> Integrity;
     TSharedPtr<FJsonObject> Payload;
-    FString Algorithm, KeyId, Signature;
-    if (!JumanjiCheckpointRuntime::ReadInteger(Envelope, TEXT("envelopeVersion"), EnvelopeVersion)
-        || EnvelopeVersion != 1
+    FString Algorithm, KeyId, Signature, ResponseEncounterId;
+    int64 ResponseSequence = 0;
+    int64 ResponseAuthorityEpoch = 0;
+    if (!JumanjiCheckpointRuntime::ReadString(ResponseObject, TEXT("encounterId"), ResponseEncounterId)
+        || !JumanjiCheckpointRuntime::ReadInteger(ResponseObject, TEXT("checkpointSequence"), ResponseSequence)
+        || !JumanjiCheckpointRuntime::ReadInteger(ResponseObject, TEXT("authorityEpoch"), ResponseAuthorityEpoch)
+        || ResponseSequence < 1
+        || ResponseAuthorityEpoch != AuthorityEpoch
         || !Envelope->TryGetObjectField(TEXT("integrity"), Integrity) || !Integrity.IsValid()
         || !Envelope->TryGetObjectField(TEXT("payload"), Payload) || !Payload.IsValid()
+        || !JumanjiCheckpointRuntime::ReadInteger(Envelope, TEXT("envelopeVersion"), EnvelopeVersion)
+        || EnvelopeVersion != 1
         || !JumanjiCheckpointRuntime::ReadString(Integrity, TEXT("algorithm"), Algorithm)
         || Algorithm != TEXT("Ed25519")
         || !JumanjiCheckpointRuntime::ReadString(Integrity, TEXT("keyId"), KeyId)
+        || !JumanjiCheckpointRuntime::IsSafeServerValue(KeyId, 96)
         || !JumanjiCheckpointRuntime::ReadString(Integrity, TEXT("signature"), Signature)
-        || Signature.Len() < 64)
+        || Signature.Len() < 64
+        || Signature.Len() > 256)
     {
         OutError = TEXT("SIGNED_ENVELOPE_SHAPE_INVALID");
         return false;
@@ -994,7 +1005,9 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::StageVerifiedBackendResponse(
 
     Candidate.EncounterId = FName(*EncounterIdString);
     Candidate.CheckpointSequence = Sequence;
-    if (Candidate.EncounterId != EncounterDirector->GetEncounterId()
+    if (ResponseEncounterId != EncounterIdString
+        || ResponseSequence != Sequence
+        || Candidate.EncounterId != EncounterDirector->GetEncounterId()
         || !FGuid::Parse(SessionIdString, Candidate.SessionId)
         || !Candidate.SessionId.IsValid())
     {
@@ -1025,6 +1038,8 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::StageVerifiedBackendResponse(
         || !JumanjiCheckpointRuntime::ReadInteger(Authority, TEXT("authorityEpoch"), PreviousEpoch)
         || PreviousEpoch < 1
         || PreviousEpoch >= AuthorityEpoch
+        || !JumanjiCheckpointRuntime::IsSafeServerValue(PreviousServerId, 96)
+        || PreviousShardId != ShardId
         || PreviousBuildId != BuildId
         || PreviousRuleset != RulesetVersion
         || PreviousContent != WorldContentVersion)
