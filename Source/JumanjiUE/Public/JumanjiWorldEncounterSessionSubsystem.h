@@ -52,6 +52,9 @@ public:
     UFUNCTION(BlueprintPure, Category = "JUMANJI|Encounter|Session")
     int32 GetParticipantCount() const { return ParticipantProfileIds.Num(); }
 
+    /** Volatile UUID for the active encounter session; never persisted in a player profile. */
+    FGuid GetActiveSessionId() const { return ActiveSessionId; }
+
 protected:
     UPROPERTY(Config, EditDefaultsOnly, Category = "JUMANJI|Encounter|Session",
         meta = (ClampMin = "30.0", ClampMax = "1800.0"))
@@ -64,6 +67,7 @@ private:
 
     /** Active-session membership is held only in server process memory. */
     FName ActiveEncounterId = NAME_None;
+    FGuid ActiveSessionId;
     TSet<FString> ParticipantProfileIds;
     TSet<FString> ConnectedProfileIds;
     TMap<FString, FDateTime> DisconnectedAtUtc;
