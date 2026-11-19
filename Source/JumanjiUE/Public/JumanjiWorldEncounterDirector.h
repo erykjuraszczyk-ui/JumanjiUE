@@ -133,6 +133,9 @@ private:
     bool ValidatePlayerPrerequisites(const AJumanjiPlayerState* PlayerState) const;
     UFUNCTION()
     void HandleAdventureChapterChanged(const FJumanjiAdventureChapterState& ChapterState);
+
+    UFUNCTION()
+    void HandleAdventureObjectivesChanged(int32 ObjectiveRevision);
     void SpawnWave(int32 WaveIndex);
     void SpawnBoss();
     UFUNCTION()
@@ -159,4 +162,5 @@ private:
     int32 ActiveWaveIndex = INDEX_NONE;
     bool bEncounterActive = false;
     bool bListeningForChapterChanges = false;
+    bool bListeningForObjectiveChanges = false;
 };
