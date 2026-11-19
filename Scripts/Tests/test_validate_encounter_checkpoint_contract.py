@@ -27,6 +27,27 @@ class EncounterCheckpointContractTests(unittest.TestCase):
     def test_example_fixture_is_valid(self) -> None:
         self.assertEqual(MODULE.validate_envelope(self.example), [])
 
+    def test_integral_json_number_format_is_schema_integer(self) -> None:
+        candidate = copy.deepcopy(self.example)
+        payload = candidate["payload"]
+        payload["schemaVersion"] = 1.0
+        payload["checkpointSequence"] = 12.0
+        payload["authority"]["authorityEpoch"] = 7.0
+        safe = payload["safePoint"]
+        safe["encounterRevision"] = 22.0
+        safe["chapter"]["chapterRevision"] = 41.0
+        safe["combat"]["currentWave"] = 0.0
+        safe["combat"]["totalWaves"] = 3.0
+        safe["combat"]["boss"]["phaseRevision"] = 2.0
+        payload["deterministic"]["encounterSeed"] = 2718281828.0
+        payload["participants"][0]["profileRevision"] = 18.0
+        self.assertEqual(MODULE.validate_envelope(candidate), [])
+
+    def test_boolean_is_not_an_integer(self) -> None:
+        candidate = copy.deepcopy(self.example)
+        candidate["payload"]["checkpointSequence"] = True
+        self.assertTrue(any("checkpointSequence" in error for error in MODULE.validate_envelope(candidate)))
+
     def test_unsupported_schema_version_is_rejected(self) -> None:
         candidate = copy.deepcopy(self.example)
         candidate["payload"]["schemaVersion"] = 99
