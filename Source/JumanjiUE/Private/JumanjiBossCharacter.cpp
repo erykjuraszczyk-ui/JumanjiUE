@@ -150,8 +150,77 @@ float AJumanjiBossCharacter::GetBossHealthFraction() const
     return FMath::Clamp(Attributes->GetHealth() / Attributes->GetMaxHealth(), 0.0f, 1.0f);
 }
 
+bool AJumanjiBossCharacter::ApplyCheckpointRestoreState(
+    float HealthFraction,
+    uint8 RestoredPhase,
+    int32 RestoredPhaseRevision)
+{
+    if (!HasAuthority()
+        || IsDefeated()
+        || !FMath::IsFinite(HealthFraction)
+        || HealthFraction <= 0.0f
+        || HealthFraction > 1.0f
+        || RestoredPhase < 2
+        || RestoredPhase > 3
+        || RestoredPhaseRevision < 1
+        || BossTelegraphState.Stage != EJumanjiBossTelegraphStage::None
+        || (RestoredPhase == 2
+            && HealthFraction <= PhaseThreeHealthThreshold)
+        || (RestoredPhase == 3
+            && HealthFraction > PhaseThreeHealthThreshold))
+    {
+        return false;
+    }
+
+    UJumanjiAbilitySystemComponent* ASC = GetEnemyAbilitySystemComponent();
+    UJumanjiAttributeSet* Attributes = GetEnemyAttributeSet();
+    if (!ASC || !Attributes || Attributes->GetMaxHealth() <= KINDA_SMALL_NUMBER)
+    {
+        return false;
+    }
+
+    bApplyingCheckpointRestoreState = true;
+    ASC->SetNumericAttributeBase(
+        UJumanjiAttributeSet::GetHealthAttribute(),
+        Attributes->GetMaxHealth() * HealthFraction);
+    BossPhase = RestoredPhase;
+    BossPhaseRevision = RestoredPhaseRevision;
+
+    const FGameplayTag PhaseTwoTag = FGameplayTag::RequestGameplayTag(
+        FName(TEXT("State.Boss.Phase.Two")), false);
+    const FGameplayTag PhaseThreeTag = FGameplayTag::RequestGameplayTag(
+        FName(TEXT("State.Boss.Phase.Three")), false);
+
+    if (PhaseTwoTag.IsValid())
+    {
+        ASC->RemoveLooseGameplayTag(PhaseTwoTag, 1, EGameplayTagReplicationState::TagAndCountToAll);
+    }
+    if (PhaseThreeTag.IsValid())
+    {
+        ASC->RemoveLooseGameplayTag(PhaseThreeTag, 1, EGameplayTagReplicationState::TagAndCountToAll);
+    }
+    if (RestoredPhase >= 2 && PhaseTwoTag.IsValid())
+    {
+        ASC->AddLooseGameplayTag(PhaseTwoTag, 1, EGameplayTagReplicationState::TagAndCountToAll);
+    }
+    if (RestoredPhase >= 3 && PhaseThreeTag.IsValid())
+    {
+        ASC->AddLooseGameplayTag(PhaseThreeTag, 1, EGameplayTagReplicationState::TagAndCountToAll);
+    }
+
+    bApplyingCheckpointRestoreState = false;
+    BP_OnBossPhaseChanged(BossPhase);
+    ForceNetUpdate();
+    return true;
+}
+
 void AJumanjiBossCharacter::HandleCombatHealthChanged(const FOnAttributeChangeData& ChangeData)
 {
+    if (bApplyingCheckpointRestoreState)
+    {
+        return;
+    }
+
     Super::HandleCombatHealthChanged(ChangeData);
 
     if (!HasAuthority() || IsDefeated())
