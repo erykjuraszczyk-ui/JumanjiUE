@@ -1421,8 +1421,7 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::StageVerifiedBackendResponse(
             || !FMath::IsFinite(HealthFraction)
             || HealthFraction < 0.0 || HealthFraction > 1.0
             || FName(*DefinitionId) != EncounterDirector->GetBossDefinitionId()
-            || (PhaseId != TEXT("BOSS_PHASE_01")
-                && PhaseId != TEXT("BOSS_PHASE_02")
+            || (PhaseId != TEXT("BOSS_PHASE_02")
                 && PhaseId != TEXT("BOSS_PHASE_03"))
             || PhaseRevision < 1)
         {
