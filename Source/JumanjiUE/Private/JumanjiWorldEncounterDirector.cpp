@@ -11,6 +11,7 @@
 #include "JumanjiPlayerState.h"
 #include "JumanjiProgressionRewardSubsystem.h"
 #include "JumanjiWorldEncounterSessionSubsystem.h"
+#include "JumanjiEncounterCheckpointRuntimeSubsystem.h"
 
 AJumanjiWorldEncounterDirector::AJumanjiWorldEncounterDirector()
 {
@@ -228,6 +229,20 @@ bool AJumanjiWorldEncounterDirector::StartEncounter(AJumanjiPlayerState* Initiat
     bEncounterActive = true;
     ActiveWaveIndex = INDEX_NONE;
 
+    if (UJumanjiEncounterCheckpointRuntimeSubsystem* CheckpointSubsystem = GameInstance
+        ? GameInstance->GetSubsystem<UJumanjiEncounterCheckpointRuntimeSubsystem>()
+        : nullptr)
+    {
+        // Checkpointing is optional for local development. A missing backend or
+        // server secret never blocks the gameplay encounter from starting.
+        if (!CheckpointSubsystem->BeginEncounterCheckpointSession(EncounterId))
+        {
+            UE_LOG(LogTemp, Warning,
+                TEXT("JUMANJI checkpoint: lease was not started for encounter '%s'; this session has no durable checkpoints."),
+                *EncounterId.ToString());
+        }
+    }
+
     GameState->OnAdventureChapterChanged.AddUniqueDynamic(
         this,
         &AJumanjiWorldEncounterDirector::HandleAdventureChapterChanged);
@@ -254,6 +269,15 @@ void AJumanjiWorldEncounterDirector::HandleAdventureChapterChanged(
         || ActiveWaveIndex != INDEX_NONE)
     {
         return;
+    }
+
+    if (UJumanjiEncounterCheckpointRuntimeSubsystem* CheckpointSubsystem = GetGameInstance()
+        ? GetGameInstance()->GetSubsystem<UJumanjiEncounterCheckpointRuntimeSubsystem>()
+        : nullptr)
+    {
+        CheckpointSubsystem->CaptureSafePoint(
+            this,
+            EJumanjiEncounterCheckpointSafePoint::TrialBoundary);
     }
 
     SpawnWave(0);
@@ -387,6 +411,33 @@ void AJumanjiWorldEncounterDirector::SpawnBoss()
         FailEncounter(FName(TEXT("BOSS_REFERENCE_REJECTED")));
         return;
     }
+
+    ActiveBoss->OnBossPhaseChanged.AddUniqueDynamic(
+        this,
+        &AJumanjiWorldEncounterDirector::HandleBossPhaseChanged);
+}
+
+void AJumanjiWorldEncounterDirector::HandleBossPhaseChanged(uint8 NewPhase, int32 PhaseRevision)
+{
+    if (!HasAuthority()
+        || !bEncounterActive
+        || !IsValid(ActiveBoss)
+        || NewPhase < 2
+        || NewPhase > 3
+        || PhaseRevision < 1
+        || ActiveBoss->GetBossTelegraphState().Stage != EJumanjiBossTelegraphStage::None)
+    {
+        return;
+    }
+
+    if (UJumanjiEncounterCheckpointRuntimeSubsystem* CheckpointSubsystem = GetGameInstance()
+        ? GetGameInstance()->GetSubsystem<UJumanjiEncounterCheckpointRuntimeSubsystem>()
+        : nullptr)
+    {
+        CheckpointSubsystem->CaptureSafePoint(
+            this,
+            EJumanjiEncounterCheckpointSafePoint::BossPhaseBoundary);
+    }
 }
 
 void AJumanjiWorldEncounterDirector::HandleEnemyDefeated(AJumanjiEnemyCharacter* Enemy)
@@ -415,6 +466,15 @@ void AJumanjiWorldEncounterDirector::HandleEnemyDefeated(AJumanjiEnemyCharacter*
 
     if (ActiveEnemies.IsEmpty())
     {
+        if (UJumanjiEncounterCheckpointRuntimeSubsystem* CheckpointSubsystem = GetGameInstance()
+            ? GetGameInstance()->GetSubsystem<UJumanjiEncounterCheckpointRuntimeSubsystem>()
+            : nullptr)
+        {
+            CheckpointSubsystem->CaptureSafePoint(
+                this,
+                EJumanjiEncounterCheckpointSafePoint::WaveBoundary);
+        }
+
         SpawnWave(ActiveWaveIndex + 1);
     }
 }
@@ -475,6 +535,39 @@ void AJumanjiWorldEncounterDirector::CompleteEncounter()
         return;
     }
 
+    TArray<AJumanjiPlayerState*> RewardParticipants;
+    for (APlayerState* BasePlayerState : GameState->PlayerArray)
+    {
+        AJumanjiPlayerState* Candidate = Cast<AJumanjiPlayerState>(BasePlayerState);
+        if (Candidate && !Candidate->GetPersistentProfileId().IsEmpty())
+        {
+            RewardParticipants.Add(Candidate);
+        }
+    }
+
+    if (RewardParticipants.Num() == 1)
+    {
+        const FName RewardReceiptId = RewardSubsystem->GetWorldEncounterRewardTransactionId(
+            RewardParticipants[0], EncounterId);
+
+        if (UJumanjiEncounterCheckpointRuntimeSubsystem* CheckpointSubsystem = GetGameInstance()
+            ? GetGameInstance()->GetSubsystem<UJumanjiEncounterCheckpointRuntimeSubsystem>()
+            : nullptr)
+        {
+            CheckpointSubsystem->CaptureSafePoint(
+                this,
+                EJumanjiEncounterCheckpointSafePoint::RewardPending,
+                RewardReceiptId);
+        }
+    }
+    else
+    {
+        // Schema v1 has one reward transactionId. Do not write a partial
+        // multi-participant RewardPending checkpoint.
+        UE_LOG(LogTemp, Warning,
+            TEXT("JUMANJI checkpoint: RewardPending snapshot skipped; schema v1 requires a single participant."));
+    }
+
     for (APlayerState* BasePlayerState : GameState->PlayerArray)
     {
         AJumanjiPlayerState* PlayerState = Cast<AJumanjiPlayerState>(BasePlayerState);
@@ -496,6 +589,13 @@ void AJumanjiWorldEncounterDirector::CompleteEncounter()
     {
         FailEncounter(FName(TEXT("ENCOUNTER_COMPLETION_REJECTED")));
         return;
+    }
+
+    if (UJumanjiEncounterCheckpointRuntimeSubsystem* CheckpointSubsystem = GetGameInstance()
+        ? GetGameInstance()->GetSubsystem<UJumanjiEncounterCheckpointRuntimeSubsystem>()
+        : nullptr)
+    {
+        CheckpointSubsystem->EndEncounterCheckpointSession(EncounterId);
     }
 
     if (UJumanjiWorldEncounterSessionSubsystem* SessionSubsystem =
@@ -548,6 +648,13 @@ void AJumanjiWorldEncounterDirector::FailEncounter(FName ReasonId)
     }
 
     PublishEncounterState(EJumanjiWorldEncounterPhase::Failed, 0, 0);
+
+    if (UJumanjiEncounterCheckpointRuntimeSubsystem* CheckpointSubsystem = GetGameInstance()
+        ? GetGameInstance()->GetSubsystem<UJumanjiEncounterCheckpointRuntimeSubsystem>()
+        : nullptr)
+    {
+        CheckpointSubsystem->EndEncounterCheckpointSession(EncounterId);
+    }
 
     if (UJumanjiWorldEncounterSessionSubsystem* SessionSubsystem =
         GetGameInstance()
