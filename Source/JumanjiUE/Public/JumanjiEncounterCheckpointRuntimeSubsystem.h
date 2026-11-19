@@ -7,6 +7,8 @@
 
 class UJumanjiEncounterCheckpointBackendSubsystem;
 
+class UJumanjiEncounterCheckpointBackendSubsystem;
+
 /**
  * Server-only logical snapshot builder and private restore staging service.
  *
