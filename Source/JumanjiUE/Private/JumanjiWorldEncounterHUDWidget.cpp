@@ -133,6 +133,9 @@ void UJumanjiWorldEncounterHUDWidget::BindPlayerState()
         CachedPlayerState->OnEncounterReconnectChanged.RemoveDynamic(
             this,
             &UJumanjiWorldEncounterHUDWidget::HandleEncounterReconnectChanged);
+        CachedPlayerState->OnEncounterReconnectFeedbackChanged.RemoveDynamic(
+            this,
+            &UJumanjiWorldEncounterHUDWidget::HandleEncounterReconnectFeedbackChanged);
     }
 
     CachedPlayerState = NewPlayerState;
