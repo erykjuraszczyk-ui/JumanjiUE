@@ -10,6 +10,7 @@ void UJumanjiWorldEncounterSessionSubsystem::Initialize(
 {
     Super::Initialize(Collection);
     ActiveEncounterId = NAME_None;
+    ActiveSessionId.Invalidate();
     ParticipantProfileIds.Reset();
     ConnectedProfileIds.Reset();
     DisconnectedAtUtc.Reset();
@@ -116,6 +117,7 @@ bool UJumanjiWorldEncounterSessionSubsystem::BeginEncounterSession(
     PruneRecentlyEndedParticipants();
 
     ActiveEncounterId = EncounterId;
+    ActiveSessionId = FGuid::NewGuid();
     ParticipantProfileIds.Reset();
     ConnectedProfileIds.Reset();
     DisconnectedAtUtc.Reset();
