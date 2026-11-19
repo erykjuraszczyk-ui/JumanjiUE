@@ -59,7 +59,6 @@ class EncounterRestoreMaterializationTests(unittest.TestCase):
             source = source.replace(
                 "HasProcessedProfileTransaction(Candidate.RewardTransactionId)",
                 "HasSomeOtherReceipt(Candidate.RewardTransactionId)",
-                1,
             )
             path.write_text(source, encoding="utf-8")
             errors = MODULE.validate_project(root)
