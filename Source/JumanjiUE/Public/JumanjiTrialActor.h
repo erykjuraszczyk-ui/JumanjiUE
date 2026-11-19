@@ -73,6 +73,11 @@ public:
     bool CanResetForEncounterRetry() const;
     bool ResetForEncounterRetry();
 
+    /** Server-only checkpoint materialization. No client/RPC entry point is exposed. */
+    bool CanApplyCheckpointRestoreState() const;
+    bool ApplyCheckpointRestoreState(bool bCompleted);
+    void PublishCheckpointRestoreState();
+
     /** Server-only validation entry point; PlayerController routes client requests here. */
     bool SubmitOption(FName OptionId, int32 ExpectedRevision);
 
