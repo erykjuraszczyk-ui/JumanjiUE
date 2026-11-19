@@ -427,6 +427,21 @@ bool AJumanjiAdventureChapterDirector::AreCheckpointTrialIdsConsistent(
 
     // Completed IDs are a subset of chapter content; partial TrialBoundary
     // checkpoints must remain valid while preserving one-to-one ID mapping.
+    for (const FName CompletedTrialId : CompletedTrialSet)
+    {
+        if (!ExpectedTrialIds.Contains(CompletedTrialId))
+        {
+            return false;
+        }
+    }
+    for (const FName CompletedObjectiveId : CompletedObjectiveSet)
+    {
+        if (!ExpectedObjectiveIds.Contains(CompletedObjectiveId))
+        {
+            return false;
+        }
+    }
+
     return CompletedTrialSet.Num() == CompletedObjectiveSet.Num();
 }
 
@@ -454,6 +469,57 @@ bool AJumanjiAdventureChapterDirector::BuildCheckpointRestoreObjectives(
         || !AreCheckpointTrialIdsConsistent(CompletedTrialIds, CompletedObjectiveIds))
     {
         return false;
+    }
+
+    TSet<FName> ConfiguredObjectiveIds;
+    for (const FJumanjiAdventureObjectiveState& Configured : ChapterObjectives)
+    {
+        if (Configured.ObjectiveId.IsNone()
+            || Configured.DisplayName.IsEmpty()
+            || Configured.RequiredProgress < 1
+            || Configured.RequiredProgress > 1000
+            || ConfiguredObjectiveIds.Contains(Configured.ObjectiveId))
+        {
+            return false;
+        }
+        ConfiguredObjectiveIds.Add(Configured.ObjectiveId);
+    }
+
+    TSet<FName> TrialObjectiveIds;
+    for (const AJumanjiTrialActor* Trial : TrialActors)
+    {
+        if (!IsValid(Trial)
+            || Trial->GetWorld() != GetWorld()
+            || Trial->GetObjectiveId().IsNone()
+            || TrialObjectiveIds.Contains(Trial->GetObjectiveId()))
+        {
+            return false;
+        }
+
+        const FJumanjiAdventureObjectiveState* MatchingObjective =
+            ChapterObjectives.FindByPredicate(
+                [Trial](const FJumanjiAdventureObjectiveState& Entry)
+                {
+                    return Entry.ObjectiveId == Trial->GetObjectiveId();
+                });
+        if (!MatchingObjective
+            || MatchingObjective->RequiredProgress != Trial->GetStepCount())
+        {
+            return false;
+        }
+        TrialObjectiveIds.Add(Trial->GetObjectiveId());
+    }
+
+    if (ConfiguredObjectiveIds.Num() != TrialObjectiveIds.Num())
+    {
+        return false;
+    }
+    for (const FName ObjectiveId : ConfiguredObjectiveIds)
+    {
+        if (!TrialObjectiveIds.Contains(ObjectiveId))
+        {
+            return false;
+        }
     }
 
     TSet<FName> CompletedObjectives;
