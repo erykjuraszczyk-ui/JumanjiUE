@@ -76,7 +76,7 @@ REQUIRED_TOKENS = {
     ),
 
     "Docs/STAGE_30_ENCOUNTER_SESSION_RECONNECT_RECOVERY.md": (
-        "same-server",
+        "tym samym procesie serwera",
         "ReconnectGraceWindowSeconds",
         "Completed",
         "Failed",
