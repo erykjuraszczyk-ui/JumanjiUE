@@ -960,6 +960,10 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::StageVerifiedBackendResponse(
         return false;
     }
 
+    // Stage 33's trusted service has already revalidated the stored envelope
+    // and cryptographically verified its Ed25519 signature before HTTP 200.
+    // This client-side preflight checks structure and game/content semantics;
+    // the private signing key never exists in the Unreal server process.
     TSharedPtr<FJsonObject> Envelope;
     if (!ResponseObject->TryGetObjectField(TEXT("envelope"), Envelope) || !Envelope.IsValid())
     {
