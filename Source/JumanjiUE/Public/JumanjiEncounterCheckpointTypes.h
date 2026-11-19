@@ -101,6 +101,9 @@ struct FJumanjiEncounterCheckpointCaptureInput
     bool bNoPendingSpawn = false;
 
     UPROPERTY()
+    bool bNoActiveEnemies = false;
+
+    UPROPERTY()
     bool bNoActiveBossTelegraph = false;
 
     UPROPERTY()
