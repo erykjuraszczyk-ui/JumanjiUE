@@ -39,6 +39,10 @@ public:
     TArray<FName> GetConfiguredObjectiveIds() const;
     TArray<FName> GetConfiguredTrialIds() const;
     TArray<FName> GetCompletedTrialIds() const;
+    TArray<FName> GetCompletedTrialObjectiveIds() const;
+    bool AreCheckpointTrialIdsConsistent(
+        const TArray<FName>& CompletedTrialIds,
+        const TArray<FName>& CompletedObjectiveIds) const;
     bool HasNoTrialsInProgress() const;
 
 protected:
