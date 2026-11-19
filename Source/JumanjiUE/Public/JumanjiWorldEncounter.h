@@ -72,3 +72,39 @@ struct JUMANJIUE_API FJumanjiEncounterReconnectState
     UPROPERTY(BlueprintReadOnly, Category = "JUMANJI|Encounter|Reconnect")
     int32 ReconnectRevision = 0;
 };
+
+
+/** Outcome shown to the reconnecting local player. None is silent for normal logins. */
+UENUM(BlueprintType)
+enum class EJumanjiEncounterReconnectOutcome : uint8
+{
+    None UMETA(DisplayName = "No reconnect notice"),
+    Reconnected UMETA(DisplayName = "Reconnected"),
+    GraceWindowExpired UMETA(DisplayName = "Reconnect window expired"),
+    EncounterEnded UMETA(DisplayName = "Encounter ended while away")
+};
+
+/**
+ * Transient UI feedback for one PostLogin attempt. It is replicated to the
+ * returning PlayerState, but is never serialized into a player profile.
+ */
+USTRUCT(BlueprintType)
+struct JUMANJIUE_API FJumanjiEncounterReconnectFeedbackState
+{
+    GENERATED_BODY()
+
+    UPROPERTY(BlueprintReadOnly, Category = "JUMANJI|Encounter|Reconnect")
+    EJumanjiEncounterReconnectOutcome Outcome = EJumanjiEncounterReconnectOutcome::None;
+
+    UPROPERTY(BlueprintReadOnly, Category = "JUMANJI|Encounter|Reconnect")
+    FName EncounterId = NAME_None;
+
+    UPROPERTY(BlueprintReadOnly, Category = "JUMANJI|Encounter|Reconnect")
+    EJumanjiWorldEncounterPhase Phase = EJumanjiWorldEncounterPhase::Inactive;
+
+    UPROPERTY(BlueprintReadOnly, Category = "JUMANJI|Encounter|Reconnect")
+    int32 Revision = 0;
+
+    UPROPERTY(BlueprintReadOnly, Category = "JUMANJI|Encounter|Reconnect")
+    float DisplayDurationSeconds = 6.0f;
+};
