@@ -117,6 +117,11 @@ private:
         AJumanjiWorldEncounterDirector* EncounterDirector,
         FString& OutError);
 
+    /** Reconciles live identities/profiles, then asks the director to materialize and publish. */
+    bool CommitStagedRestore(
+        AJumanjiWorldEncounterDirector* EncounterDirector,
+        FString& OutError);
+
     void HandleLeaseAcquired(const struct FJumanjiCheckpointBackendResponse& Response);
     void HandleCheckpointRead(const struct FJumanjiCheckpointBackendResponse& Response,
         TWeakObjectPtr<AJumanjiWorldEncounterDirector> EncounterDirector);
