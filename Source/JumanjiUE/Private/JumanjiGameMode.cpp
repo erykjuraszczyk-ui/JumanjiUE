@@ -116,11 +116,7 @@ void AJumanjiGameMode::PostLogin(APlayerController* NewPlayer)
         {
             FJumanjiEncounterReconnectState ReconnectState;
             FJumanjiEncounterReconnectFeedbackState FeedbackState;
-            const bool bRejoined = SessionSubsystem->TryRejoinPlayer(
-                JumanjiPlayerState,
-                ReconnectState,
-                FeedbackState
-            );
+            const bool bRejoined = SessionSubsystem->TryRejoinPlayer(JumanjiPlayerState, ReconnectState, FeedbackState);
 
             if (bRejoined)
             {
