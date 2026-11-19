@@ -425,12 +425,18 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::ValidateCaptureInput(
         return Fail(TEXT("PARTICIPANTS_INVALID"), TEXT("A checkpoint requires 1 to 64 trusted participants."));
     }
 
+    if (!ParticipantRevisionValidator)
+    {
+        return Fail(TEXT("PARTICIPANT_RESOLVER_MISSING"), TEXT("A trusted profile revision validator must be registered before a checkpoint can be written."));
+    }
+
     TSet<FString> ParticipantKeys;
     for (const FJumanjiCheckpointParticipant& Participant : Input.Participants)
     {
         if (!IsOpaqueParticipantKey(Participant.ParticipantKey)
             || Participant.ProfileRevision < 0
-            || ParticipantKeys.Contains(Participant.ParticipantKey))
+            || ParticipantKeys.Contains(Participant.ParticipantKey)
+            || !ParticipantRevisionValidator(Participant.ParticipantKey, Participant.ProfileRevision))
         {
             return Fail(TEXT("PARTICIPANTS_INVALID"), TEXT("Participant keys must be unique opaque keys with non-negative profile revisions."));
         }
@@ -904,8 +910,24 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::ParseAndValidateRestoreEnvelop
         return Fail(TEXT("CHAPTER_PROGRESS_INVALID"), TEXT("Completed objective/trial IDs or current content allowlists are invalid."));
     }
 
-    const TSet<FName> AllowedObjectives(Expectations.AllowedObjectiveIds);
-    const TSet<FName> AllowedTrials(Expectations.AllowedTrialIds);
+    TSet<FName> AllowedObjectives;
+    for (const FName Id : Expectations.AllowedObjectiveIds)
+    {
+        if (Id.IsNone() || !IsStableContentId(Id.ToString()) || AllowedObjectives.Contains(Id))
+        {
+            return Fail(TEXT("CURRENT_OBJECTIVE_ALLOWLIST_INVALID"), TEXT("Current objective allowlist contains invalid or duplicate IDs."));
+        }
+        AllowedObjectives.Add(Id);
+    }
+    TSet<FName> AllowedTrials;
+    for (const FName Id : Expectations.AllowedTrialIds)
+    {
+        if (Id.IsNone() || !IsStableContentId(Id.ToString()) || AllowedTrials.Contains(Id))
+        {
+            return Fail(TEXT("CURRENT_TRIAL_ALLOWLIST_INVALID"), TEXT("Current trial allowlist contains invalid or duplicate IDs."));
+        }
+        AllowedTrials.Add(Id);
+    }
     for (const FName Id : CompletedObjectives)
     {
         if (!AllowedObjectives.Contains(Id))
