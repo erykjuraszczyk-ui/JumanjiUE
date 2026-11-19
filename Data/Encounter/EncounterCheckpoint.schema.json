@@ -1,0 +1,324 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jumanji.example/schemas/encounter-checkpoint-v1.json",
+  "title": "JUMANJI Encounter Checkpoint Envelope v1",
+  "description": "Server-authored logical encounter checkpoint; not a serialization of Unreal actors or client state.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "envelopeVersion",
+    "payload",
+    "integrity"
+  ],
+  "properties": {
+    "envelopeVersion": {
+      "const": 1
+    },
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "checkpointId",
+        "encounterId",
+        "sessionId",
+        "checkpointSequence",
+        "createdAtUtc",
+        "expiresAtUtc",
+        "authority",
+        "safePoint",
+        "deterministic",
+        "participants"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": 1
+        },
+        "checkpointId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "encounterId": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9_]{2,95}$"
+        },
+        "sessionId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "checkpointSequence": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "createdAtUtc": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "expiresAtUtc": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "authority": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "serverInstanceId",
+            "shardId",
+            "authorityEpoch",
+            "serverBuildId",
+            "rulesetVersion",
+            "worldContentVersion"
+          ],
+          "properties": {
+            "serverInstanceId": {
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 96,
+              "pattern": "^[A-Za-z0-9._-]+$"
+            },
+            "shardId": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 96,
+              "pattern": "^[A-Za-z0-9._-]+$"
+            },
+            "authorityEpoch": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "serverBuildId": {
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 128
+            },
+            "rulesetVersion": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "worldContentVersion": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            }
+          }
+        },
+        "safePoint": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "phase",
+            "kind",
+            "encounterRevision",
+            "chapter",
+            "combat"
+          ],
+          "properties": {
+            "phase": {
+              "enum": [
+                "Trials",
+                "Combat",
+                "Boss",
+                "Reward"
+              ]
+            },
+            "kind": {
+              "enum": [
+                "TrialBoundary",
+                "WaveBoundary",
+                "BossPhaseBoundary",
+                "RewardPending"
+              ]
+            },
+            "encounterRevision": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "chapter": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "chapterId",
+                "boardEventId",
+                "chapterRevision",
+                "completedObjectiveIds",
+                "completedTrialIds"
+              ],
+              "properties": {
+                "chapterId": {
+                  "type": "string",
+                  "pattern": "^[A-Z][A-Z0-9_]{2,95}$"
+                },
+                "boardEventId": {
+                  "type": "string",
+                  "pattern": "^[A-Z][A-Z0-9_]{2,95}$"
+                },
+                "chapterRevision": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "completedObjectiveIds": {
+                  "type": "array",
+                  "maxItems": 64,
+                  "uniqueItems": true,
+                  "items": {
+                    "type": "string",
+                    "pattern": "^[A-Z][A-Z0-9_]{2,95}$"
+                  }
+                },
+                "completedTrialIds": {
+                  "type": "array",
+                  "maxItems": 9,
+                  "uniqueItems": true,
+                  "items": {
+                    "type": "string",
+                    "pattern": "^[A-Z][A-Z0-9_]{2,95}$"
+                  }
+                }
+              }
+            },
+            "combat": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "currentWave",
+                "totalWaves"
+              ],
+              "properties": {
+                "currentWave": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 100
+                },
+                "totalWaves": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 100
+                },
+                "boss": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "definitionId",
+                    "phaseId",
+                    "healthFraction",
+                    "phaseRevision"
+                  ],
+                  "properties": {
+                    "definitionId": {
+                      "type": "string",
+                      "pattern": "^[A-Z][A-Z0-9_]{2,95}$"
+                    },
+                    "phaseId": {
+                      "type": "string",
+                      "pattern": "^[A-Z][A-Z0-9_]{2,95}$"
+                    },
+                    "healthFraction": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    "phaseRevision": {
+                      "type": "integer",
+                      "minimum": 1
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "deterministic": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "encounterSeed",
+            "spawnSetId"
+          ],
+          "properties": {
+            "encounterSeed": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 4294967295
+            },
+            "spawnSetId": {
+              "type": "string",
+              "pattern": "^[A-Z][A-Z0-9_]{2,95}$"
+            }
+          }
+        },
+        "participants": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "participantKey",
+              "profileRevision"
+            ],
+            "properties": {
+              "participantKey": {
+                "type": "string",
+                "pattern": "^pk_[A-Za-z0-9_-]{20,96}$"
+              },
+              "profileRevision": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          }
+        },
+        "reward": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "rewardDefinitionId",
+            "transactionId",
+            "status"
+          ],
+          "properties": {
+            "rewardDefinitionId": {
+              "type": "string",
+              "pattern": "^[A-Z][A-Z0-9_]{2,95}$"
+            },
+            "transactionId": {
+              "type": "string",
+              "pattern": "^[A-Z][A-Z0-9_]{2,127}$"
+            },
+            "status": {
+              "const": "PendingLedgerCheck"
+            }
+          }
+        }
+      }
+    },
+    "integrity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "algorithm",
+        "keyId",
+        "signature"
+      ],
+      "properties": {
+        "algorithm": {
+          "const": "Ed25519"
+        },
+        "keyId": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 96,
+          "pattern": "^[A-Za-z0-9._-]+$"
+        },
+        "signature": {
+          "type": "string",
+          "minLength": 64,
+          "maxLength": 256,
+          "pattern": "^[A-Za-z0-9_-]+$"
+        }
+      }
+    }
+  }
+}
