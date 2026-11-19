@@ -1306,7 +1306,8 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::StageVerifiedBackendResponse(
         || FName(*BoardEventIdString) != ChapterDirector->GetBoardEventId()
         || FName(*SpawnSetIdString) != EncounterDirector->GetSpawnSetId()
         || Seed < 0 || Seed > MAX_uint32
-        || EncounterRevision < 1 || ChapterRevision < 1
+        || EncounterRevision < 1 || EncounterRevision > MAX_int32
+        || ChapterRevision < 1 || ChapterRevision > MAX_int32
         || CurrentWave < 0 || TotalWaves < 1 || TotalWaves > 100
         || TotalWaves != EncounterDirector->GetTotalWaveCount()
         || CurrentWave > TotalWaves)
@@ -1427,7 +1428,8 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::StageVerifiedBackendResponse(
             || FName(*DefinitionId) != EncounterDirector->GetBossDefinitionId()
             || (PhaseId != TEXT("BOSS_PHASE_02")
                 && PhaseId != TEXT("BOSS_PHASE_03"))
-            || PhaseRevision < 1)
+            || PhaseRevision < 1
+            || PhaseRevision > MAX_int32)
         {
             OutError = TEXT("CHECKPOINT_BOSS_SNAPSHOT_INVALID");
             return false;
@@ -1460,6 +1462,7 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::StageVerifiedBackendResponse(
             || !JumanjiCheckpointRuntime::IsParticipantKeyFormatValid(ParticipantKey)
             || !JumanjiCheckpointRuntime::ReadInteger(Participant, TEXT("profileRevision"), ProfileRevision)
             || ProfileRevision < 0
+            || ProfileRevision > MAX_int32
             || SeenParticipantKeys.Contains(ParticipantKey))
         {
             OutError = TEXT("CHECKPOINT_PARTICIPANT_ENTRY_INVALID");
