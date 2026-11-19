@@ -11,7 +11,6 @@ class AJumanjiAdventureChapterDirector;
 class AJumanjiBossCharacter;
 class AJumanjiEnemyCharacter;
 class AJumanjiPlayerState;
-class AJumanjiBossCharacter;
 
 USTRUCT(BlueprintType)
 struct JUMANJIUE_API FJumanjiEncounterEnemySpawn
@@ -128,8 +127,7 @@ protected:
 private:
     bool ValidateConfiguration() const;
     bool ValidatePlayerPrerequisites(const AJumanjiPlayerState* PlayerState) const;
-    UFUNCTION()
-    void HandleAdventureChapterChanged(const FJumanjiAdventureChapterState& ChapterState);
+    void HandleChapterCheckpointBoundaryReady();
     void SpawnWave(int32 WaveIndex);
     void SpawnBoss();
     UFUNCTION()
@@ -158,6 +156,6 @@ private:
     FGuid EncounterSessionId;
     uint32 EncounterSeed = 0;
     FDelegateHandle BossCheckpointDelegateHandle;
+    FDelegateHandle ChapterCheckpointDelegateHandle;
     bool bEncounterActive = false;
-    bool bListeningForChapterChanges = false;
 };
