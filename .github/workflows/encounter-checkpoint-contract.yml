@@ -1,0 +1,46 @@
+name: Encounter Checkpoint Contract
+
+on:
+  pull_request:
+    paths:
+      - "Data/Encounter/EncounterCheckpoint.schema.json"
+      - "Data/Encounter/EncounterCheckpointExample.json"
+      - "Data/Encounter/EncounterCheckpointRecoveryMatrix.csv"
+      - "Scripts/validate_encounter_checkpoint_contract.py"
+      - "Scripts/Tests/test_validate_encounter_checkpoint_contract.py"
+      - "Docs/STAGE_32_ENCOUNTER_SESSION_CHECKPOINT_CONTRACT.md"
+      - ".github/workflows/encounter-checkpoint-contract.yml"
+      - "README.md"
+  push:
+    branches: [main]
+    paths:
+      - "Data/Encounter/EncounterCheckpoint.schema.json"
+      - "Data/Encounter/EncounterCheckpointExample.json"
+      - "Data/Encounter/EncounterCheckpointRecoveryMatrix.csv"
+      - "Scripts/validate_encounter_checkpoint_contract.py"
+      - "Scripts/Tests/test_validate_encounter_checkpoint_contract.py"
+      - "Docs/STAGE_32_ENCOUNTER_SESSION_CHECKPOINT_CONTRACT.md"
+      - ".github/workflows/encounter-checkpoint-contract.yml"
+      - "README.md"
+
+permissions:
+  contents: read
+
+jobs:
+  checkpoint-contract:
+    name: Validate checkpoint schema and recovery matrix
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate Stage 32 checkpoint contract
+        run: python Scripts/validate_encounter_checkpoint_contract.py
+
+      - name: Run Stage 32 contract tests
+        run: python -m unittest discover -s Scripts/Tests -p "test_validate_encounter_checkpoint_contract.py" -v
