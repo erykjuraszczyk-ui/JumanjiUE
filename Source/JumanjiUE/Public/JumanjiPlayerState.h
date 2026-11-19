@@ -77,6 +77,12 @@ public:
     /** Server-only identity binding established by GameMode after login. */
     void SetPersistentProfileId(const FString& InProfileId);
     const FString& GetPersistentProfileId() const { return PersistentProfileId; }
+
+    /** Trusted profile-service binding; the key is opaque and is never persisted or replicated. */
+    bool SetCheckpointParticipantIdentity(const FString& OpaqueParticipantKey, int64 ProfileRevision);
+    const FString& GetCheckpointParticipantKey() const { return CheckpointParticipantKey; }
+    int64 GetCheckpointProfileRevision() const { return CheckpointProfileRevision; }
+
     void RequestProfileSave();
 
     /** Prevents fallback state from overwriting an existing unreadable profile slot. */
@@ -237,6 +243,10 @@ private:
     /** Server-only key; never accepted directly from a client RPC. */
     FString PersistentProfileId;
     bool bProfilePersistenceEnabled = true;
+
+    /** Backend-issued opaque checkpoint identity; intentionally transient and server-only. */
+    FString CheckpointParticipantKey;
+    int64 CheckpointProfileRevision = INDEX_NONE;
 
     /** Server-only idempotency ledger; saved with the progression snapshot, not replicated. */
     TArray<FName> ProcessedTransactionIds;
