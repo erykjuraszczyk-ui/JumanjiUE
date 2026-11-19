@@ -271,6 +271,16 @@ bool UJumanjiWorldEncounterSessionSubsystem::TryRejoinPlayer(
     {
         OutFeedbackState.Outcome = EJumanjiEncounterReconnectOutcome::GraceWindowExpired;
         OutFeedbackState.EncounterId = ActiveEncounterId;
+        if (const UGameInstance* GameInstance = GetGameInstance())
+        {
+            if (const UWorld* World = GameInstance->GetWorld())
+            {
+                if (const AJumanjiGameState* GameState = World->GetGameState<AJumanjiGameState>())
+                {
+                    OutFeedbackState.Phase = GameState->GetWorldEncounterState().Phase;
+                }
+            }
+        }
         StoreFeedbackRevision(OutFeedbackState);
 
         DisconnectedAtUtc.Remove(ProfileId);
@@ -303,8 +313,12 @@ bool UJumanjiWorldEncounterSessionSubsystem::TryRejoinPlayer(
         OutFeedbackState.Outcome = EJumanjiEncounterReconnectOutcome::EncounterEnded;
         OutFeedbackState.EncounterId = ActiveEncounterId;
         OutFeedbackState.Phase = EncounterState.Phase;
+        const FName EndedEncounterId = ActiveEncounterId;
+        EndEncounterSession(EndedEncounterId);
+        RecentlyEndedEncounterIds.Remove(ProfileId);
+        RecentlyEndedAtUtc.Remove(ProfileId);
+        RecentlyEndedPhases.Remove(ProfileId);
         StoreFeedbackRevision(OutFeedbackState);
-        EndEncounterSession(ActiveEncounterId);
         return false;
     }
 
