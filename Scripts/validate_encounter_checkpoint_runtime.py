@@ -50,7 +50,7 @@ REQUIRED: dict[str, tuple[str, ...]] = {
         "CHECKPOINT_REWARD_RECEIPT_MISMATCH",
         "PendingLedgerCheck",
         "StagedRestoreCandidate = MoveTemp(Candidate)",
-        "the trusted service has already revalidated the stored envelope",
+        "trusted service has already revalidated the stored envelope",
         "bCheckpointWriteBlockedUntilResync",
     ),
     "Source/JumanjiUE/Public/JumanjiWorldEncounterSessionSubsystem.h": (
