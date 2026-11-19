@@ -6,6 +6,7 @@ This check does not compile Unreal C++, run UHT, start a backend or perform PIE.
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 from pathlib import Path
 
@@ -204,12 +205,13 @@ def validate_project(root: Path) -> list[str]:
 
     director_header = sources["Source/JumanjiUE/Public/JumanjiWorldEncounterDirector.h"]
     for name in ("BeginCheckpointRestore", "MaterializeCheckpointRestore"):
-        function_position = director_header.find(f"bool {name}")
-        if function_position < 0:
+        if f"bool {name}" not in director_header:
             errors.append(f"{name} declaration is missing")
-            continue
-        previous_declaration_end = director_header.rfind(";", 0, function_position)
-        if "UFUNCTION" in director_header[previous_declaration_end + 1:function_position]:
+        reflected_declaration = re.search(
+            rf"UFUNCTION\\s*\\([^)]*\\)\\s*bool\\s+{re.escape(name)}\\s*\\(",
+            director_header,
+        )
+        if reflected_declaration:
             errors.append(f"{name} must remain a native server-only API, not a Blueprint/RPC entry point")
 
     runtime = sources["Source/JumanjiUE/Private/JumanjiEncounterCheckpointRuntimeSubsystem.cpp"]
