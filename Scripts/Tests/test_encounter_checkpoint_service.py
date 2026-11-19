@@ -188,6 +188,42 @@ class EncounterCheckpointBackendTests(unittest.TestCase):
             urlopen(request, timeout=3)
         self.assertEqual(error.exception.code, 401)
 
+    def test_integral_json_numbers_from_unreal_are_accepted(self) -> None:
+        acquired = self.backend.acquire_lease(
+            "ENCOUNTER_JSON_NUMBER_TTL",
+            {**self.identity, "ttlSeconds": 45.0},
+        )
+        self.assertGreaterEqual(acquired["authorityEpoch"], 1)
+
+        write_request = self.make_write_request(self.make_payload())
+        write_request["authorityEpoch"] = float(self.lease["authorityEpoch"])
+        write_request["expectedSequence"] = 0.0
+        written = self.backend.write_checkpoint(ENCOUNTER_ID, write_request)
+        self.assertEqual(written["checkpointSequence"], 1)
+
+        renew_request = {
+            **self.identity,
+            "leaseToken": self.lease["leaseToken"],
+            "authorityEpoch": float(self.lease["authorityEpoch"]),
+            "ttlSeconds": 45.0,
+        }
+        renewed = self.backend.renew_lease(ENCOUNTER_ID, renew_request)
+        self.assertEqual(renewed["authorityEpoch"], self.lease["authorityEpoch"])
+
+    def test_fractional_json_numbers_are_rejected_for_integer_fields(self) -> None:
+        with self.assertRaises(CheckpointServiceError) as ttl_error:
+            self.backend.acquire_lease(
+                "ENCOUNTER_FRACTIONAL_TTL",
+                {**self.identity, "ttlSeconds": 45.5},
+            )
+        self.assertEqual(ttl_error.exception.code, "INVALID_LEASE_TTL")
+
+        request = self.make_read_request()
+        request["authorityEpoch"] = float(self.lease["authorityEpoch"]) + 0.5
+        with self.assertRaises(CheckpointServiceError) as epoch_error:
+            self.backend.read_checkpoint(ENCOUNTER_ID, request)
+        self.assertEqual(epoch_error.exception.code, "INVALID_AUTHORITY_EPOCH")
+
     def test_lease_ttl_is_bounded(self) -> None:
         with self.assertRaises(CheckpointServiceError) as error:
             self.backend.acquire_lease(
