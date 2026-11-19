@@ -441,7 +441,8 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::ValidateCaptureInput(
     {
     case EJumanjiWorldEncounterPhase::Trials:
         if (Input.CurrentWave != 0 || Input.TotalWaves < 1
-            || !Input.CompletedObjectiveIds.Num() || !Input.CompletedTrialIds.Num())
+            || !Input.bNoActiveEnemies
+            || Input.CompletedObjectiveIds.IsEmpty() || Input.CompletedTrialIds.IsEmpty())
         {
             return Fail(TEXT("TRIAL_BARRIER_INVALID"), TEXT("Trial boundary requires committed chapter progress and currentWave=0."));
         }
@@ -449,7 +450,7 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::ValidateCaptureInput(
 
     case EJumanjiWorldEncounterPhase::Combat:
         if (Input.CurrentWave < 1 || Input.TotalWaves < Input.CurrentWave
-            || !Input.bNoPendingSpawn)
+            || !Input.bNoPendingSpawn || !Input.bNoActiveEnemies)
         {
             return Fail(TEXT("WAVE_BARRIER_INVALID"), TEXT("Wave boundary requires a completed wave and no pending spawn."));
         }
@@ -470,7 +471,7 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::ValidateCaptureInput(
         break;
 
     case EJumanjiWorldEncounterPhase::Reward:
-        if (!Input.bRewardTransactionStable
+        if (!Input.bNoActiveEnemies || !Input.bRewardTransactionStable
             || Input.RewardDefinitionId.IsNone()
             || Input.RewardTransactionId.IsNone()
             || !IsStableContentId(Input.RewardDefinitionId.ToString())
@@ -517,9 +518,9 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::BuildCheckpointPayload(
 
     TSharedRef<FJsonObject> Payload = MakeObject();
     Payload->SetNumberField(TEXT("schemaVersion"), 1);
-    Payload->SetStringField(TEXT("checkpointId"), FGuid::NewGuid().ToString(EGuidFormats::DigitsWithHyphensLower));
+    Payload->SetStringField(TEXT("checkpointId"), FGuid::NewGuid().ToString(EGuidFormats::DigitsWithHyphens));
     Payload->SetStringField(TEXT("encounterId"), Input.EncounterId.ToString());
-    Payload->SetStringField(TEXT("sessionId"), Input.SessionId.ToString(EGuidFormats::DigitsWithHyphensLower));
+    Payload->SetStringField(TEXT("sessionId"), Input.SessionId.ToString(EGuidFormats::DigitsWithHyphens));
     Payload->SetNumberField(TEXT("checkpointSequence"), static_cast<double>(Sequence));
 
     const FDateTime Now = FDateTime::UtcNow();
