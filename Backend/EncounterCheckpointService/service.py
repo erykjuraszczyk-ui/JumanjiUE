@@ -54,6 +54,15 @@ def _parse_utc_epoch(value: str) -> float:
     return datetime.fromisoformat(value.replace("Z", "+00:00")).timestamp()
 
 
+def _as_integral_number(value: object) -> int | None:
+    # Unreal FJsonObject stores numeric values as doubles; accept 7.0 but never 7.25 or bool.
+    if type(value) is int:
+        return value
+    if type(value) is float and math.isfinite(value) and value.is_integer():
+        return int(value)
+    return None
+
+
 def _json_bytes(value: object) -> bytes:
     return json.dumps(value, ensure_ascii=False, separators=(",", ":"), allow_nan=False).encode("utf-8")
 
@@ -144,21 +153,22 @@ class EncounterCheckpointBackend:
 
     @staticmethod
     def _validate_ttl(value: object) -> int:
-        if type(value) is not int or not MIN_LEASE_SECONDS <= value <= MAX_LEASE_SECONDS:
+        normalized = _as_integral_number(value)
+        if normalized is None or not MIN_LEASE_SECONDS <= normalized <= MAX_LEASE_SECONDS:
             raise CheckpointServiceError(
                 400,
                 "INVALID_LEASE_TTL",
-                f"ttlSeconds must be between {MIN_LEASE_SECONDS} and {MAX_LEASE_SECONDS}",
+                f"ttlSeconds must be an integer from {MIN_LEASE_SECONDS} to {MAX_LEASE_SECONDS}",
             )
-        return value
+        return normalized
 
     @staticmethod
     def _validate_lease_fields(body: dict[str, Any]) -> tuple[str, int]:
         token = body.get("leaseToken")
-        epoch = body.get("authorityEpoch")
+        epoch = _as_integral_number(body.get("authorityEpoch"))
         if not isinstance(token, str) or len(token) < 32 or len(token) > 256:
             raise CheckpointServiceError(400, "INVALID_LEASE_TOKEN", "leaseToken has an invalid format")
-        if type(epoch) is not int or epoch < 1:
+        if epoch is None or epoch < 1:
             raise CheckpointServiceError(400, "INVALID_AUTHORITY_EPOCH", "authorityEpoch must be a positive integer")
         return token, epoch
 
@@ -320,8 +330,8 @@ class EncounterCheckpointBackend:
         )
         server_id, shard_id = self._validate_server_identity(body["serverInstanceId"], body["shardId"])
         token, epoch = self._validate_lease_fields(body)
-        expected = body["expectedSequence"]
-        if type(expected) is not int or expected < 0:
+        expected = _as_integral_number(body["expectedSequence"])
+        if expected is None or expected < 0:
             raise CheckpointServiceError(400, "INVALID_SEQUENCE", "expectedSequence must be a non-negative integer")
 
         payload = body["payload"]
