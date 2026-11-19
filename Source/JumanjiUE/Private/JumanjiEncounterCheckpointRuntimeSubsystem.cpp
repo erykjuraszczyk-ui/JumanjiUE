@@ -213,7 +213,10 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::BeginEncounterCheckpointSessio
         || EncounterId.IsNone()
         || EncounterId.ToString().Len() > 64
         || bLeaseAcquiring
-        || (bLeaseReady && ActiveEncounterId == EncounterId))
+        || bLeaseReady
+        || bWriteInFlight
+        || bReadInFlight
+        || !ActiveEncounterId.IsNone())
     {
         return false;
     }
@@ -238,6 +241,7 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::BeginEncounterCheckpointSessio
     if (!BackendSubsystem)
     {
         UE_LOG(LogTemp, Warning, TEXT("JUMANJI checkpoint: backend adapter is unavailable."));
+        ClearLeaseState();
         return false;
     }
 
@@ -251,7 +255,7 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::BeginEncounterCheckpointSessio
 
     if (!bStarted)
     {
-        bLeaseAcquiring = false;
+        ClearLeaseState();
     }
     return bStarted;
 }
@@ -837,9 +841,24 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::BeginRestoreStaging(
     if (!IsServerRuntime()
         || !IsValid(EncounterDirector)
         || !EncounterDirector->HasAuthority()
+        || EncounterDirector->GetEncounterId().IsNone()
         || bLeaseAcquiring
+        || bLeaseReady
+        || bWriteInFlight
         || bReadInFlight
+        || !ActiveEncounterId.IsNone()
         || !BackendSubsystem)
+    {
+        return false;
+    }
+
+    const UWorld* World = GetWorld();
+    const AJumanjiGameState* GameState = World
+        ? World->GetGameState<AJumanjiGameState>()
+        : nullptr;
+    if (!GameState
+        || (GameState->GetWorldEncounterState().Phase != EJumanjiWorldEncounterPhase::Inactive
+            && GameState->GetWorldEncounterState().Phase != EJumanjiWorldEncounterPhase::Failed))
     {
         return false;
     }
