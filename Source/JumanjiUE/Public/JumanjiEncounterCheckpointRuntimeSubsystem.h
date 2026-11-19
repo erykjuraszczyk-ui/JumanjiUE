@@ -7,8 +7,6 @@
 
 class UJumanjiEncounterCheckpointBackendSubsystem;
 
-class UJumanjiEncounterCheckpointBackendSubsystem;
-
 /**
  * Server-only logical snapshot builder and private restore staging service.
  *
@@ -82,6 +80,7 @@ private:
     int64 LastCheckpointSequence = 0;
     bool bLeaseReady = false;
     bool bLeaseRequestPending = false;
+    bool bCaptureRequestPending = false;
 
     TFunction<bool(const FString&, int64)> ParticipantRevisionValidator;
 
