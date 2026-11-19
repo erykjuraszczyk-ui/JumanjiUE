@@ -232,6 +232,75 @@ bool AJumanjiAdventureChapterDirector::ResetChapterForEncounterRetry(FName Encou
     );
 }
 
+bool AJumanjiAdventureChapterDirector::BuildCheckpointProgress(
+    TArray<FName>& OutCompletedObjectiveIds,
+    TArray<FName>& OutCompletedTrialIds,
+    int32& OutChapterRevision) const
+{
+    OutCompletedObjectiveIds.Reset();
+    OutCompletedTrialIds.Reset();
+    OutChapterRevision = 0;
+
+    const UWorld* World = GetWorld();
+    const AJumanjiGameState* BoardGameState = World
+        ? World->GetGameState<AJumanjiGameState>()
+        : nullptr;
+    if (!HasAuthority() || !BoardGameState
+        || BoardGameState->GetAdventureChapterState().ChapterId != ChapterId
+        || BoardGameState->GetAdventureChapterState().Phase != EJumanjiAdventureChapterPhase::Completed
+        || ChapterObjectives.IsEmpty()
+        || ChapterObjectives.Num() != TrialActors.Num())
+    {
+        return false;
+    }
+
+    const TArray<FJumanjiAdventureObjectiveState> Objectives =
+        BoardGameState->GetAdventureObjectives();
+    TSet<FName> CompletedObjectiveSet;
+    for (const FJumanjiAdventureObjectiveState& Objective : Objectives)
+    {
+        if (Objective.bCompleted)
+        {
+            CompletedObjectiveSet.Add(Objective.ObjectiveId);
+        }
+    }
+
+    for (const FJumanjiAdventureObjectiveState& RequiredObjective : ChapterObjectives)
+    {
+        if (!CompletedObjectiveSet.Contains(RequiredObjective.ObjectiveId))
+        {
+            return false;
+        }
+        OutCompletedObjectiveIds.Add(RequiredObjective.ObjectiveId);
+    }
+
+    TSet<FName> CompletedTrialSet;
+    for (const AJumanjiTrialActor* TrialActor : TrialActors)
+    {
+        if (!IsValid(TrialActor)
+            || TrialActor->GetTrialState() != EJumanjiTrialState::Completed
+            || TrialActor->GetObjectiveId().IsNone()
+            || CompletedTrialSet.Contains(TrialActor->GetObjectiveId()))
+        {
+            OutCompletedObjectiveIds.Reset();
+            return false;
+        }
+        CompletedTrialSet.Add(TrialActor->GetObjectiveId());
+        OutCompletedTrialIds.Add(TrialActor->GetObjectiveId());
+    }
+
+    if (OutCompletedObjectiveIds.Num() != ChapterObjectives.Num()
+        || OutCompletedTrialIds.Num() != TrialActors.Num())
+    {
+        OutCompletedObjectiveIds.Reset();
+        OutCompletedTrialIds.Reset();
+        return false;
+    }
+
+    OutChapterRevision = BoardGameState->GetAdventureChapterState().Revision;
+    return OutChapterRevision > 0;
+}
+
 bool AJumanjiAdventureChapterDirector::IsChapterComplete() const
 {
     const UWorld* World = GetWorld();
