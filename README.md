@@ -35,6 +35,7 @@ Open-world third-person adventure RPG prototype with a shared-world direction an
 - Stage 29 — Encounter Replay & Recovery: server-only retry of a matching Failed encounter, Living Board trial/objective reset, cleanup of all encounter-spawned actors and preservation of persistent profile/economy receipts.
 - Stage 30 — Encounter Session Persistence & Reconnect Recovery: in-memory same-server participant registry, bounded reconnect grace window, profile-restored rejoin validation and transient PlayerState reconnect notice.
 - Stage 31 — Encounter Reconnect UX & Session QA: replicated success/expired/ended feedback, a non-persistent local HUD banner contract, bounded terminal notices and a 13-scenario network QA matrix.
+- Stage 32 — Encounter Session Checkpoint Contract & Server Recovery Design: strict versioned checkpoint envelope, signed logical payload contract, safe recovery barriers, anti-rollback/fencing requirements and recovery QA matrix; no backend or runtime resume is claimed.
 
 ## The nine playable Great Spirits
 1. Great Spirit I — Duch Korzeni (Root / Guardian)
@@ -100,6 +101,7 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - Docs/STAGE_29_ENCOUNTER_REPLAY_RECOVERY.md — failed encounter retry, session-only chapter/trial reset, encounter-owned actor cleanup, profile/economy invariants and QA workflow.
 - Docs/STAGE_30_ENCOUNTER_SESSION_RECONNECT_RECOVERY.md — same-server disconnect/reconnect lifecycle, grace window, transient PlayerState notice, profile separation and QA checklist.
 - Docs/STAGE_31_ENCOUNTER_RECONNECT_UX_SESSION_QA.md — reconnect success/expired/ended outcomes, UMG banner wiring, bounded terminal notice retention and multiplayer/Android QA.
+- Docs/STAGE_32_ENCOUNTER_SESSION_CHECKPOINT_CONTRACT.md — versioned checkpoint schema, safe-point rules, Ed25519 envelope, identity/privacy boundaries, anti-rollback lease design and recovery acceptance matrix.
 - Data/Encounter/EncounterReconnectSessionQAMatrix.csv — 13 reconnect outcome and network interruption scenarios.
 - Scripts/validate_emerald_jungle_encounter_reconnect.py — Stage 30 server reconnect source validator.
 - Scripts/validate_emerald_jungle_encounter_reconnect_ux.py — Stage 31 reconnect UX contract and QA matrix validator.
