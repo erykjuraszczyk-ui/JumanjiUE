@@ -495,7 +495,15 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::BuildPayloadJson(
             && GameState->GetActiveBoardEventId() == ChapterDirector->GetBoardEventId())
         : !GameState->IsBoardEventActive();
 
-    if (EncounterState.EncounterId != ActiveEncounterId
+    if (!JumanjiCheckpointRuntime::IsStableId(ActiveEncounterId.ToString(), 96)
+        || !JumanjiCheckpointRuntime::IsStableId(ChapterState.ChapterId.ToString(), 96)
+        || !JumanjiCheckpointRuntime::IsStableId(ChapterState.BoardEventId.ToString(), 96)
+        || EncounterState.Revision < 1
+        || ChapterState.Revision < 1
+        || EncounterState.TotalWaves != EncounterDirector->GetTotalWaveCount()
+        || EncounterState.TotalWaves < 1
+        || EncounterState.TotalWaves > 100
+        || EncounterState.EncounterId != ActiveEncounterId
         || ChapterState.ChapterId != ChapterDirector->GetChapterId()
         || ChapterState.BoardEventId != ChapterDirector->GetBoardEventId()
         || !bExpectedChapterPhase
@@ -562,7 +570,8 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::BuildPayloadJson(
     {
         if (Objective.bCompleted)
         {
-            if (!ConfiguredObjectives.Contains(Objective.ObjectiveId))
+            if (!ConfiguredObjectives.Contains(Objective.ObjectiveId)
+                || !JumanjiCheckpointRuntime::IsStableId(Objective.ObjectiveId.ToString(), 96))
             {
                 OutError = TEXT("CHECKPOINT_OBJECTIVE_ID_NOT_ALLOWLISTED");
                 return false;
@@ -574,7 +583,8 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::BuildPayloadJson(
     TArray<FString> CompletedTrialNames;
     for (const FName TrialId : CompletedTrialIds)
     {
-        if (!ConfiguredTrials.Contains(TrialId))
+        if (!ConfiguredTrials.Contains(TrialId)
+            || !JumanjiCheckpointRuntime::IsStableId(TrialId.ToString(), 96))
         {
             OutError = TEXT("CHECKPOINT_TRIAL_ID_NOT_ALLOWLISTED");
             return false;
@@ -725,8 +735,13 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::BuildPayloadJson(
         SeenParticipantKeys.Add(ParticipantKey);
         TSharedRef<FJsonObject> Participant = MakeShared<FJsonObject>();
         Participant->SetStringField(TEXT("participantKey"), ParticipantKey);
-        Participant->SetNumberField(TEXT("profileRevision"),
-            PlayerState->GetProgressionState().Revision);
+        const int32 ProfileRevision = PlayerState->GetProgressionState().Revision;
+        if (ProfileRevision < 0)
+        {
+            OutError = TEXT("CHECKPOINT_PROFILE_REVISION_INVALID");
+            return false;
+        }
+        Participant->SetNumberField(TEXT("profileRevision"), ProfileRevision);
         ParticipantValues.Add(MakeShared<FJsonValueObject>(Participant));
     }
     Payload->SetArrayField(TEXT("participants"), ParticipantValues);
@@ -808,6 +823,10 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::CaptureSafePoint(
     {
         bWriteInFlight = false;
         bCheckpointWriteBlockedUntilResync = true;
+        if (bReleaseLeaseWhenIdle)
+        {
+            EndEncounterCheckpointSession(ActiveEncounterId);
+        }
     }
     return bStarted;
 }
@@ -1039,6 +1058,7 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::StageVerifiedBackendResponse(
         || PreviousEpoch < 1
         || PreviousEpoch >= AuthorityEpoch
         || !JumanjiCheckpointRuntime::IsSafeServerValue(PreviousServerId, 96)
+        || !JumanjiCheckpointRuntime::IsSafeServerValue(PreviousShardId, 96)
         || PreviousShardId != ShardId
         || PreviousBuildId != BuildId
         || PreviousRuleset != RulesetVersion
