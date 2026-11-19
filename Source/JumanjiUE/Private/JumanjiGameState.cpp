@@ -216,6 +216,132 @@ bool AJumanjiGameState::SetWorldEncounterBoss(
     return true;
 }
 
+
+bool AJumanjiGameState::ApplyEncounterCheckpointRestore(
+    FName EncounterId,
+    int32 TotalWaves,
+    EJumanjiWorldEncounterPhase Phase,
+    int32 CurrentWave,
+    int32 ActiveEnemyCount,
+    AJumanjiBossCharacter* BossActor,
+    FName ChapterId,
+    FName BoardEventId,
+    const FText& ChapterTitle,
+    const FText& ChapterDescription,
+    const TArray<FJumanjiAdventureObjectiveState>& RestoredObjectives,
+    int32 RestoredEncounterRevision,
+    int32 RestoredChapterRevision)
+{
+    if (!HasAuthority()
+        || EncounterId.IsNone()
+        || ChapterId.IsNone()
+        || BoardEventId.IsNone()
+        || ChapterTitle.IsEmpty()
+        || ChapterDescription.IsEmpty()
+        || TotalWaves < 1
+        || TotalWaves > 16
+        || RestoredObjectives.IsEmpty()
+        || RestoredObjectives.Num() > MaxAdventureObjectives
+        || RestoredEncounterRevision < 1
+        || RestoredChapterRevision < 1
+        || (WorldEncounterState.Phase != EJumanjiWorldEncounterPhase::Inactive
+            && !(WorldEncounterState.Phase == EJumanjiWorldEncounterPhase::Failed
+                && WorldEncounterState.EncounterId == EncounterId))
+        || bBoardEventActive
+        || (AdventureChapterState.Phase == EJumanjiAdventureChapterPhase::Active
+            && WorldEncounterState.Phase != EJumanjiWorldEncounterPhase::Failed))
+    {
+        return false;
+    }
+
+    const bool bTrials = Phase == EJumanjiWorldEncounterPhase::Trials;
+    const bool bCombat = Phase == EJumanjiWorldEncounterPhase::Combat;
+    const bool bBoss = Phase == EJumanjiWorldEncounterPhase::Boss;
+    const bool bCompleted = Phase == EJumanjiWorldEncounterPhase::Completed;
+    if ((!bTrials && !bCombat && !bBoss && !bCompleted)
+        || (bTrials && (CurrentWave != 0 || ActiveEnemyCount != 0 || BossActor != nullptr))
+        || (bCombat && (CurrentWave < 1 || CurrentWave > TotalWaves
+            || ActiveEnemyCount < 1 || ActiveEnemyCount > 64 || BossActor != nullptr))
+        || (bBoss && (CurrentWave != 0 || ActiveEnemyCount != 1
+            || !IsValid(BossActor) || BossActor->GetWorld() != GetWorld()))
+        || (bCompleted && (CurrentWave != 0 || ActiveEnemyCount != 0 || BossActor != nullptr)))
+    {
+        return false;
+    }
+
+    TSet<FName> SeenObjectiveIds;
+    bool bAllObjectivesComplete = true;
+    FJumanjiAdventureObjectiveSet NewObjectiveSet;
+    NewObjectiveSet.Objectives.Reserve(RestoredObjectives.Num());
+    for (const FJumanjiAdventureObjectiveState& Objective : RestoredObjectives)
+    {
+        if (Objective.ObjectiveId.IsNone()
+            || Objective.DisplayName.IsEmpty()
+            || Objective.RequiredProgress < 1
+            || Objective.RequiredProgress > MaxObjectiveProgress
+            || Objective.CurrentProgress < 0
+            || Objective.CurrentProgress > Objective.RequiredProgress
+            || Objective.bCompleted != (Objective.CurrentProgress == Objective.RequiredProgress)
+            || SeenObjectiveIds.Contains(Objective.ObjectiveId))
+        {
+            return false;
+        }
+
+        SeenObjectiveIds.Add(Objective.ObjectiveId);
+        bAllObjectivesComplete &= Objective.bCompleted;
+        NewObjectiveSet.Objectives.Add(Objective);
+    }
+
+    if ((bTrials && bAllObjectivesComplete)
+        || ((bCombat || bBoss || bCompleted) && !bAllObjectivesComplete))
+    {
+        return false;
+    }
+
+    FJumanjiAdventureChapterState NewChapterState;
+    NewChapterState.ChapterId = ChapterId;
+    NewChapterState.BoardEventId = BoardEventId;
+    NewChapterState.DisplayName = ChapterTitle;
+    NewChapterState.Description = ChapterDescription;
+    NewChapterState.Phase = bTrials
+        ? EJumanjiAdventureChapterPhase::Active
+        : EJumanjiAdventureChapterPhase::Completed;
+    NewChapterState.Revision = FMath::Max(
+        AdventureChapterState.Revision < MAX_int32 ? AdventureChapterState.Revision + 1 : 1,
+        RestoredChapterRevision);
+
+    NewObjectiveSet.Revision = FMath::Max(
+        AdventureObjectiveSet.Revision < MAX_int32 ? AdventureObjectiveSet.Revision + 1 : 1,
+        RestoredChapterRevision);
+
+    FJumanjiWorldEncounterState NewEncounterState;
+    NewEncounterState.EncounterId = EncounterId;
+    NewEncounterState.Phase = Phase;
+    NewEncounterState.CurrentWave = CurrentWave;
+    NewEncounterState.TotalWaves = TotalWaves;
+    NewEncounterState.ActiveEnemyCount = ActiveEnemyCount;
+    NewEncounterState.BossActor = BossActor;
+    NewEncounterState.Revision = FMath::Max(
+        WorldEncounterState.Revision < MAX_int32 ? WorldEncounterState.Revision + 1 : 1,
+        RestoredEncounterRevision);
+
+    // Commit all authoritative fields first. Observers run only after the
+    // complete encounter/chapter/board/objective state is present on the server.
+    ActiveBoardEventId = bTrials ? BoardEventId : NAME_None;
+    bBoardEventActive = bTrials;
+    BoardEventRevision = BoardEventRevision < MAX_int32 ? BoardEventRevision + 1 : 1;
+    AdventureChapterState = MoveTemp(NewChapterState);
+    AdventureObjectiveSet = MoveTemp(NewObjectiveSet);
+    WorldEncounterState = MoveTemp(NewEncounterState);
+
+    OnBoardEventStateChanged.Broadcast(ActiveBoardEventId, bBoardEventActive, BoardEventRevision);
+    OnAdventureObjectivesChanged.Broadcast(AdventureObjectiveSet.Revision);
+    OnAdventureChapterChanged.Broadcast(AdventureChapterState);
+    OnWorldEncounterChanged.Broadcast(WorldEncounterState);
+    ForceNetUpdate();
+    return true;
+}
+
 bool AJumanjiGameState::CompleteWorldEncounter(FName EncounterId)
 {
     if (!HasAuthority()
