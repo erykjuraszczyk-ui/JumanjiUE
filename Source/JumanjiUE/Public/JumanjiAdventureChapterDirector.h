@@ -45,6 +45,25 @@ public:
         const TArray<FName>& CompletedObjectiveIds) const;
     bool HasNoTrialsInProgress() const;
 
+    /** Builds an allowlisted objective snapshot from stable trial/objective IDs. */
+    bool BuildCheckpointRestoreObjectives(
+        const TArray<FName>& CompletedTrialIds,
+        const TArray<FName>& CompletedObjectiveIds,
+        TArray<FJumanjiAdventureObjectiveState>& OutObjectives,
+        bool& bOutChapterComplete,
+        FText& OutChapterTitle,
+        FText& OutChapterDescription) const;
+
+    /** Validates and applies only stable logical trial completion state. */
+    bool CanApplyCheckpointTrialStates(
+        const TArray<FName>& CompletedTrialIds,
+        const TArray<FName>& CompletedObjectiveIds) const;
+    bool ApplyCheckpointTrialStates(
+        const TArray<FName>& CompletedTrialIds,
+        const TArray<FName>& CompletedObjectiveIds);
+    void PublishCheckpointTrialStates();
+    bool BindForCheckpointRestoredActiveChapter();
+
 protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "JUMANJI|Adventure")
     FName ChapterId = TEXT("EMERALD_JUNGLE_NINE_SEALS");
