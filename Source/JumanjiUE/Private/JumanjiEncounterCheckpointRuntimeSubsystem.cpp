@@ -942,6 +942,8 @@ void UJumanjiEncounterCheckpointRuntimeSubsystem::HandleCheckpointRead(
     bRestoreStagingRequested = false;
     PendingRestoreDirector.Reset();
 
+    const FName RestoredEncounterId = ActiveEncounterId;
+    const int64 RestoredSequence = LastCommittedSequence;
     FString CommitError;
     if (!CommitStagedRestore(EncounterDirector.Get(), CommitError))
     {
@@ -954,8 +956,8 @@ void UJumanjiEncounterCheckpointRuntimeSubsystem::HandleCheckpointRead(
 
     UE_LOG(LogTemp, Log,
         TEXT("JUMANJI checkpoint restore committed: encounter=%s sequence=%lld."),
-        *ActiveEncounterId.ToString(),
-        LastCommittedSequence);
+        *RestoredEncounterId.ToString(),
+        RestoredSequence);
 }
 
 bool UJumanjiEncounterCheckpointRuntimeSubsystem::CommitStagedRestore(
@@ -1016,6 +1018,7 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::CommitStagedRestore(
         AJumanjiPlayerState* PlayerState = Cast<AJumanjiPlayerState>(BasePlayerState);
         if (!IsValid(PlayerState)
             || !PlayerState->HasAuthority()
+            || !PlayerState->IsProfilePersistenceEnabled()
             || PlayerState->GetPersistentProfileId().IsEmpty())
         {
             continue;
