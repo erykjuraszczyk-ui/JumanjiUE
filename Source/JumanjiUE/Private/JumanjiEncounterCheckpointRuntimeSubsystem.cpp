@@ -437,6 +437,25 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::ValidateCaptureInput(
         ParticipantKeys.Add(Participant.ParticipantKey);
     }
 
+    TSet<FName> SeenObjectives;
+    for (const FName Id : Input.CompletedObjectiveIds)
+    {
+        if (Id.IsNone() || !IsStableContentId(Id.ToString()) || SeenObjectives.Contains(Id))
+        {
+            return Fail(TEXT("CHAPTER_PROGRESS_INVALID"), TEXT("Completed objective IDs must be unique stable content IDs."));
+        }
+        SeenObjectives.Add(Id);
+    }
+    TSet<FName> SeenTrials;
+    for (const FName Id : Input.CompletedTrialIds)
+    {
+        if (Id.IsNone() || !IsStableContentId(Id.ToString()) || SeenTrials.Contains(Id))
+        {
+            return Fail(TEXT("CHAPTER_PROGRESS_INVALID"), TEXT("Completed trial IDs must be unique stable content IDs."));
+        }
+        SeenTrials.Add(Id);
+    }
+
     switch (Input.Phase)
     {
     case EJumanjiWorldEncounterPhase::Trials:
@@ -672,7 +691,7 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::CaptureSafePoint(
 
     if (!bStarted)
     {
-        Complete(Callback, false, TEXT("LEASE_RENEW_NOT_STARTED"), TEXT("Could not start the lease renewal request."));
+        // Backend adapter invokes the supplied callback for local request-start failures.
         return false;
     }
     return true;
@@ -878,9 +897,28 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::ParseAndValidateRestoreEnvelop
 
     TArray<FName> CompletedObjectives, CompletedTrials;
     if (!ReadUniqueNameArray(Chapter, TEXT("completedObjectiveIds"), 64, CompletedObjectives)
-        || !ReadUniqueNameArray(Chapter, TEXT("completedTrialIds"), 9, CompletedTrials))
+        || !ReadUniqueNameArray(Chapter, TEXT("completedTrialIds"), 9, CompletedTrials)
+        || Expectations.AllowedObjectiveIds.IsEmpty()
+        || Expectations.AllowedTrialIds.IsEmpty())
     {
-        return Fail(TEXT("CHAPTER_PROGRESS_INVALID"), TEXT("Completed objective/trial IDs are malformed or duplicated."));
+        return Fail(TEXT("CHAPTER_PROGRESS_INVALID"), TEXT("Completed objective/trial IDs or current content allowlists are invalid."));
+    }
+
+    const TSet<FName> AllowedObjectives(Expectations.AllowedObjectiveIds);
+    const TSet<FName> AllowedTrials(Expectations.AllowedTrialIds);
+    for (const FName Id : CompletedObjectives)
+    {
+        if (!AllowedObjectives.Contains(Id))
+        {
+            return Fail(TEXT("OBJECTIVE_NOT_ALLOWLISTED"), TEXT("Checkpoint contains an objective absent from the current chapter definition."));
+        }
+    }
+    for (const FName Id : CompletedTrials)
+    {
+        if (!AllowedTrials.Contains(Id))
+        {
+            return Fail(TEXT("TRIAL_NOT_ALLOWLISTED"), TEXT("Checkpoint contains a trial absent from the current chapter definition."));
+        }
     }
 
     const TSharedPtr<FJsonObject> Combat = *CombatPtr;
@@ -1016,7 +1054,9 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::ParseAndValidateRestoreEnvelop
             || !ReadString(*RewardPtr, TEXT("status"), Status)
             || Status != TEXT("PendingLedgerCheck")
             || !IsStableContentId(RewardDefinitionId, 96)
-            || !IsStableContentId(TransactionId, 128))
+            || !IsStableContentId(TransactionId, 128)
+            || Expectations.AllowedRewardDefinitionId.IsNone()
+            || RewardDefinitionId != Expectations.AllowedRewardDefinitionId.ToString())
         {
             return Fail(TEXT("REWARD_PREFLIGHT_FAILED"), TEXT("Reward checkpoint lacks an approved stable idempotency reference."));
         }
@@ -1038,6 +1078,8 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::ReadAndStageRestorePlan(
     if (!IsServerRuntime() || !bLeaseReady || Expectations.EncounterId != ActiveEncounterId
         || Expectations.ChapterId.IsNone() || Expectations.BoardEventId.IsNone()
         || Expectations.SpawnSetId.IsNone() || Expectations.BossDefinitionId.IsNone()
+        || Expectations.AllowedRewardDefinitionId.IsNone()
+        || Expectations.AllowedObjectiveIds.IsEmpty() || Expectations.AllowedTrialIds.IsEmpty()
         || Expectations.ServerBuildId.IsEmpty() || Expectations.RulesetVersion.IsEmpty()
         || Expectations.WorldContentVersion.IsEmpty())
     {
