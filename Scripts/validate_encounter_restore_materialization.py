@@ -196,7 +196,12 @@ def validate_project(root: Path) -> list[str]:
 
     director_header = sources["Source/JumanjiUE/Public/JumanjiWorldEncounterDirector.h"]
     for name in ("BeginCheckpointRestore", "MaterializeCheckpointRestore"):
-        if "UFUNCTION" in director_header[max(0, director_header.find(name) - 180):director_header.find(name)]:
+        function_position = director_header.find(f"bool {name}")
+        if function_position < 0:
+            errors.append(f"{name} declaration is missing")
+            continue
+        previous_declaration_end = director_header.rfind(";", 0, function_position)
+        if "UFUNCTION" in director_header[previous_declaration_end + 1:function_position]:
             errors.append(f"{name} must remain a native server-only API, not a Blueprint/RPC entry point")
 
     runtime = sources["Source/JumanjiUE/Private/JumanjiEncounterCheckpointRuntimeSubsystem.cpp"]
@@ -262,9 +267,6 @@ def validate_project(root: Path) -> list[str]:
     )
     if "ActiveSessionId = RestoredSessionId" not in session or "PlayerState->HasAuthority()" not in session:
         errors.append("Restored session must adopt the verified session UUID and accept only server PlayerStates")
-
-    if "UFUNCTION(Server" in director_header if False else False:
-        errors.append("Unreachable")
 
     return errors
 
