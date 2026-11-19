@@ -102,7 +102,7 @@ class EncounterRestoreMaterializationTests(unittest.TestCase):
             source = source.replace(first_assignment, "", 1)
             source = source.replace(
                 "    OnBoardEventStateChanged.Broadcast",
-                first_assignment + "\n    OnBoardEventStateChanged.Broadcast",
+                "    OnBoardEventStateChanged.Broadcast" + "\n" + first_assignment,
                 1,
             )
             path.write_text(source, encoding="utf-8")
