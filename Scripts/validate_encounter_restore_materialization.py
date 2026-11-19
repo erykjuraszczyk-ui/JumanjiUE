@@ -122,7 +122,7 @@ REQUIRED: dict[str, tuple[str, ...]] = {
         "profileRevision",
         "RewardPending",
         "BeginCheckpointRestore",
-        "nie jest gwarancją jednoczesnego otrzymania pakietu",
+        "nie gwarancja jednoczesnego otrzymania pakietu",
         "SQLite WAL",
     ),
 }
