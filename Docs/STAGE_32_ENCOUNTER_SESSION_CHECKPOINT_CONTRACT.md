@@ -12,7 +12,7 @@ Stage 30–31 obsługują wyłącznie ponowne dołączenie do tej samej sesji, k
 - Klient nie może tworzyć, przesyłać, podpisywać, aktualizować ani odtwarzać checkpointu.
 - Profil pozostaje oddzielnym systemem trwałości. Checkpoint zawiera wyłącznie opaque participantKey i rewizję profilu, nigdy surowe ProfileId, tokeny logowania, dane portfela ani ekwipunek.
 - Zaufany backend przechowuje checkpoint i kontroluje monotoniczne sequence, aktywny lease oraz fencing epoch.
-- Podpis Ed25519 obejmuje kanoniczny obiekt payload, a nie kopię payload z polem signature. Przed podpisaniem należy użyć JSON Canonicalization Scheme (RFC 8785). Weryfikacja klucza i podpisu jest obowiązkiem backendu/serwera.
+- Podpis Ed25519 obejmuje kanoniczny envelope z pominiętym wyłącznie polem `integrity.signature`; obejmuje więc `envelopeVersion`, `payload`, `integrity.algorithm` i `integrity.keyId`. Podpis i weryfikator muszą używać identycznej kanonikalizacji JSON według RFC 8785. Weryfikacja klucza i podpisu jest obowiązkiem backendu/serwera.
 - Klucz prywatny nie może znajdować się w kliencie, repozytorium, pliku konfiguracyjnym gry ani w checkpoint payload. W produkcji klucz przechowuje KMS/HSM albo równoważny secret store.
 
 ## 2. Artefakty kontraktu
@@ -24,7 +24,7 @@ Stage 30–31 obsługują wyłącznie ponowne dołączenie do tej samej sesji, k
 - Testy: Scripts/Tests/test_validate_encounter_checkpoint_contract.py.
 - CI: .github/workflows/encounter-checkpoint-contract.yml.
 
-Walidator lokalny sprawdza strukturę, semantykę i fixture. Nie wykonuje kryptograficznej weryfikacji Ed25519 i nie zastępuje backendu.
+JSON Schema zamyka strukturę envelope i typy pól; walidator Python sprawdza dodatkowo reguły między polami, fixture oraz macierz recovery. Żaden z tych testów nie wykonuje kryptograficznej weryfikacji Ed25519 i nie zastępuje backendu.
 
 ## 3. Envelope v1
 
