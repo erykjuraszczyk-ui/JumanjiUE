@@ -39,7 +39,7 @@ class EncounterRestoreMaterializationTests(unittest.TestCase):
             )
             path.write_text(source, encoding="utf-8")
             errors = MODULE.validate_project(root)
-            self.assertTrue(any("profile revision" in error.lower() for error in errors))
+            self.assertTrue(any("CurrentProfileRevision" in error.lower() for error in errors))
 
     def test_reward_ledger_check_is_required(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -62,7 +62,7 @@ class EncounterRestoreMaterializationTests(unittest.TestCase):
             source = path.read_text(encoding="utf-8")
             source = source.replace(
                 "bool BeginCheckpointRestore();",
-                "UFUNCTION(BlueprintCallable)\\n    bool BeginCheckpointRestore();",
+                "UFUNCTION(BlueprintCallable)\n    bool BeginCheckpointRestore();",
                 1,
             )
             path.write_text(source, encoding="utf-8")
@@ -76,7 +76,7 @@ class EncounterRestoreMaterializationTests(unittest.TestCase):
             source = path.read_text(encoding="utf-8")
             source = source.replace(
                 "    if (!GameState->ApplyEncounterCheckpointRestore(",
-                "    for (AJumanjiEnemyCharacter* Enemy : StagedEnemies) { Enemy->SetReplicates(true); }\\n"
+                "    for (AJumanjiEnemyCharacter* Enemy : StagedEnemies) { Enemy->SetReplicates(true); }\n"
                 "    if (!GameState->ApplyEncounterCheckpointRestore(",
                 1,
             )
@@ -93,7 +93,7 @@ class EncounterRestoreMaterializationTests(unittest.TestCase):
             source = source.replace(first_assignment, "", 1)
             source = source.replace(
                 "    OnBoardEventStateChanged.Broadcast",
-                first_assignment + "\\n    OnBoardEventStateChanged.Broadcast",
+                first_assignment + "\n    OnBoardEventStateChanged.Broadcast",
                 1,
             )
             path.write_text(source, encoding="utf-8")
