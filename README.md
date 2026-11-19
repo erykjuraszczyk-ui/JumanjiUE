@@ -36,6 +36,7 @@ Open-world third-person adventure RPG prototype with a shared-world direction an
 - Stage 30 — Encounter Session Persistence & Reconnect Recovery: in-memory same-server participant registry, bounded reconnect grace window, profile-restored rejoin validation and transient PlayerState reconnect notice.
 - Stage 31 — Encounter Reconnect UX & Session QA: replicated success/expired/ended feedback, a non-persistent local HUD banner contract, bounded terminal notices and a 13-scenario network QA matrix.
 - Stage 32 — Encounter Session Checkpoint Contract & Server Recovery Design: strict versioned checkpoint envelope, signed logical payload contract, safe recovery barriers, anti-rollback/fencing requirements and recovery QA matrix; no backend or runtime resume is claimed.
+- Stage 33 — Encounter Checkpoint Backend Adapter & Lease Service Prototype: trusted server-to-server checkpoint API, Ed25519/RFC 8785 signatures, SQLite CAS/lease fencing, server-only Unreal HTTP adapter and concurrency/security tests; no live-world snapshot builder or runtime restore is claimed.
 
 ## The nine playable Great Spirits
 1. Great Spirit I — Duch Korzeni (Root / Guardian)
@@ -102,6 +103,9 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - Docs/STAGE_30_ENCOUNTER_SESSION_RECONNECT_RECOVERY.md — same-server disconnect/reconnect lifecycle, grace window, transient PlayerState notice, profile separation and QA checklist.
 - Docs/STAGE_31_ENCOUNTER_RECONNECT_UX_SESSION_QA.md — reconnect success/expired/ended outcomes, UMG banner wiring, bounded terminal notice retention and multiplayer/Android QA.
 - Docs/STAGE_32_ENCOUNTER_SESSION_CHECKPOINT_CONTRACT.md — versioned checkpoint schema, safe-point rules, Ed25519 envelope, identity/privacy boundaries, anti-rollback lease design and recovery acceptance matrix.
+- Docs/STAGE_33_ENCOUNTER_CHECKPOINT_BACKEND_LEASE_SERVICE.md — trusted backend, lease/CAS/fencing, Ed25519 signing, Unreal adapter, local runbook and limitations.
+- Backend/EncounterCheckpointService/README.md — local checkpoint backend setup and server environment.
+- Scripts/validate_encounter_checkpoint_backend.py — Stage 33 backend integration contract validator.
 - Data/Encounter/EncounterReconnectSessionQAMatrix.csv — 13 reconnect outcome and network interruption scenarios.
 - Scripts/validate_emerald_jungle_encounter_reconnect.py — Stage 30 server reconnect source validator.
 - Scripts/validate_emerald_jungle_encounter_reconnect_ux.py — Stage 31 reconnect UX contract and QA matrix validator.
@@ -223,6 +227,10 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - transient replicated PlayerState reconnect notice and Encounter HUD Blueprint callback;
 - session registry cleanup on encounter completion, failure, director EndPlay and start rollback;
 - static source validator, unit tests and GitHub Actions quality gate for same-server reconnect (Stage 30).
+
+- UJumanjiEncounterCheckpointBackendSubsystem native-only async HTTP adapter; client net mode is rejected and server credentials/identity are read from process environment.
+- Trusted Python checkpoint service prototype with Ed25519/RFC 8785 signing, signature verification, bounded leases, monotonically increasing fencing epoch and SQLite compare-and-swap.
+- Checkpoint backend unit tests for concurrency, lease fencing, stale sequence, signature tampering and server authentication; Stage 33 GitHub Actions workflow.
 
 ## Not yet included
 This is a source-code foundation, not a finished game or installable Android build. The repository still needs:

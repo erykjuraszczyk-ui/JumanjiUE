@@ -72,7 +72,17 @@ def _exact_keys(value: object, required: set[str], optional: set[str] | None = N
 
 
 def _is_int(value: object) -> bool:
-    return type(value) is int
+    if type(value) is int:
+        return True
+    # RFC 8259 permits JSON number formatting such as 1.0; Draft 2020-12
+    # treats it as an integer when its mathematical value is integral.
+    # Bound float inputs to IEEE-754's exact integer range to avoid rounded IDs.
+    return (
+        type(value) is float
+        and math.isfinite(value)
+        and value.is_integer()
+        and abs(value) <= 9007199254740991
+    )
 
 
 def _is_finite_number(value: object) -> bool:
