@@ -132,6 +132,15 @@ struct FJumanjiEncounterCheckpointRestoreExpectations
     FName BossDefinitionId = NAME_None;
 
     UPROPERTY()
+    FName AllowedRewardDefinitionId = NAME_None;
+
+    UPROPERTY()
+    TArray<FName> AllowedObjectiveIds;
+
+    UPROPERTY()
+    TArray<FName> AllowedTrialIds;
+
+    UPROPERTY()
     FString ServerBuildId;
 
     UPROPERTY()
