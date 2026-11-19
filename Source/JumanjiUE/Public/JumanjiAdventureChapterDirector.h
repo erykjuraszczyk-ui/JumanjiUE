@@ -39,6 +39,7 @@ public:
     TArray<FName> GetConfiguredObjectiveIds() const;
     TArray<FName> GetConfiguredTrialIds() const;
     TArray<FName> GetCompletedTrialIds() const;
+    bool HasNoTrialsInProgress() const;
 
 protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "JUMANJI|Adventure")
