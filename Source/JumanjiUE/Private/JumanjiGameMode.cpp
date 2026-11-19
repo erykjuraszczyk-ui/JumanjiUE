@@ -122,34 +122,36 @@ void AJumanjiGameMode::PostLogin(APlayerController* NewPlayer)
                 FeedbackState
             );
 
-            if (bRejoined
-                && JumanjiPlayerState->SetEncounterReconnectState(ReconnectState))
+            if (bRejoined)
             {
-                FeedbackState.Outcome = EJumanjiEncounterReconnectOutcome::Reconnected;
-                JumanjiPlayerState->SetEncounterReconnectFeedback(FeedbackState);
-
-                UE_LOG(LogTemp, Log,
-                    TEXT("JUMANJI encounter: profile '%s' rejoined encounter '%s' at revision %d."),
-                    *ProfileId,
-                    *ReconnectState.EncounterId.ToString(),
-                    ReconnectState.EncounterRevision);
-
-                // If the participant reconnects during Reward, the director may
-                // already have iterated GameState::PlayerArray. Use the same
-                // idempotent completion transaction to catch up this profile.
-                if (ReconnectState.Phase == EJumanjiWorldEncounterPhase::Reward)
+                if (JumanjiPlayerState->SetEncounterReconnectState(ReconnectState))
                 {
-                    if (UJumanjiProgressionRewardSubsystem* RewardSubsystem =
-                        GameInstance->GetSubsystem<UJumanjiProgressionRewardSubsystem>())
+                    FeedbackState.Outcome = EJumanjiEncounterReconnectOutcome::Reconnected;
+                    JumanjiPlayerState->SetEncounterReconnectFeedback(FeedbackState);
+
+                    UE_LOG(LogTemp, Log,
+                        TEXT("JUMANJI encounter: profile '%s' rejoined encounter '%s' at revision %d."),
+                        *ProfileId,
+                        *ReconnectState.EncounterId.ToString(),
+                        ReconnectState.EncounterRevision);
+
+                    // If the participant reconnects during Reward, the director may
+                    // already have iterated GameState::PlayerArray. Use the same
+                    // idempotent completion transaction to catch up this profile.
+                    if (ReconnectState.Phase == EJumanjiWorldEncounterPhase::Reward)
                     {
-                        if (!RewardSubsystem->GrantWorldEncounterCompletionReward(
-                            JumanjiPlayerState,
-                            ReconnectState.EncounterId))
+                        if (UJumanjiProgressionRewardSubsystem* RewardSubsystem =
+                            GameInstance->GetSubsystem<UJumanjiProgressionRewardSubsystem>())
                         {
-                            UE_LOG(LogTemp, Warning,
-                                TEXT("JUMANJI encounter: reconnect reward was not applied for profile '%s' in encounter '%s'."),
-                                *ProfileId,
-                                *ReconnectState.EncounterId.ToString());
+                            if (!RewardSubsystem->GrantWorldEncounterCompletionReward(
+                                JumanjiPlayerState,
+                                ReconnectState.EncounterId))
+                            {
+                                UE_LOG(LogTemp, Warning,
+                                    TEXT("JUMANJI encounter: reconnect reward was not applied for profile '%s' in encounter '%s'."),
+                                    *ProfileId,
+                                    *ReconnectState.EncounterId.ToString());
+                            }
                         }
                     }
                 }
