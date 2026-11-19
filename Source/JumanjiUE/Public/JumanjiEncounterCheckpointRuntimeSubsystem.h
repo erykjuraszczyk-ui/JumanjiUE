@@ -136,8 +136,10 @@ private:
     bool bWriteInFlight = false;
     bool bReadInFlight = false;
     bool bCheckpointWriteBlockedUntilResync = false;
+    bool bRestoreStagingRequested = false;
     bool bHasStagedRestoreCandidate = false;
 
+    TWeakObjectPtr<AJumanjiWorldEncounterDirector> PendingRestoreDirector;
     FTimerHandle LeaseRenewalTimerHandle;
     FJumanjiEncounterCheckpointRestoreCandidate StagedRestoreCandidate;
 };
