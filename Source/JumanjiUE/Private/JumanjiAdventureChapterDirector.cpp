@@ -110,6 +110,10 @@ bool AJumanjiAdventureChapterDirector::StartChapter()
             );
             return false;
         }
+
+        TrialActor->OnTrialStateChanged.AddUniqueDynamic(
+            this,
+            &AJumanjiAdventureChapterDirector::HandleTrialStateChanged);
     }
 
     BoardGameState->OnAdventureObjectivesChanged.AddUniqueDynamic(
@@ -247,7 +251,8 @@ bool AJumanjiAdventureChapterDirector::BuildCheckpointProgress(
         : nullptr;
     if (!HasAuthority() || !BoardGameState
         || BoardGameState->GetAdventureChapterState().ChapterId != ChapterId
-        || BoardGameState->GetAdventureChapterState().Phase != EJumanjiAdventureChapterPhase::Completed
+        || (BoardGameState->GetAdventureChapterState().Phase != EJumanjiAdventureChapterPhase::Active
+            && BoardGameState->GetAdventureChapterState().Phase != EJumanjiAdventureChapterPhase::Completed)
         || ChapterObjectives.IsEmpty()
         || ChapterObjectives.Num() != TrialActors.Num())
     {
@@ -256,41 +261,101 @@ bool AJumanjiAdventureChapterDirector::BuildCheckpointProgress(
 
     const TArray<FJumanjiAdventureObjectiveState> Objectives =
         BoardGameState->GetAdventureObjectives();
-    TSet<FName> CompletedObjectiveSet;
+    TMap<FName, const FJumanjiAdventureObjectiveState*> ObjectiveById;
     for (const FJumanjiAdventureObjectiveState& Objective : Objectives)
     {
-        if (Objective.bCompleted)
+        if (Objective.ObjectiveId.IsNone() || ObjectiveById.Contains(Objective.ObjectiveId))
         {
-            CompletedObjectiveSet.Add(Objective.ObjectiveId);
+            return false;
         }
+        ObjectiveById.Add(Objective.ObjectiveId, &Objective);
+    }
+
+    TSet<FName> CompletedTrialSet;
+    TSet<FName> CompletedObjectiveSet;
+    for (const AJumanjiTrialActor* TrialActor : TrialActors)
+    {
+        if (!IsValid(TrialActor) || TrialActor->GetWorld() != World
+            || TrialActor->GetObjectiveId().IsNone()
+            || CompletedTrialSet.Contains(TrialActor->GetObjectiveId()))
+        {
+            return false;
+        }
+
+        const FJumanjiAdventureObjectiveState* const* ObjectivePtr =
+            ObjectiveById.Find(TrialActor->GetObjectiveId());
+        if (!ObjectivePtr || !*ObjectivePtr
+            || (*ObjectivePtr)->RequiredProgress != TrialActor->GetStepCount())
+        {
+            return false;
+        }
+
+        const FJumanjiAdventureObjectiveState& Objective = **ObjectivePtr;
+        const EJumanjiTrialState TrialState = TrialActor->GetTrialState();
+
+        // Mid-trial snapshots are deliberately forbidden. Available means
+        // no option is currently being processed; InProgress means a sequence
+        // has begun and must reach its next Completed boundary first.
+        if (TrialState == EJumanjiTrialState::InProgress
+            || TrialState == EJumanjiTrialState::Dormant)
+        {
+            return false;
+        }
+
+        if (TrialState == EJumanjiTrialState::Completed)
+        {
+            if (!Objective.bCompleted
+                || Objective.CurrentProgress != Objective.RequiredProgress)
+            {
+                return false;
+            }
+            CompletedTrialSet.Add(TrialActor->GetObjectiveId());
+            CompletedObjectiveSet.Add(TrialActor->GetObjectiveId());
+        }
+        else if (TrialState == EJumanjiTrialState::Available)
+        {
+            if (Objective.bCompleted
+                || Objective.CurrentProgress >= Objective.RequiredProgress)
+            {
+                return false;
+            }
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    if (CompletedTrialSet.IsEmpty())
+    {
+        return false;
     }
 
     for (const FJumanjiAdventureObjectiveState& RequiredObjective : ChapterObjectives)
     {
-        if (!CompletedObjectiveSet.Contains(RequiredObjective.ObjectiveId))
+        if (CompletedObjectiveSet.Contains(RequiredObjective.ObjectiveId))
         {
-            return false;
+            OutCompletedObjectiveIds.Add(RequiredObjective.ObjectiveId);
         }
-        OutCompletedObjectiveIds.Add(RequiredObjective.ObjectiveId);
     }
 
-    TSet<FName> CompletedTrialSet;
     for (const AJumanjiTrialActor* TrialActor : TrialActors)
     {
-        if (!IsValid(TrialActor)
-            || TrialActor->GetTrialState() != EJumanjiTrialState::Completed
-            || TrialActor->GetObjectiveId().IsNone()
-            || CompletedTrialSet.Contains(TrialActor->GetObjectiveId()))
+        if (TrialActor && CompletedTrialSet.Contains(TrialActor->GetObjectiveId()))
         {
-            OutCompletedObjectiveIds.Reset();
-            return false;
+            OutCompletedTrialIds.Add(TrialActor->GetObjectiveId());
         }
-        CompletedTrialSet.Add(TrialActor->GetObjectiveId());
-        OutCompletedTrialIds.Add(TrialActor->GetObjectiveId());
     }
 
-    if (OutCompletedObjectiveIds.Num() != ChapterObjectives.Num()
-        || OutCompletedTrialIds.Num() != TrialActors.Num())
+    if (OutCompletedObjectiveIds.Num() != OutCompletedTrialIds.Num())
+    {
+        OutCompletedObjectiveIds.Reset();
+        OutCompletedTrialIds.Reset();
+        return false;
+    }
+
+    if (BoardGameState->GetAdventureChapterState().Phase == EJumanjiAdventureChapterPhase::Completed
+        && OutCompletedTrialIds.Num() != TrialActors.Num())
     {
         OutCompletedObjectiveIds.Reset();
         OutCompletedTrialIds.Reset();
@@ -363,6 +428,25 @@ void AJumanjiAdventureChapterDirector::HandleAdventureObjectivesChanged(int32 Re
     }
 }
 
+void AJumanjiAdventureChapterDirector::HandleTrialStateChanged(
+    EJumanjiTrialState TrialState,
+    int32 CurrentStepIndex,
+    int32 Revision)
+{
+    if (!HasAuthority() || TrialState != EJumanjiTrialState::Completed)
+    {
+        return;
+    }
+
+    TArray<FName> CompletedObjectiveIds;
+    TArray<FName> CompletedTrialIds;
+    int32 ChapterRevision = 0;
+    if (BuildCheckpointProgress(CompletedObjectiveIds, CompletedTrialIds, ChapterRevision))
+    {
+        OnCheckpointBoundaryReady.Broadcast();
+    }
+}
+
 void AJumanjiAdventureChapterDirector::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
     if (bListeningForObjectiveChanges)
@@ -379,6 +463,16 @@ void AJumanjiAdventureChapterDirector::EndPlay(const EEndPlayReason::Type EndPla
         }
 
         bListeningForObjectiveChanges = false;
+    }
+
+    for (AJumanjiTrialActor* TrialActor : TrialActors)
+    {
+        if (IsValid(TrialActor))
+        {
+            TrialActor->OnTrialStateChanged.RemoveDynamic(
+                this,
+                &AJumanjiAdventureChapterDirector::HandleTrialStateChanged);
+        }
     }
 
     Super::EndPlay(EndPlayReason);
