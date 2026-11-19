@@ -135,6 +135,9 @@ struct FJumanjiEncounterCheckpointRestoreExpectations
     FName AllowedRewardDefinitionId = NAME_None;
 
     UPROPERTY()
+    FName ExpectedRewardTransactionId = NAME_None;
+
+    UPROPERTY()
     TArray<FName> AllowedObjectiveIds;
 
     UPROPERTY()
