@@ -77,6 +77,25 @@ public:
     UFUNCTION(BlueprintCallable, Category = "JUMANJI|Encounter")
     bool FailWorldEncounter(FName EncounterId);
 
+    /**
+     * Single server commit point for a fully materialized checkpoint. All
+     * legacy state fields are assigned before any delegate is broadcast.
+     */
+    bool ApplyEncounterCheckpointRestore(
+        FName EncounterId,
+        int32 TotalWaves,
+        EJumanjiWorldEncounterPhase Phase,
+        int32 CurrentWave,
+        int32 ActiveEnemyCount,
+        AJumanjiBossCharacter* BossActor,
+        FName ChapterId,
+        FName BoardEventId,
+        const FText& ChapterTitle,
+        const FText& ChapterDescription,
+        const TArray<FJumanjiAdventureObjectiveState>& RestoredObjectives,
+        int32 RestoredEncounterRevision,
+        int32 RestoredChapterRevision);
+
     /** Internal server reset used only to prepare a failed encounter for a fresh attempt. */
     bool ResetAdventureChapterForEncounterRetry(
         FName EncounterId,
