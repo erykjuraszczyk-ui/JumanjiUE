@@ -780,11 +780,18 @@ void AJumanjiWorldEncounterDirector::RequestCheckpointCapture(
         return;
     }
 
+    const TWeakObjectPtr<AJumanjiWorldEncounterDirector> WeakThis(this);
     const bool bStarted = CheckpointRuntime->CaptureSafePoint(
         Input,
         FJumanjiCheckpointRuntimeCallback::CreateLambda(
-            [this, Phase](const FJumanjiCheckpointRuntimeResult& Result)
+            [WeakThis, Phase](const FJumanjiCheckpointRuntimeResult& Result)
             {
+                AJumanjiWorldEncounterDirector* Self = WeakThis.Get();
+                if (!Self)
+                {
+                    return;
+                }
+
                 if (!Result.bSucceeded)
                 {
                     UE_LOG(LogTemp, Warning,
@@ -796,24 +803,22 @@ void AJumanjiWorldEncounterDirector::RequestCheckpointCapture(
                 {
                     UE_LOG(LogTemp, Log,
                         TEXT("JUMANJI checkpoint: %s checkpoint sequence %lld committed."),
-                        *EncounterId.ToString(),
+                        *Self->EncounterId.ToString(),
                         Result.CheckpointSequence);
                 }
 
                 if (Phase == EJumanjiWorldEncounterPhase::Reward)
                 {
-                    ReleaseCheckpointLease();
+                    Self->ReleaseCheckpointLease();
                 }
             }));
 
     if (!bStarted)
     {
+        // Validation failures invoke the callback synchronously. Do not release
+        // the lease a second time from this return path.
         UE_LOG(LogTemp, Verbose,
             TEXT("JUMANJI checkpoint: safe-point request was not started; encounter gameplay is unaffected."));
-        if (Phase == EJumanjiWorldEncounterPhase::Reward)
-        {
-            ReleaseCheckpointLease();
-        }
     }
 }
 
@@ -884,6 +889,15 @@ void AJumanjiWorldEncounterDirector::DestroyActiveEnemies()
             Enemy->OnEnemyDefeated.RemoveDynamic(
                 this,
                 &AJumanjiWorldEncounterDirector::HandleEnemyDefeated);
+        }
+
+        if (AJumanjiBossCharacter* Boss = Cast<AJumanjiBossCharacter>(SpawnedActor))
+        {
+            if (BossCheckpointDelegateHandle.IsValid())
+            {
+                Boss->OnBossCheckpointBoundaryReady.Remove(BossCheckpointDelegateHandle);
+                BossCheckpointDelegateHandle.Reset();
+            }
         }
 
         SpawnedActor->Destroy();
