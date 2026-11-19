@@ -1,0 +1,46 @@
+name: Encounter Checkpoint Runtime Validation
+
+on:
+  pull_request:
+    paths:
+      - "Data/Encounter/EncounterCheckpointStage34Manifest.json"
+      - "Data/Encounter/EncounterCheckpoint.schema.json"
+      - "Docs/STAGE_32_ENCOUNTER_SESSION_CHECKPOINT_CONTRACT.md"
+      - "Docs/STAGE_33_ENCOUNTER_CHECKPOINT_BACKEND_LEASE_SERVICE.md"
+      - "Docs/STAGE_34_SAFE_POINT_SNAPSHOT_BUILDER_RESTORE_STAGING.md"
+      - "Source/JumanjiUE/Public/JumanjiEncounterCheckpoint*.h"
+      - "Source/JumanjiUE/Private/JumanjiEncounterCheckpoint*.cpp"
+      - "Source/JumanjiUE/Public/JumanjiWorldEncounterDirector.h"
+      - "Source/JumanjiUE/Private/JumanjiWorldEncounterDirector.cpp"
+      - "Source/JumanjiUE/Public/JumanjiAdventureChapterDirector.h"
+      - "Source/JumanjiUE/Private/JumanjiAdventureChapterDirector.cpp"
+      - "Source/JumanjiUE/Public/JumanjiBossCharacter.h"
+      - "Source/JumanjiUE/Private/JumanjiBossCharacter.cpp"
+      - "Scripts/validate_encounter_checkpoint_runtime.py"
+      - "Scripts/Tests/test_validate_encounter_checkpoint_runtime.py"
+      - ".github/workflows/encounter-checkpoint-runtime-validation.yml"
+  push:
+    branches: [main]
+    paths:
+      - "Data/Encounter/EncounterCheckpointStage34Manifest.json"
+      - "Data/Encounter/EncounterCheckpoint.schema.json"
+      - "Docs/STAGE_34_SAFE_POINT_SNAPSHOT_BUILDER_RESTORE_STAGING.md"
+      - "Source/JumanjiUE/Public/JumanjiEncounterCheckpoint*.h"
+      - "Source/JumanjiUE/Private/JumanjiEncounterCheckpoint*.cpp"
+      - "Scripts/validate_encounter_checkpoint_runtime.py"
+      - "Scripts/Tests/test_validate_encounter_checkpoint_runtime.py"
+      - ".github/workflows/encounter-checkpoint-runtime-validation.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate-checkpoint-runtime:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Validate Stage 34 runtime contract
+        run: python Scripts/validate_encounter_checkpoint_runtime.py
+      - name: Run Stage 34 unit tests
+        run: python -m unittest discover -s Scripts/Tests -p "test_validate_encounter_checkpoint_runtime.py" -v
