@@ -1,0 +1,126 @@
+{
+  "schema": "JUMANJI.EncounterCheckpointRuntime.v1",
+  "stage": 34,
+  "status": "NATIVE_SAFE_POINT_BUILDER_AND_PRIVATE_RESTORE_STAGING",
+  "contract": {
+    "schemaPath": "Data/Encounter/EncounterCheckpoint.schema.json",
+    "examplePath": "Data/Encounter/EncounterCheckpointExample.json",
+    "recoveryMatrixPath": "Data/Encounter/EncounterCheckpointRecoveryMatrix.csv",
+    "payloadSchemaVersion": 1,
+    "envelopeVersion": 1,
+    "integrity": {
+      "algorithm": "Ed25519",
+      "canonicalization": "RFC8785",
+      "verifiedBy": "Stage 33 trusted checkpoint backend",
+      "unrealLocalSignatureVerification": false,
+      "expectedKeyIdEnvironment": "JUMANJI_CHECKPOINT_EXPECTED_KEY_ID"
+    }
+  },
+  "requiredServerEnvironment": [
+    "JUMANJI_CHECKPOINT_SERVER_TOKEN",
+    "JUMANJI_SERVER_INSTANCE_ID",
+    "JUMANJI_SHARD_ID",
+    "JUMANJI_SERVER_BUILD_ID",
+    "JUMANJI_RULESET_VERSION",
+    "JUMANJI_WORLD_CONTENT_VERSION",
+    "JUMANJI_CHECKPOINT_EXPECTED_KEY_ID"
+  ],
+  "safePointBarriers": [
+    {
+      "phase": "Trials",
+      "kind": "TrialBoundary",
+      "trigger": "AJumanjiAdventureChapterDirector.OnCheckpointBoundaryReady after a trial actor publishes Completed and objective progress agrees",
+      "requirements": [
+        "At least one completed trial",
+        "No trial actor is InProgress or Dormant",
+        "Completed objective IDs and completed trial IDs agree",
+        "No player is traversing",
+        "No enemy is alive and no spawn is pending"
+      ],
+      "resumeMeaning": "Restore the completed subset; remaining trials are unfinished logical objectives."
+    },
+    {
+      "phase": "Combat",
+      "kind": "WaveBoundary",
+      "trigger": "WorldEncounterDirector after the last enemy of a wave is defeated and before the next wave/boss is spawned",
+      "requirements": [
+        "currentWave is the one-based last completed wave",
+        "Active enemy set is empty",
+        "No pending spawn",
+        "No player is traversing"
+      ],
+      "resumeMeaning": "Start the next wave; when currentWave equals totalWaves, spawn the boss."
+    },
+    {
+      "phase": "Boss",
+      "kind": "BossPhaseBoundary",
+      "trigger": "AJumanjiBossCharacter.ConfirmBossPhaseCheckpointBoundary after Blueprint phase presentation/effects settle",
+      "requirements": [
+        "Server phase transition is committed",
+        "No warning/executing telegraph",
+        "Current boss phase revision",
+        "Finite health fraction in 0..1",
+        "No player is traversing"
+      ],
+      "resumeMeaning": "Restore only boss definition, phase, health fraction and phase revision."
+    },
+    {
+      "phase": "Reward",
+      "kind": "RewardPending",
+      "trigger": "WorldEncounterDirector after boss defeat and before player reward transactions",
+      "requirements": [
+        "No active enemy/telegraph",
+        "Trusted reward definition exists",
+        "Stable reward intent transaction ID",
+        "Every participant identity/revision is trusted"
+      ],
+      "resumeMeaning": "Reconcile the reward intent against each participant profile ledger; never blind-pay a second time."
+    }
+  ],
+  "participantIdentity": {
+    "field": "participantKey",
+    "pattern": "^pk_[A-Za-z0-9_-]{20,96}$",
+    "source": "trusted profile/account service only",
+    "profileRevision": "validated by registered ParticipantRevisionValidator",
+    "rawProfileIdIncluded": false,
+    "providerBindingImplemented": false,
+    "captureBehaviorWhenUnbound": "reject"
+  },
+  "restorePreflight": [
+    "backend response encounter/sequence/current fencing epoch",
+    "envelope/schema version, exact keys and expiry",
+    "backend-verified Ed25519 signature plus approved key ID",
+    "source authority epoch is older than active lease epoch",
+    "build/ruleset/world-content compatibility",
+    "encounter/chapter/board-event/spawn-set/boss IDs",
+    "objective/trial IDs against current allowlists",
+    "participant opaque keys and profile revisions",
+    "reward definition and stable reward-intent transaction ID"
+  ],
+  "restoreStaging": {
+    "privateValueOnlyPlan": true,
+    "spawnActors": false,
+    "mutateGameState": false,
+    "publishReplicatedState": false,
+    "applyRewards": false,
+    "createTimersOrAI": false,
+    "automaticServerMigration": false
+  },
+  "serializationExclusions": [
+    "AActor/UObject references, NetGUID, object paths",
+    "FTransform/FVector/FRotator world-space positions",
+    "velocity and movement mode",
+    "AI controller/perception/behavior-tree state",
+    "timers/latent actions/animation montages",
+    "raw ProfileId/account IDs/authentication material",
+    "wallet balances/inventory stacks/item contents",
+    "profile transaction ledger rows/direct reward amounts",
+    "live Gameplay Ability handles and active Gameplay Effects"
+  ],
+  "limitations": [
+    "Trusted profile service must bind opaque participant keys and register revision validation before captures can succeed.",
+    "Unreal validates integrity metadata and key ID; Stage 33 backend verifies Ed25519/RFC8785 before returning a checkpoint.",
+    "Restore plan is staging only; no actor hydration or GameState publication.",
+    "Encounter gameplay remains available when the checkpoint backend or lease is unavailable."
+  ]
+}
