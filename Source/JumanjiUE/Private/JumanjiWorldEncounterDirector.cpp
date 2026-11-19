@@ -205,7 +205,9 @@ bool AJumanjiWorldEncounterDirector::MaterializeCheckpointRestore(
         || (GameState->GetWorldEncounterState().Phase != EJumanjiWorldEncounterPhase::Inactive
             && !(GameState->GetWorldEncounterState().Phase == EJumanjiWorldEncounterPhase::Failed
                 && GameState->GetWorldEncounterState().EncounterId == EncounterId))
-        || GameState->IsBoardEventActive())
+        || GameState->IsBoardEventActive()
+        || (GameState->GetAdventureChapterState().Phase == EJumanjiAdventureChapterPhase::Active
+            && GameState->GetWorldEncounterState().Phase != EJumanjiWorldEncounterPhase::Failed))
     {
         return false;
     }
