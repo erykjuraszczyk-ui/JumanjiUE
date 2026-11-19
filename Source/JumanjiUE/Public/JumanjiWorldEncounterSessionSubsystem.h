@@ -24,6 +24,13 @@ public:
     virtual void Deinitialize() override;
 
     bool BeginEncounterSession(FName EncounterId, AJumanjiPlayerState* InitiatingPlayer);
+
+    /** Server-native restore path; adopts only the verified session UUID and mapped profiles. */
+    bool BeginRestoredEncounterSession(
+        FName EncounterId,
+        FGuid RestoredSessionId,
+        const TArray<AJumanjiPlayerState*>& RestoredParticipants);
+
     bool RegisterConnectedParticipant(AJumanjiPlayerState* PlayerState);
     bool MarkPlayerDisconnected(const AJumanjiPlayerState* PlayerState);
 
