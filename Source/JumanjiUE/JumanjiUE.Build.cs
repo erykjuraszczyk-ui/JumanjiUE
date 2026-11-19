@@ -21,7 +21,10 @@ public class JumanjiUE : ModuleRules
                 "UMG",
                 "AIModule",
                 "NavigationSystem",
-                "Niagara"
+                "Niagara",
+                "HTTP",
+                "Json",
+                "JsonUtilities"
             }
         );
     }
