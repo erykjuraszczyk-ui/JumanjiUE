@@ -32,6 +32,15 @@ public:
     UFUNCTION(BlueprintPure, Category = "JUMANJI|Adventure")
     FName GetChapterId() const { return ChapterId; }
 
+    UFUNCTION(BlueprintPure, Category = "JUMANJI|Adventure")
+    FName GetBoardEventId() const { return BoardEventId; }
+
+    /** Build a value-only trial/chapter summary after every objective and trial is complete. */
+    bool BuildCheckpointProgress(
+        TArray<FName>& OutCompletedObjectiveIds,
+        TArray<FName>& OutCompletedTrialIds,
+        int32& OutChapterRevision) const;
+
 protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "JUMANJI|Adventure")
     FName ChapterId = TEXT("EMERALD_JUNGLE_NINE_SEALS");
