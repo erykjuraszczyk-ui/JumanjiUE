@@ -268,6 +268,8 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::AcquireEncounterLease(
 
     bLeaseRequestPending = true;
     bLeaseReady = false;
+    bHasStagedRestorePlan = false;
+    StagedRestorePlan = FJumanjiEncounterCheckpointRestorePlan();
     const TWeakObjectPtr<UJumanjiEncounterCheckpointRuntimeSubsystem> WeakThis(this);
     const bool bStarted = BackendSubsystem->AcquireLease(
         EncounterId,
@@ -1213,6 +1215,15 @@ void UJumanjiEncounterCheckpointRuntimeSubsystem::ClearStagedRestorePlan()
 bool UJumanjiEncounterCheckpointRuntimeSubsystem::ReleaseEncounterLease(
     FJumanjiCheckpointRuntimeCallback Callback)
 {
+    if (bCaptureRequestPending)
+    {
+        // Releasing a lease while its CAS write is in flight would race the
+        // backend transaction. Leave the short lease to expire naturally.
+        Complete(Callback, false, TEXT("CHECKPOINT_WRITE_PENDING"),
+            TEXT("Lease release is deferred by an in-flight checkpoint write; the backend lease will expire by TTL."));
+        return false;
+    }
+
     if (!bLeaseReady || !BackendSubsystem)
     {
         Complete(Callback, false, TEXT("LEASE_NOT_ACTIVE"), TEXT("No active checkpoint lease can be released."));
@@ -1243,6 +1254,12 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::ReleaseEncounterLease(
                     Self->LeaseToken.Reset();
                     Self->AuthorityEpoch = 0;
                     Self->ActiveEncounterId = NAME_None;
+                    Self->bHasStagedRestorePlan = false;
+                    Self->StagedRestorePlan = FJumanjiEncounterCheckpointRestorePlan();
+                }
+                else if (Response.HttpStatusCode == 409)
+                {
+                    Self->bLeaseReady = false;
                 }
                 Complete(Callback, bSuccess,
                     bSuccess ? TEXT("LEASE_RELEASED") : TEXT("LEASE_RELEASE_FAILED"),
