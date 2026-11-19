@@ -32,6 +32,9 @@ public:
     UFUNCTION(BlueprintPure, Category = "JUMANJI|EncounterRewards")
     bool GetWorldEncounterRewardDefinition(FName EncounterId, FJumanjiWorldEncounterRewardDefinition& OutDefinition) const;
 
+    /** Returns the exact per-profile transaction receipt key used by the grant path. */
+    FName GetWorldEncounterRewardTransactionId(const AJumanjiPlayerState* PlayerState, FName EncounterId) const;
+
     /** True only after the one-time server profile transaction for this traversal was committed. */
     bool HasCompletedTraversalReward(const AJumanjiPlayerState* PlayerState, FName TraversalId) const;
 
