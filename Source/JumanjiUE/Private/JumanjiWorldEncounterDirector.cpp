@@ -258,10 +258,9 @@ bool AJumanjiWorldEncounterDirector::StartEncounter(AJumanjiPlayerState* Initiat
         }
     }
 
-    GameState->OnAdventureChapterChanged.AddUniqueDynamic(
+    ChapterCheckpointDelegateHandle = AdventureChapterDirector->OnCheckpointBoundaryReady.AddUObject(
         this,
-        &AJumanjiWorldEncounterDirector::HandleAdventureChapterChanged);
-    bListeningForChapterChanges = true;
+        &AJumanjiWorldEncounterDirector::HandleChapterCheckpointBoundaryReady);
 
     PublishEncounterState(EJumanjiWorldEncounterPhase::Trials, 0, 0);
 
@@ -274,20 +273,47 @@ bool AJumanjiWorldEncounterDirector::StartEncounter(AJumanjiPlayerState* Initiat
     return true;
 }
 
-void AJumanjiWorldEncounterDirector::HandleAdventureChapterChanged(
-    const FJumanjiAdventureChapterState& ChapterState)
+void AJumanjiWorldEncounterDirector::HandleChapterCheckpointBoundaryReady()
 {
-    if (!HasAuthority()
-        || !bEncounterActive
-        || ChapterState.ChapterId != RequiredChapterId
-        || ChapterState.Phase != EJumanjiAdventureChapterPhase::Completed
-        || ActiveWaveIndex != INDEX_NONE)
+    if (!HasAuthority() || !bEncounterActive || ActiveWaveIndex != INDEX_NONE
+        || !AdventureChapterDirector)
     {
         return;
     }
 
+    AJumanjiGameState* GameState = GetWorld()
+        ? GetWorld()->GetGameState<AJumanjiGameState>()
+        : nullptr;
+    if (!GameState)
+    {
+        return;
+    }
+
+    TArray<FName> CompletedObjectives;
+    TArray<FName> CompletedTrials;
+    int32 ChapterRevision = 0;
+    if (!AdventureChapterDirector->BuildCheckpointProgress(
+        CompletedObjectives,
+        CompletedTrials,
+        ChapterRevision))
+    {
+        return;
+    }
+
+    const FJumanjiAdventureChapterState ChapterState = GameState->GetAdventureChapterState();
+    if (ChapterState.ChapterId != RequiredChapterId)
+    {
+        return;
+    }
+
+    // Partial completed trials are safe once no trial actor is InProgress.
+    // The final completed trial also unlocks the enemy waves.
     RequestCheckpointCapture(EJumanjiWorldEncounterPhase::Trials, 0);
-    SpawnWave(0);
+
+    if (ChapterState.Phase == EJumanjiAdventureChapterPhase::Completed)
+    {
+        SpawnWave(0);
+    }
 }
 
 void AJumanjiWorldEncounterDirector::SpawnWave(int32 WaveIndex)
@@ -549,12 +575,10 @@ void AJumanjiWorldEncounterDirector::CompleteEncounter()
     }
 
     bEncounterActive = false;
-    if (bListeningForChapterChanges)
+    if (AdventureChapterDirector && ChapterCheckpointDelegateHandle.IsValid())
     {
-        GameState->OnAdventureChapterChanged.RemoveDynamic(
-            this,
-            &AJumanjiWorldEncounterDirector::HandleAdventureChapterChanged);
-        bListeningForChapterChanges = false;
+        AdventureChapterDirector->OnCheckpointBoundaryReady.Remove(ChapterCheckpointDelegateHandle);
+        ChapterCheckpointDelegateHandle.Reset();
     }
 
     UnbindActiveEnemies();
@@ -599,18 +623,10 @@ void AJumanjiWorldEncounterDirector::FailEncounter(FName ReasonId)
         SessionSubsystem->EndEncounterSession(EncounterId);
     }
 
-    if (bListeningForChapterChanges)
+    if (AdventureChapterDirector && ChapterCheckpointDelegateHandle.IsValid())
     {
-        if (UWorld* World = GetWorld())
-        {
-            if (AJumanjiGameState* GameState = World->GetGameState<AJumanjiGameState>())
-            {
-                GameState->OnAdventureChapterChanged.RemoveDynamic(
-                    this,
-                    &AJumanjiWorldEncounterDirector::HandleAdventureChapterChanged);
-            }
-        }
-        bListeningForChapterChanges = false;
+        AdventureChapterDirector->OnCheckpointBoundaryReady.Remove(ChapterCheckpointDelegateHandle);
+        ChapterCheckpointDelegateHandle.Reset();
     }
 
     ReleaseCheckpointLease();
@@ -888,18 +904,10 @@ void AJumanjiWorldEncounterDirector::EndPlay(const EEndPlayReason::Type EndPlayR
         SessionSubsystem->EndEncounterSession(EncounterId);
     }
 
-    if (bListeningForChapterChanges)
+    if (AdventureChapterDirector && ChapterCheckpointDelegateHandle.IsValid())
     {
-        if (UWorld* World = GetWorld())
-        {
-            if (AJumanjiGameState* GameState = World->GetGameState<AJumanjiGameState>())
-            {
-                GameState->OnAdventureChapterChanged.RemoveDynamic(
-                    this,
-                    &AJumanjiWorldEncounterDirector::HandleAdventureChapterChanged);
-            }
-        }
-        bListeningForChapterChanges = false;
+        AdventureChapterDirector->OnCheckpointBoundaryReady.Remove(ChapterCheckpointDelegateHandle);
+        ChapterCheckpointDelegateHandle.Reset();
     }
 
     UnbindActiveEnemies();
