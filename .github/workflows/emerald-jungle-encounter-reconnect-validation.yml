@@ -1,0 +1,48 @@
+name: Emerald Jungle Encounter Session Reconnect Validation
+
+on:
+  pull_request:
+    paths:
+      - "Source/JumanjiUE/Public/JumanjiWorldEncounterSessionSubsystem.h"
+      - "Source/JumanjiUE/Private/JumanjiWorldEncounterSessionSubsystem.cpp"
+      - "Source/JumanjiUE/Public/JumanjiWorldEncounter.h"
+      - "Source/JumanjiUE/Public/JumanjiPlayerState.h"
+      - "Source/JumanjiUE/Private/JumanjiPlayerState.cpp"
+      - "Source/JumanjiUE/Private/JumanjiGameMode.cpp"
+      - "Source/JumanjiUE/Private/JumanjiWorldEncounterDirector.cpp"
+      - "Source/JumanjiUE/Public/JumanjiWorldEncounterHUDWidget.h"
+      - "Source/JumanjiUE/Private/JumanjiWorldEncounterHUDWidget.cpp"
+      - "Docs/STAGE_30_ENCOUNTER_SESSION_RECONNECT_RECOVERY.md"
+      - "Scripts/validate_emerald_jungle_encounter_reconnect.py"
+      - "Scripts/Tests/test_validate_emerald_jungle_encounter_reconnect.py"
+      - ".github/workflows/emerald-jungle-encounter-reconnect-validation.yml"
+  push:
+    branches: [main]
+    paths:
+      - "Source/JumanjiUE/Public/JumanjiWorldEncounterSessionSubsystem.h"
+      - "Source/JumanjiUE/Private/JumanjiWorldEncounterSessionSubsystem.cpp"
+      - "Source/JumanjiUE/Public/JumanjiWorldEncounter.h"
+      - "Source/JumanjiUE/Public/JumanjiPlayerState.h"
+      - "Source/JumanjiUE/Private/JumanjiPlayerState.cpp"
+      - "Source/JumanjiUE/Private/JumanjiGameMode.cpp"
+      - "Source/JumanjiUE/Private/JumanjiWorldEncounterDirector.cpp"
+      - "Source/JumanjiUE/Public/JumanjiWorldEncounterHUDWidget.h"
+      - "Source/JumanjiUE/Private/JumanjiWorldEncounterHUDWidget.cpp"
+      - "Docs/STAGE_30_ENCOUNTER_SESSION_RECONNECT_RECOVERY.md"
+      - "Scripts/validate_emerald_jungle_encounter_reconnect.py"
+      - "Scripts/Tests/test_validate_emerald_jungle_encounter_reconnect.py"
+      - ".github/workflows/emerald-jungle-encounter-reconnect-validation.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate-encounter-session-reconnect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Validate reconnect contracts
+        run: python Scripts/validate_emerald_jungle_encounter_reconnect.py
+      - name: Run reconnect validation tests
+        run: python -m unittest discover -s Scripts/Tests -p "test_validate_emerald_jungle_encounter_reconnect.py" -v

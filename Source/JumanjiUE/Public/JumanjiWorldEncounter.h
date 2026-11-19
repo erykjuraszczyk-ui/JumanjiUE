@@ -46,3 +46,29 @@ struct JUMANJIUE_API FJumanjiWorldEncounterState
     UPROPERTY(BlueprintReadOnly, Category = "JUMANJI|Encounter")
     int32 Revision = 0;
 };
+
+
+/**
+ * One-shot notice for a PlayerState that rejoined its still-running encounter.
+ * This is transient replicated session state, never part of the profile SaveGame.
+ */
+USTRUCT(BlueprintType)
+struct JUMANJIUE_API FJumanjiEncounterReconnectState
+{
+    GENERATED_BODY()
+
+    UPROPERTY(BlueprintReadOnly, Category = "JUMANJI|Encounter|Reconnect")
+    bool bWasReconnected = false;
+
+    UPROPERTY(BlueprintReadOnly, Category = "JUMANJI|Encounter|Reconnect")
+    FName EncounterId = NAME_None;
+
+    UPROPERTY(BlueprintReadOnly, Category = "JUMANJI|Encounter|Reconnect")
+    EJumanjiWorldEncounterPhase Phase = EJumanjiWorldEncounterPhase::Inactive;
+
+    UPROPERTY(BlueprintReadOnly, Category = "JUMANJI|Encounter|Reconnect")
+    int32 EncounterRevision = 0;
+
+    UPROPERTY(BlueprintReadOnly, Category = "JUMANJI|Encounter|Reconnect")
+    int32 ReconnectRevision = 0;
+};

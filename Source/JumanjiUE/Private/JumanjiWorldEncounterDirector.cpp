@@ -6,9 +6,11 @@
 #include "JumanjiAdventureChapter.h"
 #include "JumanjiBossCharacter.h"
 #include "JumanjiEnemyCharacter.h"
+#include "GameFramework/PlayerState.h"
 #include "JumanjiGameState.h"
 #include "JumanjiPlayerState.h"
 #include "JumanjiProgressionRewardSubsystem.h"
+#include "JumanjiWorldEncounterSessionSubsystem.h"
 
 AJumanjiWorldEncounterDirector::AJumanjiWorldEncounterDirector()
 {
@@ -193,8 +195,33 @@ bool AJumanjiWorldEncounterDirector::StartEncounter(AJumanjiPlayerState* Initiat
         return false;
     }
 
+    UGameInstance* GameInstance = GetGameInstance();
+    UJumanjiWorldEncounterSessionSubsystem* SessionSubsystem = GameInstance
+        ? GameInstance->GetSubsystem<UJumanjiWorldEncounterSessionSubsystem>()
+        : nullptr;
+
+    if (!SessionSubsystem
+        || !SessionSubsystem->BeginEncounterSession(EncounterId, InitiatingPlayer))
+    {
+        return false;
+    }
+
+    // The world encounter is shared by the players currently connected to this
+    // server. Register only server-known PlayerStates with a bound profile key.
+    for (APlayerState* BasePlayerState : GameState->PlayerArray)
+    {
+        if (AJumanjiPlayerState* Participant = Cast<AJumanjiPlayerState>(BasePlayerState))
+        {
+            if (Participant != InitiatingPlayer)
+            {
+                SessionSubsystem->RegisterConnectedParticipant(Participant);
+            }
+        }
+    }
+
     if (!GameState->BeginWorldEncounter(EncounterId, Waves.Num()))
     {
+        SessionSubsystem->EndEncounterSession(EncounterId);
         return false;
     }
 
@@ -471,6 +498,14 @@ void AJumanjiWorldEncounterDirector::CompleteEncounter()
         return;
     }
 
+    if (UJumanjiWorldEncounterSessionSubsystem* SessionSubsystem =
+        GetGameInstance()
+            ? GetGameInstance()->GetSubsystem<UJumanjiWorldEncounterSessionSubsystem>()
+            : nullptr)
+    {
+        SessionSubsystem->EndEncounterSession(EncounterId);
+    }
+
     bEncounterActive = false;
     if (bListeningForChapterChanges)
     {
@@ -513,6 +548,14 @@ void AJumanjiWorldEncounterDirector::FailEncounter(FName ReasonId)
     }
 
     PublishEncounterState(EJumanjiWorldEncounterPhase::Failed, 0, 0);
+
+    if (UJumanjiWorldEncounterSessionSubsystem* SessionSubsystem =
+        GetGameInstance()
+            ? GetGameInstance()->GetSubsystem<UJumanjiWorldEncounterSessionSubsystem>()
+            : nullptr)
+    {
+        SessionSubsystem->EndEncounterSession(EncounterId);
+    }
 
     if (bListeningForChapterChanges)
     {
@@ -581,6 +624,14 @@ void AJumanjiWorldEncounterDirector::DestroyActiveEnemies()
 
 void AJumanjiWorldEncounterDirector::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
+    if (UJumanjiWorldEncounterSessionSubsystem* SessionSubsystem =
+        GetGameInstance()
+            ? GetGameInstance()->GetSubsystem<UJumanjiWorldEncounterSessionSubsystem>()
+            : nullptr)
+    {
+        SessionSubsystem->EndEncounterSession(EncounterId);
+    }
+
     if (bListeningForChapterChanges)
     {
         if (UWorld* World = GetWorld())

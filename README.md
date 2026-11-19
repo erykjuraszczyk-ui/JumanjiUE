@@ -96,6 +96,7 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - Docs/STAGE_27_EMERALD_JUNGLE_WORLD_ENCOUNTER_INTEGRATION.md — exploration/traversal prerequisites, nine-trial chapter, configurable enemy waves, boss lifecycle, replicated encounter state, one-time reward and Unreal Editor authoring/QA workflow.
 - Docs/STAGE_28_EMERALD_JUNGLE_ENCOUNTER_PRESENTATION_QA.md — encounter HUD, replicated boss telemetry, attack telegraph lifecycle, Blueprint authoring, multiplayer QA and mobile profiling.
 - Docs/STAGE_29_ENCOUNTER_REPLAY_RECOVERY.md — failed encounter retry, session-only chapter/trial reset, encounter-owned actor cleanup, profile/economy invariants and QA workflow.
+- Docs/STAGE_30_ENCOUNTER_SESSION_RECONNECT_RECOVERY.md — same-server disconnect/reconnect lifecycle, grace window, transient PlayerState notice, profile separation and QA checklist.
 - Data/Encounter/EmeraldJungleBossTelegraphs.csv — nine sample telegraph definitions across the three boss phases.
 - Content/Traversal/README.md — traversal DataTable, prompt widget, montage and spline authoring guide.
 - Data/Traversal/TraversalPresentationManifest.csv — four stable starter presentation records.
@@ -208,7 +209,12 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - local PlayerController creation of the configured Encounter HUD, plus nine-row boss telegraph CSV manifest, Python validator, unit tests and GitHub Actions workflow (Stage 28);
 - server-authoritative encounter retry from Failed for the same EncounterId, chapter/trial reset and revision increments;
 - tracking and cleanup of all spawned encounter actors, including defeated actors awaiting cosmetic lifespan expiry;
-- static source validator, unit tests and GitHub Actions quality gate for encounter recovery (Stage 29).
+- static source validator, unit tests and GitHub Actions quality gate for encounter recovery (Stage 29);
+- UJumanjiWorldEncounterSessionSubsystem for in-memory, profile-keyed encounter participant membership and a configurable reconnect grace window;
+- server-side disconnect tracking in GameMode::Logout and profile-restored rejoin validation in GameMode::PostLogin;
+- transient replicated PlayerState reconnect notice and Encounter HUD Blueprint callback;
+- session registry cleanup on encounter completion, failure, director EndPlay and start rollback;
+- static source validator, unit tests and GitHub Actions quality gate for same-server reconnect (Stage 30).
 
 ## Not yet included
 This is a source-code foundation, not a finished game or installable Android build. The repository still needs:
@@ -238,7 +244,7 @@ This is a source-code foundation, not a finished game or installable Android bui
 - asynchronous asset preloading and device profiling;
 - production account authentication, secure economy backend and cross-shard transaction processing;
 - dedicated-server deployment;
-- automated resume of an in-progress encounter after server/shard migration; Stage 29 restarts a failed attempt from the beginning and does not serialize live actors;
+- automated resume of an in-progress encounter after server/shard migration or process restart; Stage 30 only supports same-server reconnect while the GameInstance/world remain alive and deliberately does not serialize live actors;
 - a packaged and device-tested APK/AAB.
 
 The supplied reference image is used as an art direction source. The binary image itself and Unreal binary assets are not added by the text-file GitHub workflow; add them through Git LFS with provenance/license notes.

@@ -80,6 +80,31 @@ void AJumanjiPlayerState::SetPersistentProfileId(const FString& InProfileId)
     bProfilePersistenceEnabled = true;
 }
 
+bool AJumanjiPlayerState::SetEncounterReconnectState(
+    const FJumanjiEncounterReconnectState& NewState)
+{
+    const bool bActivePhase =
+        NewState.Phase == EJumanjiWorldEncounterPhase::Trials
+        || NewState.Phase == EJumanjiWorldEncounterPhase::Combat
+        || NewState.Phase == EJumanjiWorldEncounterPhase::Boss
+        || NewState.Phase == EJumanjiWorldEncounterPhase::Reward;
+
+    if (!HasAuthority()
+        || !NewState.bWasReconnected
+        || NewState.EncounterId.IsNone()
+        || !bActivePhase
+        || NewState.EncounterRevision < 0
+        || NewState.ReconnectRevision <= EncounterReconnectState.ReconnectRevision)
+    {
+        return false;
+    }
+
+    EncounterReconnectState = NewState;
+    OnEncounterReconnectChanged.Broadcast(EncounterReconnectState);
+    ForceNetUpdate();
+    return true;
+}
+
 void AJumanjiPlayerState::RequestProfileSave()
 {
     PersistProfileSnapshot();
@@ -1023,6 +1048,11 @@ void AJumanjiPlayerState::OnRep_ProgressionState()
     OnProgressionChanged.Broadcast(ProgressionState);
 }
 
+void AJumanjiPlayerState::OnRep_EncounterReconnectState()
+{
+    OnEncounterReconnectChanged.Broadcast(EncounterReconnectState);
+}
+
 void AJumanjiPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
@@ -1030,4 +1060,5 @@ void AJumanjiPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& 
     DOREPLIFETIME(AJumanjiPlayerState, WorldExplorationState);
     DOREPLIFETIME(AJumanjiPlayerState, CompletedAdventureChapterIds);
     DOREPLIFETIME(AJumanjiPlayerState, ProgressionState);
+    DOREPLIFETIME(AJumanjiPlayerState, EncounterReconnectState);
 }
