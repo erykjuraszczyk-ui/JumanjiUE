@@ -176,7 +176,7 @@ void UJumanjiEncounterCheckpointRuntimeSubsystem::Deinitialize()
 bool UJumanjiEncounterCheckpointRuntimeSubsystem::IsServerRuntime() const
 {
     const UWorld* World = GetWorld();
-    return World && World->GetNetMode() != NM_Client && World->GetNetMode() != NM_Standalone;
+    return World && World->GetNetMode() != NM_Client;
 }
 
 bool UJumanjiEncounterCheckpointRuntimeSubsystem::ReadRequiredServerMetadata(
@@ -268,6 +268,12 @@ void UJumanjiEncounterCheckpointRuntimeSubsystem::EndEncounterCheckpointSession(
         World->GetTimerManager().ClearTimer(LeaseRenewalTimerHandle);
     }
 
+    if (bWriteInFlight || bLeaseAcquiring)
+    {
+        bReleaseLeaseWhenIdle = true;
+        return;
+    }
+
     if (bLeaseReady && BackendSubsystem && !LeaseToken.IsEmpty())
     {
         BackendSubsystem->ReleaseLease(
@@ -293,6 +299,7 @@ void UJumanjiEncounterCheckpointRuntimeSubsystem::ClearLeaseState()
     bReadInFlight = false;
     bCheckpointWriteBlockedUntilResync = false;
     bRestoreStagingRequested = false;
+    bReleaseLeaseWhenIdle = false;
     PendingRestoreDirector.Reset();
     bHasStagedRestoreCandidate = false;
     StagedRestoreCandidate = FJumanjiEncounterCheckpointRestoreCandidate();
@@ -340,10 +347,16 @@ void UJumanjiEncounterCheckpointRuntimeSubsystem::HandleLeaseAcquired(
             true);
     }
 
+    if (bReleaseLeaseWhenIdle)
+    {
+        EndEncounterCheckpointSession(ActiveEncounterId);
+        return;
+    }
+
     if (bRestoreStagingRequested && PendingRestoreDirector.IsValid())
     {
         bReadInFlight = true;
-        BackendSubsystem->ReadCheckpoint(
+        const bool bReadStarted = BackendSubsystem->ReadCheckpoint(
             ActiveEncounterId,
             LeaseToken,
             AuthorityEpoch,
@@ -351,6 +364,11 @@ void UJumanjiEncounterCheckpointRuntimeSubsystem::HandleLeaseAcquired(
                 this,
                 &UJumanjiEncounterCheckpointRuntimeSubsystem::HandleCheckpointRead,
                 PendingRestoreDirector));
+        if (!bReadStarted)
+        {
+            bReadInFlight = false;
+            bRestoreStagingRequested = false;
+        }
     }
 }
 
@@ -516,8 +534,10 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::BuildPayloadJson(
     const TArray<FName> ConfiguredObjectiveIds = ChapterDirector->GetConfiguredObjectiveIds();
     const TArray<FName> ConfiguredTrialIds = ChapterDirector->GetConfiguredTrialIds();
     const TArray<FName> CompletedTrialIds = ChapterDirector->GetCompletedTrialIds();
-    TSet<FName> ConfiguredObjectives(ConfiguredObjectiveIds);
-    TSet<FName> ConfiguredTrials(ConfiguredTrialIds);
+    TSet<FName> ConfiguredObjectives;
+    TSet<FName> ConfiguredTrials;
+    for (const FName Id : ConfiguredObjectiveIds) { ConfiguredObjectives.Add(Id); }
+    for (const FName Id : ConfiguredTrialIds) { ConfiguredTrials.Add(Id); }
 
     TArray<FString> CompletedObjectiveNames;
     for (const FJumanjiAdventureObjectiveState& Objective : GameState->GetAdventureObjectives())
@@ -579,9 +599,9 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::BuildPayloadJson(
 
     TSharedRef<FJsonObject> Payload = MakeShared<FJsonObject>();
     Payload->SetNumberField(TEXT("schemaVersion"), 1);
-    Payload->SetStringField(TEXT("checkpointId"), FGuid::NewGuid().ToString(EGuidFormats::DigitsWithHyphensLower));
+    Payload->SetStringField(TEXT("checkpointId"), FGuid::NewGuid().ToString());
     Payload->SetStringField(TEXT("encounterId"), ActiveEncounterId.ToString());
-    Payload->SetStringField(TEXT("sessionId"), ActiveSessionId.ToString(EGuidFormats::DigitsWithHyphensLower));
+    Payload->SetStringField(TEXT("sessionId"), ActiveSessionId.ToString());
     Payload->SetNumberField(TEXT("checkpointSequence"), static_cast<double>(CheckpointSequence));
 
     const FDateTime Now = FDateTime::UtcNow();
@@ -760,12 +780,20 @@ void UJumanjiEncounterCheckpointRuntimeSubsystem::HandleCheckpointWrite(
         bCheckpointWriteBlockedUntilResync = false;
         UE_LOG(LogTemp, Log, TEXT("JUMANJI checkpoint committed: encounter=%s sequence=%lld."),
             *ActiveEncounterId.ToString(), LastCommittedSequence);
+        if (bReleaseLeaseWhenIdle)
+        {
+            EndEncounterCheckpointSession(ActiveEncounterId);
+        }
         return;
     }
 
     // A timeout may occur after the backend committed the CAS. Never retry the
     // same sequence blindly; first read the signed head and reconcile it.
     bCheckpointWriteBlockedUntilResync = true;
+    if (bReleaseLeaseWhenIdle)
+    {
+        EndEncounterCheckpointSession(ActiveEncounterId);
+    }
     UE_LOG(LogTemp, Error,
         TEXT("JUMANJI checkpoint write failed or was ambiguous (HTTP %d); writes are blocked until resync."),
         Response.HttpStatusCode);
@@ -938,7 +966,6 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::StageVerifiedBackendResponse(
         || !JumanjiCheckpointRuntime::ReadInteger(Authority, TEXT("authorityEpoch"), PreviousEpoch)
         || PreviousEpoch < 1
         || PreviousEpoch >= AuthorityEpoch
-        || PreviousShardId != ShardId
         || PreviousBuildId != BuildId
         || PreviousRuleset != RulesetVersion
         || PreviousContent != WorldContentVersion)
