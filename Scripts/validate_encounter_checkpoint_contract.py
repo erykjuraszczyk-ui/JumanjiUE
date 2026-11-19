@@ -94,7 +94,11 @@ def _find_forbidden_keys(value: object, path: str = "$") -> list[str]:
     if isinstance(value, dict):
         for key, child in value.items():
             normalized = re.sub(r"[^a-z0-9]", "", str(key).casefold())
-            if normalized in FORBIDDEN_KEYS:
+            sensitive_suffixes = (
+                "actorref", "netguid", "objectpath", "profileid",
+                "accesstoken", "refreshtoken", "privatekey",
+            )
+            if normalized in FORBIDDEN_KEYS or normalized.endswith(sensitive_suffixes):
                 errors.append(f"{path}.{key}: forbidden field")
             errors.extend(_find_forbidden_keys(child, f"{path}.{key}"))
     elif isinstance(value, list):
