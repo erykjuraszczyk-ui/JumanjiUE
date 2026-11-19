@@ -560,10 +560,17 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::BuildPayloadJson(
     const TArray<FName> ConfiguredObjectiveIds = ChapterDirector->GetConfiguredObjectiveIds();
     const TArray<FName> ConfiguredTrialIds = ChapterDirector->GetConfiguredTrialIds();
     const TArray<FName> CompletedTrialIds = ChapterDirector->GetCompletedTrialIds();
+    const TArray<FName> CompletedTrialObjectiveIds = ChapterDirector->GetCompletedTrialObjectiveIds();
     TSet<FName> ConfiguredObjectives;
     TSet<FName> ConfiguredTrials;
     for (const FName Id : ConfiguredObjectiveIds) { ConfiguredObjectives.Add(Id); }
     for (const FName Id : ConfiguredTrialIds) { ConfiguredTrials.Add(Id); }
+    if (ConfiguredObjectives.Num() != ConfiguredObjectiveIds.Num()
+        || ConfiguredTrials.Num() != ConfiguredTrialIds.Num())
+    {
+        OutError = TEXT("CHECKPOINT_DUPLICATE_CONFIGURED_CONTENT_ID");
+        return false;
+    }
 
     TArray<FString> CompletedObjectiveNames;
     for (const FJumanjiAdventureObjectiveState& Objective : GameState->GetAdventureObjectives())
@@ -600,27 +607,17 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::BuildPayloadJson(
         return false;
     }
 
-    TSet<FName> CompletedObjectiveSet;
-    TSet<FName> CompletedTrialSet;
-    for (const FString& Id : CompletedObjectiveNames) { CompletedObjectiveSet.Add(FName(*Id)); }
-    for (const FString& Id : CompletedTrialNames) { CompletedTrialSet.Add(FName(*Id)); }
-    if (CompletedObjectiveSet.Num() != CompletedTrialSet.Num())
+    if (!ChapterDirector->AreCheckpointTrialIdsConsistent(
+        CompletedTrialIds,
+        CompletedTrialObjectiveIds))
     {
         OutError = TEXT("CHECKPOINT_TRIAL_OBJECTIVE_STATE_MISMATCH");
         return false;
     }
-    for (const FName Id : CompletedObjectiveSet)
-    {
-        if (!CompletedTrialSet.Contains(Id))
-        {
-            OutError = TEXT("CHECKPOINT_TRIAL_OBJECTIVE_STATE_MISMATCH");
-            return false;
-        }
-    }
 
     if (!bTrialBoundary
-        && (CompletedObjectiveSet.Num() != ConfiguredObjectives.Num()
-            || CompletedTrialSet.Num() != ConfiguredTrials.Num()))
+        && (CompletedObjectiveNames.Num() != ConfiguredObjectives.Num()
+            || CompletedTrialNames.Num() != ConfiguredTrials.Num()))
     {
         OutError = TEXT("CHECKPOINT_CHAPTER_CONTENT_INCOMPLETE");
         return false;
@@ -1189,18 +1186,12 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::StageVerifiedBackendResponse(
         Candidate.CompletedTrialIds.Add(Id);
     }
 
-    if (SeenObjectiveIds.Num() != SeenTrialIds.Num())
+    if (!ChapterDirector->AreCheckpointTrialIdsConsistent(
+        Candidate.CompletedTrialIds,
+        Candidate.CompletedObjectiveIds))
     {
         OutError = TEXT("CHECKPOINT_TRIAL_OBJECTIVE_STATE_MISMATCH");
         return false;
-    }
-    for (const FName Id : SeenObjectiveIds)
-    {
-        if (!SeenTrialIds.Contains(Id))
-        {
-            OutError = TEXT("CHECKPOINT_TRIAL_OBJECTIVE_STATE_MISMATCH");
-            return false;
-        }
     }
 
     if (PhaseString != TEXT("Trials")
