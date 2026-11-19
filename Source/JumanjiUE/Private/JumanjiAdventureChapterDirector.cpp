@@ -1,4 +1,5 @@
 #include "JumanjiAdventureChapterDirector.h"
+#include "JumanjiTrialActor.h"
 
 #include "JumanjiBoardWorldSubsystem.h"
 #include "JumanjiGameState.h"
@@ -313,4 +314,135 @@ void AJumanjiAdventureChapterDirector::EndPlay(const EEndPlayReason::Type EndPla
     }
 
     Super::EndPlay(EndPlayReason);
+}
+
+
+TArray<FName> AJumanjiAdventureChapterDirector::GetConfiguredObjectiveIds() const
+{
+    TArray<FName> Result;
+    Result.Reserve(ChapterObjectives.Num());
+    for (const FJumanjiAdventureObjectiveState& Objective : ChapterObjectives)
+    {
+        if (!Objective.ObjectiveId.IsNone())
+        {
+            Result.AddUnique(Objective.ObjectiveId);
+        }
+    }
+    return Result;
+}
+
+TArray<FName> AJumanjiAdventureChapterDirector::GetConfiguredTrialIds() const
+{
+    TArray<FName> Result;
+    Result.Reserve(TrialActors.Num());
+    for (const AJumanjiTrialActor* Trial : TrialActors)
+    {
+        if (IsValid(Trial) && !Trial->GetCheckpointTrialId().IsNone())
+        {
+            Result.Add(Trial->GetCheckpointTrialId());
+        }
+    }
+    return Result;
+}
+
+
+TArray<FName> AJumanjiAdventureChapterDirector::GetCompletedTrialIds() const
+{
+    TArray<FName> Result;
+    Result.Reserve(TrialActors.Num());
+    for (const AJumanjiTrialActor* Trial : TrialActors)
+    {
+        if (IsValid(Trial)
+            && Trial->GetTrialState() == EJumanjiTrialState::Completed
+            && !Trial->GetCheckpointTrialId().IsNone())
+        {
+            Result.Add(Trial->GetCheckpointTrialId());
+        }
+    }
+    return Result;
+}
+
+TArray<FName> AJumanjiAdventureChapterDirector::GetCompletedTrialObjectiveIds() const
+{
+    TArray<FName> Result;
+    Result.Reserve(TrialActors.Num());
+    for (const AJumanjiTrialActor* Trial : TrialActors)
+    {
+        if (IsValid(Trial)
+            && Trial->GetTrialState() == EJumanjiTrialState::Completed
+            && !Trial->GetObjectiveId().IsNone())
+        {
+            Result.AddUnique(Trial->GetObjectiveId());
+        }
+    }
+    return Result;
+}
+
+bool AJumanjiAdventureChapterDirector::AreCheckpointTrialIdsConsistent(
+    const TArray<FName>& CompletedTrialIds,
+    const TArray<FName>& CompletedObjectiveIds) const
+{
+    TSet<FName> CompletedTrialSet;
+    TSet<FName> CompletedObjectiveSet;
+    for (const FName Id : CompletedTrialIds)
+    {
+        if (Id.IsNone() || CompletedTrialSet.Contains(Id))
+        {
+            return false;
+        }
+        CompletedTrialSet.Add(Id);
+    }
+    for (const FName Id : CompletedObjectiveIds)
+    {
+        if (Id.IsNone() || CompletedObjectiveSet.Contains(Id))
+        {
+            return false;
+        }
+        CompletedObjectiveSet.Add(Id);
+    }
+
+    TSet<FName> ExpectedTrialIds;
+    TSet<FName> ExpectedObjectiveIds;
+    for (const AJumanjiTrialActor* Trial : TrialActors)
+    {
+        if (!IsValid(Trial)
+            || Trial->GetCheckpointTrialId().IsNone()
+            || Trial->GetObjectiveId().IsNone()
+            || ExpectedTrialIds.Contains(Trial->GetCheckpointTrialId())
+            || ExpectedObjectiveIds.Contains(Trial->GetObjectiveId()))
+        {
+            return false;
+        }
+
+        ExpectedTrialIds.Add(Trial->GetCheckpointTrialId());
+        ExpectedObjectiveIds.Add(Trial->GetObjectiveId());
+
+        const bool bTrialCompleted = CompletedTrialSet.Contains(Trial->GetCheckpointTrialId());
+        const bool bObjectiveCompleted = CompletedObjectiveSet.Contains(Trial->GetObjectiveId());
+        if (bTrialCompleted != bObjectiveCompleted)
+        {
+            return false;
+        }
+    }
+
+    return ExpectedTrialIds.Num() == CompletedTrialSet.Num()
+        ? ExpectedObjectiveIds.Num() == CompletedObjectiveSet.Num()
+        : false;
+}
+
+bool AJumanjiAdventureChapterDirector::HasNoTrialsInProgress() const
+{
+    if (TrialActors.IsEmpty())
+    {
+        return false;
+    }
+
+    for (const AJumanjiTrialActor* Trial : TrialActors)
+    {
+        if (!IsValid(Trial) || Trial->GetTrialState() == EJumanjiTrialState::InProgress)
+        {
+            return false;
+        }
+    }
+    return true;
 }

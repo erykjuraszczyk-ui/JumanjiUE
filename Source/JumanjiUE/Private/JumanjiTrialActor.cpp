@@ -168,16 +168,27 @@ bool AJumanjiTrialActor::SubmitOption(FName OptionId, int32 ExpectedRevision)
         ? World->GetSubsystem<UJumanjiBoardWorldSubsystem>()
         : nullptr;
 
-    if (!BoardSubsystem
-        || !BoardSubsystem->AdvanceBoardAdventureObjective(ObjectiveId, 1))
+    if (!BoardSubsystem)
     {
         return false;
     }
 
+    // Publish the logical trial step before the objective delegate fires.
+    // This lets safe-point listeners observe Completed rather than an
+    // intermediate InProgress state for the final accepted step.
+    const int32 PreviousStepIndex = CurrentStepIndex;
+    const EJumanjiTrialState PreviousTrialState = TrialState;
     ++CurrentStepIndex;
     TrialState = CurrentStepIndex >= Steps.Num()
         ? EJumanjiTrialState::Completed
         : EJumanjiTrialState::InProgress;
+
+    if (!BoardSubsystem->AdvanceBoardAdventureObjective(ObjectiveId, 1))
+    {
+        CurrentStepIndex = PreviousStepIndex;
+        TrialState = PreviousTrialState;
+        return false;
+    }
 
     ++TrialRevision;
     BroadcastTrialStateChanged();

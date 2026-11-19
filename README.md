@@ -104,6 +104,7 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - Docs/STAGE_31_ENCOUNTER_RECONNECT_UX_SESSION_QA.md — reconnect success/expired/ended outcomes, UMG banner wiring, bounded terminal notice retention and multiplayer/Android QA.
 - Docs/STAGE_32_ENCOUNTER_SESSION_CHECKPOINT_CONTRACT.md — versioned checkpoint schema, safe-point rules, Ed25519 envelope, identity/privacy boundaries, anti-rollback lease design and recovery acceptance matrix.
 - Docs/STAGE_33_ENCOUNTER_CHECKPOINT_BACKEND_LEASE_SERVICE.md — trusted backend, lease/CAS/fencing, Ed25519 signing, Unreal adapter, local runbook and limitations.
+- Docs/STAGE_34_ENCOUNTER_SAFEPOINT_SNAPSHOT_RESTORE_STAGING.md — live-world safe-point snapshot builder, lease lifecycle, privacy boundaries, restore preflight and acceptance tests.
 - Backend/EncounterCheckpointService/README.md — local checkpoint backend setup and server environment.
 - Scripts/validate_encounter_checkpoint_backend.py — Stage 33 backend integration contract validator.
 - Data/Encounter/EncounterReconnectSessionQAMatrix.csv — 13 reconnect outcome and network interruption scenarios.

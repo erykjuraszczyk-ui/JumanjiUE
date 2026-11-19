@@ -79,6 +79,12 @@ public:
     UFUNCTION(BlueprintPure, Category = "JUMANJI|Trial")
     FName GetObjectiveId() const { return ObjectiveId; }
 
+    /** Stable checkpoint/content ID; falls back to ObjectiveId for legacy trial Blueprints. */
+    FName GetCheckpointTrialId() const
+    {
+        return CheckpointTrialId.IsNone() ? ObjectiveId : CheckpointTrialId;
+    }
+
     UFUNCTION(BlueprintPure, Category = "JUMANJI|Trial|Presentation")
     FText GetTrialDisplayName() const { return TrialDisplayName; }
 
@@ -131,6 +137,10 @@ protected:
 
     UPROPERTY(EditDefaultsOnly, Category = "JUMANJI|Trial")
     FName ObjectiveId = NAME_None;
+
+    /** Optional unique ID used by checkpoint schema v1; empty preserves the legacy ObjectiveId mapping. */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "JUMANJI|Trial|Checkpoint")
+    FName CheckpointTrialId = NAME_None;
 
     UPROPERTY(EditDefaultsOnly, Category = "JUMANJI|Trial")
     TArray<FJumanjiTrialStepDefinition> Steps;

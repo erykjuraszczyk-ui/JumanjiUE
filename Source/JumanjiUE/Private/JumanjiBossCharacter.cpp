@@ -139,6 +139,17 @@ void AJumanjiBossCharacter::CancelBossTelegraph()
     PublishTelegraphState();
 }
 
+float AJumanjiBossCharacter::GetBossHealthFraction() const
+{
+    const UJumanjiAttributeSet* Attributes = GetEnemyAttributeSet();
+    if (!Attributes || Attributes->GetMaxHealth() <= KINDA_SMALL_NUMBER)
+    {
+        return 0.0f;
+    }
+
+    return FMath::Clamp(Attributes->GetHealth() / Attributes->GetMaxHealth(), 0.0f, 1.0f);
+}
+
 void AJumanjiBossCharacter::HandleCombatHealthChanged(const FOnAttributeChangeData& ChangeData)
 {
     Super::HandleCombatHealthChanged(ChangeData);
@@ -215,6 +226,10 @@ void AJumanjiBossCharacter::SetBossPhase(uint8 NewPhase)
         }
     }
 
+    BossPhaseRevision = BossPhaseRevision < MAX_int32
+        ? BossPhaseRevision + 1
+        : 1;
+    OnBossPhaseChanged.Broadcast(BossPhase, BossPhaseRevision);
     BP_OnBossPhaseChanged(BossPhase);
     ForceNetUpdate();
 }
@@ -332,5 +347,6 @@ void AJumanjiBossCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeReplicatedProps);
     DOREPLIFETIME(AJumanjiBossCharacter, BossPhase);
+    DOREPLIFETIME(AJumanjiBossCharacter, BossPhaseRevision);
     DOREPLIFETIME(AJumanjiBossCharacter, BossTelegraphState);
 }

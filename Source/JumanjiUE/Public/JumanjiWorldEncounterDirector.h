@@ -70,6 +70,12 @@ public:
     UFUNCTION(BlueprintPure, Category = "JUMANJI|Encounter")
     bool CanRetryEncounter() const;
 
+    AJumanjiAdventureChapterDirector* GetAdventureChapterDirector() const { return AdventureChapterDirector; }
+    FName GetBossDefinitionId() const { return BossDefinitionId; }
+    FName GetSpawnSetId() const { return SpawnSetId; }
+    uint32 GetEncounterSeed() const { return EncounterSeed; }
+    int32 GetTotalWaveCount() const { return Waves.Num(); }
+
 protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "JUMANJI|Encounter")
     FName EncounterId = FName(TEXT("ENCOUNTER_EMERALD_JUNGLE_CITADEL"));
@@ -95,6 +101,17 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "JUMANJI|Encounter|Boss")
     TSubclassOf<AJumanjiBossCharacter> BossClass;
 
+    /** Stable logical definition ID stored in checkpoint payloads; never a class/object path. */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "JUMANJI|Encounter|Boss")
+    FName BossDefinitionId = FName(TEXT("BOSS_EMERALD_JUNGLE_GUARDIAN"));
+
+    /** Stable, allowlisted spawn-set ID and deterministic seed for checkpoint reconstruction. */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "JUMANJI|Encounter|Checkpoint")
+    FName SpawnSetId = FName(TEXT("EMERALD_CITADEL_WAVESET_A"));
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "JUMANJI|Encounter|Checkpoint")
+    uint32 EncounterSeed = 2718281828u;
+
     UPROPERTY(EditInstanceOnly, BlueprintReadOnly, Category = "JUMANJI|Encounter|Boss")
     TObjectPtr<AActor> BossSpawnPoint;
 
@@ -117,10 +134,16 @@ private:
     bool ValidatePlayerPrerequisites(const AJumanjiPlayerState* PlayerState) const;
     UFUNCTION()
     void HandleAdventureChapterChanged(const FJumanjiAdventureChapterState& ChapterState);
+
+    UFUNCTION()
+    void HandleAdventureObjectivesChanged(int32 ObjectiveRevision);
     void SpawnWave(int32 WaveIndex);
     void SpawnBoss();
     UFUNCTION()
     void HandleEnemyDefeated(AJumanjiEnemyCharacter* Enemy);
+
+    UFUNCTION()
+    void HandleBossPhaseChanged(uint8 NewPhase, int32 PhaseRevision);
     void PublishEncounterState(EJumanjiWorldEncounterPhase Phase, int32 WaveIndex, int32 ActiveEnemyCount);
     void CompleteEncounter();
     void FailEncounter(FName ReasonId);
@@ -140,4 +163,5 @@ private:
     int32 ActiveWaveIndex = INDEX_NONE;
     bool bEncounterActive = false;
     bool bListeningForChapterChanges = false;
+    bool bListeningForObjectiveChanges = false;
 };

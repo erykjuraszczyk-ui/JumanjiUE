@@ -72,6 +72,12 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(
     const FJumanjiBossTelegraphState&, TelegraphState
 );
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(
+    FJumanjiBossPhaseChanged,
+    uint8, NewPhase,
+    int32, PhaseRevision
+);
+
 /** Three-phase boss foundation with replicated health phases and attack telegraph snapshots. */
 UCLASS(Blueprintable)
 class JUMANJIUE_API AJumanjiBossCharacter : public AJumanjiEnemyCharacter
@@ -83,6 +89,12 @@ public:
 
     UFUNCTION(BlueprintPure, Category = "JUMANJI|Boss")
     uint8 GetBossPhase() const { return BossPhase; }
+
+    UFUNCTION(BlueprintPure, Category = "JUMANJI|Boss")
+    int32 GetBossPhaseRevision() const { return BossPhaseRevision; }
+
+    UFUNCTION(BlueprintPure, Category = "JUMANJI|Boss")
+    float GetBossHealthFraction() const;
 
     UFUNCTION(BlueprintPure, Category = "JUMANJI|Boss|Telegraph")
     FJumanjiBossTelegraphState GetBossTelegraphState() const { return BossTelegraphState; }
@@ -108,6 +120,9 @@ public:
     UPROPERTY(BlueprintAssignable, Category = "JUMANJI|Boss|Telegraph")
     FJumanjiBossTelegraphChanged OnBossTelegraphChanged;
 
+    UPROPERTY(BlueprintAssignable, Category = "JUMANJI|Boss")
+    FJumanjiBossPhaseChanged OnBossPhaseChanged;
+
 protected:
     virtual void HandleCombatHealthChanged(const FOnAttributeChangeData& ChangeData) override;
     virtual void HandleDefeated() override;
@@ -120,6 +135,9 @@ protected:
 
     UPROPERTY(ReplicatedUsing = OnRep_BossPhase, BlueprintReadOnly, Category = "JUMANJI|Boss")
     uint8 BossPhase = 1;
+
+    UPROPERTY(Replicated, BlueprintReadOnly, Category = "JUMANJI|Boss")
+    int32 BossPhaseRevision = 1;
 
     UPROPERTY(ReplicatedUsing = OnRep_BossTelegraphState, BlueprintReadOnly, Category = "JUMANJI|Boss|Telegraph")
     FJumanjiBossTelegraphState BossTelegraphState;

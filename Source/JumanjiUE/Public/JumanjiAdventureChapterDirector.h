@@ -32,6 +32,19 @@ public:
     UFUNCTION(BlueprintPure, Category = "JUMANJI|Adventure")
     FName GetChapterId() const { return ChapterId; }
 
+    UFUNCTION(BlueprintPure, Category = "JUMANJI|Adventure")
+    FName GetBoardEventId() const { return BoardEventId; }
+
+    /** Stable designer IDs only; no trial UObject references leave this director. */
+    TArray<FName> GetConfiguredObjectiveIds() const;
+    TArray<FName> GetConfiguredTrialIds() const;
+    TArray<FName> GetCompletedTrialIds() const;
+    TArray<FName> GetCompletedTrialObjectiveIds() const;
+    bool AreCheckpointTrialIdsConsistent(
+        const TArray<FName>& CompletedTrialIds,
+        const TArray<FName>& CompletedObjectiveIds) const;
+    bool HasNoTrialsInProgress() const;
+
 protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "JUMANJI|Adventure")
     FName ChapterId = TEXT("EMERALD_JUNGLE_NINE_SEALS");
