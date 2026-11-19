@@ -85,6 +85,7 @@ Checkpoint CAS:
 - payload.checkpointSequence musi wynosić expectedSequence + 1.
 - encounterId, serverInstanceId, shardId i authorityEpoch w payloadzie muszą być zgodne z aktywnym lease.
 - Konflikt sequence zwraca HTTP 409; serwer musi pobrać aktualny stan i podjąć świadomą decyzję.
+- Pola sterujące requestu (TTL, authorityEpoch, expectedSequence) akceptują JSON integer oraz dokładny zapis całkowity typu 7.0; odrzucane są ułamki, NaN/Infinity i wartości logiczne. Stage 32 waliduje tak samo pola integer w payloadzie, zgodnie z matematycznym znaczeniem typu integer w JSON Schema.
 - Wygasły payload, brak wymaganych pól lub niedozwolone dane powodują odrzucenie przed zapisem.
 
 Podpis:
