@@ -23,6 +23,7 @@ void UJumanjiWorldEncounterSessionSubsystem::Initialize(
 void UJumanjiWorldEncounterSessionSubsystem::Deinitialize()
 {
     ActiveEncounterId = NAME_None;
+    ActiveSessionId.Invalidate();
     ParticipantProfileIds.Reset();
     ConnectedProfileIds.Reset();
     DisconnectedAtUtc.Reset();
