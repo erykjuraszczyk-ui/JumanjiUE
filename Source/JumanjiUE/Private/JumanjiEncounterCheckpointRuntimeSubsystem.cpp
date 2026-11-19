@@ -1039,7 +1039,9 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::StageVerifiedBackendResponse(
         || FName(*SpawnSetIdString) != EncounterDirector->GetSpawnSetId()
         || Seed < 0 || Seed > MAX_uint32
         || EncounterRevision < 1 || ChapterRevision < 1
-        || CurrentWave < 0 || TotalWaves < 1 || TotalWaves > 100 || CurrentWave > TotalWaves)
+        || CurrentWave < 0 || TotalWaves < 1 || TotalWaves > 100
+        || TotalWaves != EncounterDirector->GetTotalWaveCount()
+        || CurrentWave > TotalWaves)
     {
         OutError = TEXT("CHECKPOINT_CONTENT_IDS_NOT_ALLOWLISTED");
         return false;
@@ -1057,11 +1059,14 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::StageVerifiedBackendResponse(
     Candidate.SpawnSetId = FName(*SpawnSetIdString);
 
     const bool bValidBoundary =
-        (PhaseString == TEXT("Trials") && KindString == TEXT("TrialBoundary"))
+        (PhaseString == TEXT("Trials") && KindString == TEXT("TrialBoundary")
+            && CurrentWave == 0)
         || (PhaseString == TEXT("Combat") && KindString == TEXT("WaveBoundary")
             && CurrentWave >= 1 && CurrentWave <= TotalWaves)
-        || (PhaseString == TEXT("Boss") && KindString == TEXT("BossPhaseBoundary"))
-        || (PhaseString == TEXT("Reward") && KindString == TEXT("RewardPending"));
+        || (PhaseString == TEXT("Boss") && KindString == TEXT("BossPhaseBoundary")
+            && CurrentWave == 0)
+        || (PhaseString == TEXT("Reward") && KindString == TEXT("RewardPending")
+            && CurrentWave == 0);
     if (!bValidBoundary)
     {
         OutError = TEXT("CHECKPOINT_PHASE_BOUNDARY_MISMATCH");
