@@ -464,6 +464,7 @@ bool AJumanjiAdventureChapterDirector::BuildCheckpointRestoreObjectives(
         || ChapterTitle.IsEmpty()
         || ChapterDescription.IsEmpty()
         || ChapterObjectives.IsEmpty()
+        || ChapterObjectives.Num() > 32
         || ChapterObjectives.Num() != TrialActors.Num()
         || CompletedTrialIds.Num() != CompletedObjectiveIds.Num()
         || !AreCheckpointTrialIdsConsistent(CompletedTrialIds, CompletedObjectiveIds))
