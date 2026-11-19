@@ -10,9 +10,9 @@ class AJumanjiPlayerState;
 /**
  * Volatile, server-process encounter membership registry.
  *
- * It tracks profile IDs that participated in the currently running encounter
- * and a short disconnect grace window. It intentionally stores no live actor
- * references and does not write any encounter data into the player profile.
+ * It tracks verified profile IDs for one live encounter, a short reconnect
+ * grace window, and bounded terminal-result tombstones for disconnected
+ * participants. It stores no live actors and never writes profile data.
  */
 UCLASS(Config = Game)
 class JUMANJIUE_API UJumanjiWorldEncounterSessionSubsystem : public UGameInstanceSubsystem
@@ -23,25 +23,27 @@ public:
     virtual void Initialize(FSubsystemCollectionBase& Collection) override;
     virtual void Deinitialize() override;
 
-    /** Starts a new in-memory session and registers its initiating profile. */
     bool BeginEncounterSession(FName EncounterId, AJumanjiPlayerState* InitiatingPlayer);
-
-    /** Server-registers another already-connected world participant for reconnect. */
     bool RegisterConnectedParticipant(AJumanjiPlayerState* PlayerState);
-
-    /** Marks a registered participant disconnected during the active encounter. */
     bool MarkPlayerDisconnected(const AJumanjiPlayerState* PlayerState);
 
     /**
-     * Reattaches a reconnecting profile to the currently active same-server
-     * encounter when it disconnected inside the grace window.
+     * Reattaches a same-server participant inside the grace window.
+     * OutFeedbackState remains None for ordinary logins that were not
+     * disconnected members of an encounter.
      */
+    bool TryRejoinPlayer(
+        AJumanjiPlayerState* RejoiningPlayer,
+        FJumanjiEncounterReconnectState& OutReconnectState,
+        FJumanjiEncounterReconnectFeedbackState& OutFeedbackState
+    );
+
+    /** Backward-compatible overload for callers that only need the success snapshot. */
     bool TryRejoinPlayer(
         AJumanjiPlayerState* RejoiningPlayer,
         FJumanjiEncounterReconnectState& OutReconnectState
     );
 
-    /** Clears volatile membership when an encounter reaches a terminal state. */
     void EndEncounterSession(FName EncounterId);
 
     UFUNCTION(BlueprintPure, Category = "JUMANJI|Encounter|Session")
@@ -57,11 +59,26 @@ protected:
 
 private:
     bool IsValidProfileKey(const FString& ProfileId) const;
+    void PruneRecentlyEndedParticipants();
+    void StoreFeedbackRevision(FJumanjiEncounterReconnectFeedbackState& OutFeedbackState);
 
-    /** These values exist only in server process memory. */
+    /** Active-session membership is held only in server process memory. */
     FName ActiveEncounterId = NAME_None;
     TSet<FString> ParticipantProfileIds;
     TSet<FString> ConnectedProfileIds;
     TMap<FString, FDateTime> DisconnectedAtUtc;
     int32 ReconnectRevision = 0;
+
+    /** Bounded, short-lived tombstones let a returning participant learn that the encounter ended. */
+    TMap<FString, FName> RecentlyEndedEncounterIds;
+    TMap<FString, FDateTime> RecentlyEndedAtUtc;
+    TMap<FString, EJumanjiWorldEncounterPhase> RecentlyEndedPhases;
+
+    UPROPERTY(Config, EditDefaultsOnly, Category = "JUMANJI|Encounter|Session",
+        meta = (ClampMin = "60.0", ClampMax = "3600.0"))
+    float TerminalNoticeRetentionSeconds = 600.0f;
+
+    UPROPERTY(Config, EditDefaultsOnly, Category = "JUMANJI|Encounter|Session",
+        meta = (ClampMin = "16", ClampMax = "512"))
+    int32 MaxTerminalNoticeEntries = 256;
 };
