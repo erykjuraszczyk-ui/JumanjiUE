@@ -180,4 +180,5 @@ private:
 
     FTimerHandle TelegraphWarningTimerHandle;
     FTimerHandle TelegraphActiveTimerHandle;
+    bool bApplyingCheckpointRestoreState = false;
 };
