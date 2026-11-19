@@ -74,7 +74,8 @@ bool UJumanjiEncounterCheckpointBackendSubsystem::IsServerRuntime() const
 bool UJumanjiEncounterCheckpointBackendSubsystem::IsValidEncounterId(FName EncounterId) const
 {
     const FString Value = EncounterId.ToString();
-    if (Value.Len() < 3 || Value.Len() > 96)
+    if (Value.Len() < 3 || Value.Len() > 96
+        || Value[0] < TEXT('A') || Value[0] > TEXT('Z'))
     {
         return false;
     }
@@ -183,10 +184,10 @@ bool UJumanjiEncounterCheckpointBackendSubsystem::SendJsonRequest(
     Request->SetContentAsString(BodyJson);
 
     Request->OnProcessRequestComplete().BindLambda(
-        [Callback = MoveTemp(Callback)](
+        [Callback](
             FHttpRequestPtr CompletedRequest,
             FHttpResponsePtr Response,
-            bool bWasSuccessful) mutable
+            bool bWasSuccessful)
         {
             FJumanjiCheckpointBackendResponse Result;
             Result.bTransportSucceeded = bWasSuccessful && Response.IsValid();
@@ -198,7 +199,16 @@ bool UJumanjiEncounterCheckpointBackendSubsystem::SendJsonRequest(
             Callback.ExecuteIfBound(Result);
         });
 
-    return Request->ProcessRequest();
+    if (!Request->ProcessRequest())
+    {
+        CompleteLocalFailure(
+            Callback,
+            TEXT("REQUEST_NOT_STARTED"),
+            TEXT("Unreal HTTP module did not start the checkpoint request"));
+        return false;
+    }
+
+    return true;
 }
 
 bool UJumanjiEncounterCheckpointBackendSubsystem::AcquireLease(
