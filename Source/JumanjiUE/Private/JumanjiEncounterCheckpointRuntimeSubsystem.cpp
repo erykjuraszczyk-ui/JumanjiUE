@@ -1078,7 +1078,9 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::ParseAndValidateRestoreEnvelop
             || !IsStableContentId(RewardDefinitionId, 96)
             || !IsStableContentId(TransactionId, 128)
             || Expectations.AllowedRewardDefinitionId.IsNone()
-            || RewardDefinitionId != Expectations.AllowedRewardDefinitionId.ToString())
+            || Expectations.ExpectedRewardTransactionId.IsNone()
+            || RewardDefinitionId != Expectations.AllowedRewardDefinitionId.ToString()
+            || TransactionId != Expectations.ExpectedRewardTransactionId.ToString())
         {
             return Fail(TEXT("REWARD_PREFLIGHT_FAILED"), TEXT("Reward checkpoint lacks an approved stable idempotency reference."));
         }
@@ -1101,6 +1103,7 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::ReadAndStageRestorePlan(
         || Expectations.ChapterId.IsNone() || Expectations.BoardEventId.IsNone()
         || Expectations.SpawnSetId.IsNone() || Expectations.BossDefinitionId.IsNone()
         || Expectations.AllowedRewardDefinitionId.IsNone()
+        || Expectations.ExpectedRewardTransactionId.IsNone()
         || Expectations.AllowedObjectiveIds.IsEmpty() || Expectations.AllowedTrialIds.IsEmpty()
         || Expectations.ServerBuildId.IsEmpty() || Expectations.RulesetVersion.IsEmpty()
         || Expectations.WorldContentVersion.IsEmpty())
