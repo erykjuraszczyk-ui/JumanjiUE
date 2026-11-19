@@ -248,6 +248,11 @@ bool AJumanjiWorldEncounterDirector::StartEncounter(AJumanjiPlayerState* Initiat
         &AJumanjiWorldEncounterDirector::HandleAdventureChapterChanged);
     bListeningForChapterChanges = true;
 
+    GameState->OnAdventureObjectivesChanged.AddUniqueDynamic(
+        this,
+        &AJumanjiWorldEncounterDirector::HandleAdventureObjectivesChanged);
+    bListeningForObjectiveChanges = true;
+
     PublishEncounterState(EJumanjiWorldEncounterPhase::Trials, 0, 0);
 
     if (!AdventureChapterDirector->StartChapter())
@@ -271,6 +276,35 @@ void AJumanjiWorldEncounterDirector::HandleAdventureChapterChanged(
         return;
     }
 
+    SpawnWave(0);
+}
+
+void AJumanjiWorldEncounterDirector::HandleAdventureObjectivesChanged(int32 ObjectiveRevision)
+{
+    if (!HasAuthority()
+        || !bEncounterActive
+        || ActiveWaveIndex != INDEX_NONE)
+    {
+        return;
+    }
+
+    const UWorld* World = GetWorld();
+    const AJumanjiGameState* GameState = World
+        ? World->GetGameState<AJumanjiGameState>()
+        : nullptr;
+    const FJumanjiAdventureChapterState ChapterState = GameState
+        ? GameState->GetAdventureChapterState()
+        : FJumanjiAdventureChapterState();
+
+    if (!GameState
+        || ChapterState.ChapterId != RequiredChapterId
+        || ChapterState.Phase != EJumanjiAdventureChapterPhase::Active
+        || !IsValid(AdventureChapterDirector)
+        || !AdventureChapterDirector->HasNoTrialsInProgress())
+    {
+        return;
+    }
+
     if (UJumanjiEncounterCheckpointRuntimeSubsystem* CheckpointSubsystem = GetGameInstance()
         ? GetGameInstance()->GetSubsystem<UJumanjiEncounterCheckpointRuntimeSubsystem>()
         : nullptr)
@@ -279,8 +313,6 @@ void AJumanjiWorldEncounterDirector::HandleAdventureChapterChanged(
             this,
             EJumanjiEncounterCheckpointSafePoint::TrialBoundary);
     }
-
-    SpawnWave(0);
 }
 
 void AJumanjiWorldEncounterDirector::SpawnWave(int32 WaveIndex)
@@ -614,6 +646,13 @@ void AJumanjiWorldEncounterDirector::CompleteEncounter()
             &AJumanjiWorldEncounterDirector::HandleAdventureChapterChanged);
         bListeningForChapterChanges = false;
     }
+    if (bListeningForObjectiveChanges)
+    {
+        GameState->OnAdventureObjectivesChanged.RemoveDynamic(
+            this,
+            &AJumanjiWorldEncounterDirector::HandleAdventureObjectivesChanged);
+        bListeningForObjectiveChanges = false;
+    }
 
     UnbindActiveEnemies();
     SpawnedEncounterActors.Reset();
@@ -676,6 +715,20 @@ void AJumanjiWorldEncounterDirector::FailEncounter(FName ReasonId)
             }
         }
         bListeningForChapterChanges = false;
+    }
+
+    if (bListeningForObjectiveChanges)
+    {
+        if (UWorld* World = GetWorld())
+        {
+            if (AJumanjiGameState* GameState = World->GetGameState<AJumanjiGameState>())
+            {
+                GameState->OnAdventureObjectivesChanged.RemoveDynamic(
+                    this,
+                    &AJumanjiWorldEncounterDirector::HandleAdventureObjectivesChanged);
+            }
+        }
+        bListeningForObjectiveChanges = false;
     }
 
     BP_OnEncounterFailed(ReasonId);
@@ -751,6 +804,27 @@ void AJumanjiWorldEncounterDirector::EndPlay(const EEndPlayReason::Type EndPlayR
             }
         }
         bListeningForChapterChanges = false;
+    }
+
+    if (bListeningForObjectiveChanges)
+    {
+        if (UWorld* World = GetWorld())
+        {
+            if (AJumanjiGameState* GameState = World->GetGameState<AJumanjiGameState>())
+            {
+                GameState->OnAdventureObjectivesChanged.RemoveDynamic(
+                    this,
+                    &AJumanjiWorldEncounterDirector::HandleAdventureObjectivesChanged);
+            }
+        }
+        bListeningForObjectiveChanges = false;
+    }
+
+    if (UJumanjiEncounterCheckpointRuntimeSubsystem* CheckpointSubsystem = GetGameInstance()
+        ? GetGameInstance()->GetSubsystem<UJumanjiEncounterCheckpointRuntimeSubsystem>()
+        : nullptr)
+    {
+        CheckpointSubsystem->EndEncounterCheckpointSession(EncounterId);
     }
 
     UnbindActiveEnemies();
