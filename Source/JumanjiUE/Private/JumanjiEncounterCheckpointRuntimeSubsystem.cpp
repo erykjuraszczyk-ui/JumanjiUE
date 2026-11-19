@@ -250,7 +250,7 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::AcquireEncounterLease(
     FName EncounterId,
     FJumanjiCheckpointRuntimeCallback Callback)
 {
-    if (!IsServerRuntime() || EncounterId.IsNone() || bLeaseRequestPending)
+    if (!IsServerRuntime() || EncounterId.IsNone() || bLeaseRequestPending || bLeaseReady || bCaptureRequestPending)
     {
         Complete(Callback, false, TEXT("LEASE_REQUEST_REJECTED"),
             TEXT("Checkpoint lease requires a server runtime, a valid encounter and no pending lease request."));
@@ -621,9 +621,9 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::CaptureSafePoint(
     const FJumanjiEncounterCheckpointCaptureInput& Input,
     FJumanjiCheckpointRuntimeCallback Callback)
 {
-    if (!bLeaseReady || !IsServerRuntime())
+    if (!bLeaseReady || !IsServerRuntime() || bCaptureRequestPending)
     {
-        Complete(Callback, false, TEXT("LEASE_NOT_READY"), TEXT("No active trusted checkpoint lease is available."));
+        Complete(Callback, false, TEXT("LEASE_NOT_READY_OR_WRITE_PENDING"), TEXT("A trusted lease is required and only one checkpoint write may be in flight."));
         return false;
     }
 
@@ -643,6 +643,7 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::CaptureSafePoint(
         return false;
     }
 
+    bCaptureRequestPending = true;
     const TWeakObjectPtr<UJumanjiEncounterCheckpointRuntimeSubsystem> WeakThis(this);
     const bool bStarted = BackendSubsystem->RenewLease(
         ActiveEncounterId,
@@ -659,6 +660,7 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::CaptureSafePoint(
                 }
                 if (!RenewResponse.bTransportSucceeded || RenewResponse.HttpStatusCode != 200)
                 {
+                    Self->bCaptureRequestPending = false;
                     Self->bLeaseReady = false;
                     Complete(Callback, false, TEXT("LEASE_RENEW_FAILED"), TEXT("Safe-point capture was not written because the lease could not be renewed."));
                     return;
@@ -678,6 +680,7 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::CaptureSafePoint(
                             {
                                 return;
                             }
+                            Current->bCaptureRequestPending = false;
                             if (!WriteResponse.bTransportSucceeded || WriteResponse.HttpStatusCode != 201)
                             {
                                 if (WriteResponse.HttpStatusCode == 409)
@@ -689,7 +692,27 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::CaptureSafePoint(
                                 return;
                             }
 
-                            Current->LastCheckpointSequence = NextSequence;
+                            TSharedPtr<FJsonObject> WriteHead;
+                            const TSharedRef<TJsonReader<>> WriteReader = TJsonReaderFactory<>::Create(WriteResponse.ResponseBody);
+                            int64 CommittedSequence = 0;
+                            int64 CommittedEpoch = 0;
+                            FString CommittedEncounter;
+                            if (!FJsonSerializer::Deserialize(WriteReader, WriteHead)
+                                || !WriteHead.IsValid()
+                                || !ReadInteger(WriteHead, TEXT("checkpointSequence"), CommittedSequence, 1)
+                                || !ReadInteger(WriteHead, TEXT("authorityEpoch"), CommittedEpoch, 1)
+                                || !ReadString(WriteHead, TEXT("encounterId"), CommittedEncounter)
+                                || CommittedSequence != NextSequence
+                                || CommittedEpoch != Current->AuthorityEpoch
+                                || CommittedEncounter != Current->ActiveEncounterId.ToString())
+                            {
+                                Current->bLeaseReady = false;
+                                Complete(Callback, false, TEXT("CHECKPOINT_COMMIT_RESPONSE_INVALID"),
+                                    TEXT("Backend commit receipt did not match the pending sequence, epoch or encounter."));
+                                return;
+                            }
+
+                            Current->LastCheckpointSequence = CommittedSequence;
                             Complete(Callback, true, TEXT("CHECKPOINT_COMMITTED"),
                                 TEXT("Signed logical checkpoint was committed by the trusted backend."), NextSequence);
                         }));
