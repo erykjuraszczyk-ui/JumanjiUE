@@ -447,6 +447,25 @@ bool AJumanjiWorldEncounterDirector::MaterializeCheckpointRestore(
         ? StagedEnemies.Num()
         : (TargetPhase == EJumanjiWorldEncounterPhase::Boss ? 1 : 0);
 
+    // Stage the director's complete in-memory view before GameState emits
+    // delegates, so callbacks never observe a partially initialized encounter.
+    bEncounterActive = !bCompleteImmediately;
+    ActiveWaveIndex = TargetPhase == EJumanjiWorldEncounterPhase::Combat
+        ? RestoreWaveIndex
+        : INDEX_NONE;
+    ActiveEnemies.Reset();
+    ActiveBoss = StagedBoss;
+    SpawnedEncounterActors.Reset();
+    for (AJumanjiEnemyCharacter* Enemy : StagedEnemies)
+    {
+        ActiveEnemies.Add(Enemy);
+        SpawnedEncounterActors.Add(Enemy);
+    }
+    if (IsValid(StagedBoss))
+    {
+        SpawnedEncounterActors.Add(StagedBoss);
+    }
+
     if (!GameState->ApplyEncounterCheckpointRestore(
         EncounterId,
         Waves.Num(),
@@ -466,25 +485,20 @@ bool AJumanjiWorldEncounterDirector::MaterializeCheckpointRestore(
         {
             SessionSubsystem->EndEncounterSession(EncounterId);
         }
+        bEncounterActive = false;
+        ActiveWaveIndex = INDEX_NONE;
+        ActiveEnemies.Reset();
+        ActiveBoss = nullptr;
+        SpawnedEncounterActors.Reset();
         DestroyStagedActors();
         return false;
     }
-
-    bEncounterActive = !bCompleteImmediately;
-    ActiveWaveIndex = TargetPhase == EJumanjiWorldEncounterPhase::Combat
-        ? RestoreWaveIndex
-        : INDEX_NONE;
-    ActiveEnemies.Reset();
-    ActiveBoss = StagedBoss;
-    SpawnedEncounterActors.Reset();
 
     for (AJumanjiEnemyCharacter* Enemy : StagedEnemies)
     {
         Enemy->OnEnemyDefeated.AddUniqueDynamic(
             this,
             &AJumanjiWorldEncounterDirector::HandleEnemyDefeated);
-        ActiveEnemies.Add(Enemy);
-        SpawnedEncounterActors.Add(Enemy);
     }
 
     if (IsValid(ActiveBoss))
@@ -495,7 +509,6 @@ bool AJumanjiWorldEncounterDirector::MaterializeCheckpointRestore(
         ActiveBoss->OnBossPhaseChanged.AddUniqueDynamic(
             this,
             &AJumanjiWorldEncounterDirector::HandleBossPhaseChanged);
-        SpawnedEncounterActors.Add(ActiveBoss);
     }
 
     if (TargetPhase == EJumanjiWorldEncounterPhase::Trials)
