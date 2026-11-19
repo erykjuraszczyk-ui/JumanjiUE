@@ -102,7 +102,8 @@ class EncounterCheckpointBackend:
         return connection
 
     def initialize(self) -> None:
-        with self._connect() as connection:
+        connection = self._connect()
+        try:
             connection.execute("PRAGMA journal_mode = WAL")
             connection.execute(
                 """
@@ -119,6 +120,8 @@ class EncounterCheckpointBackend:
                 )
                 """
             )
+        finally:
+            connection.close()
 
     @staticmethod
     def _exact_fields(body: object, expected: set[str]) -> dict[str, Any]:
