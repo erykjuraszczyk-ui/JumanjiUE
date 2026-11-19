@@ -29,7 +29,9 @@ class EncounterReconnectValidationTests(unittest.TestCase):
                 content += (
                     "void AJumanjiGameMode::PostLogin(APlayerController* NewPlayer) {\n"
                     " ProfileSubsystem->LoadProfile(ProfileId, Snapshot);\n"
-                    " SessionSubsystem->TryRejoinPlayer(JumanjiPlayerState, ReconnectState);\n"
+                    " FJumanjiEncounterReconnectFeedbackState FeedbackState;\n"
+                    " SessionSubsystem->TryRejoinPlayer(JumanjiPlayerState, ReconnectState, FeedbackState);\n"
+                    " JumanjiPlayerState->SetEncounterReconnectFeedback(FeedbackState);\n"
                     " if (ReconnectState.Phase == EJumanjiWorldEncounterPhase::Reward) {\n"
                     "  RewardSubsystem->GrantWorldEncounterCompletionReward(JumanjiPlayerState, ReconnectState.EncounterId);\n"
                     " }\n"
