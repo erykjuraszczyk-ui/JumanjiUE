@@ -67,7 +67,8 @@ namespace
 
 bool UJumanjiEncounterCheckpointBackendSubsystem::IsServerRuntime() const
 {
-    const UWorld* World = GetWorld();
+    const UGameInstance* GameInstance = GetGameInstance();
+    const UWorld* World = GameInstance ? GameInstance->GetWorld() : nullptr;
     return World && World->GetNetMode() != NM_Client;
 }
 
