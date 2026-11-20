@@ -41,6 +41,7 @@ Open-world third-person adventure RPG prototype with a shared-world direction an
 - Stage 34 — Safe-Point Snapshot Builder & Restore Staging: server snapshot creation at trial/wave/boss/reward boundaries, lease and fencing lifecycle, opaque participant IDs, signed checkpoint preflight and a private restore candidate without world mutation.
 - Stage 35 — Encounter Restore Materialization & Atomic Publish: authenticated participant mapping, profile revision and reward-ledger reconciliation, trial/wave/boss reconstruction, restored session identity and a single server-side GameState commit before actor replication.
 - Stage 36 — Encounter Startup Coordinator & Participant Barrier: automatic server recovery after profile restore, persistent-level director discovery, staged-candidate retry after each PostLogin and bounded 180-second wait for all checkpoint participants.
+- Stage 37 — Recovery Observability & Operator Controls: secret-free process diagnostics, correlated outcome logs, bounded retry/abort server APIs, operator runbook, source validator and regression CI.
 
 ## The nine playable Great Spirits
 1. Great Spirit I — Duch Korzeni (Root / Guardian)
@@ -112,6 +113,7 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - Docs/STAGE_34_ENCOUNTER_SAFEPOINT_SNAPSHOT_RESTORE_STAGING.md — live-world safe-point snapshot builder, lease lifecycle, privacy boundaries, restore preflight and acceptance tests.
 - Docs/STAGE_35_ENCOUNTER_RESTORE_MATERIALIZATION_ATOMIC_PUBLISH.md — participant reconciliation, profile revision and reward receipt checks, trial/wave/boss reconstruction, server commit ordering, startup integration and known recovery limitations.
 - Docs/STAGE_36_ENCOUNTER_STARTUP_COORDINATOR_PARTICIPANT_BARRIER.md — automatic PostLogin recovery startup, persistent-level director selection, staged participant barrier, bounded timeout and host acceptance tests.
+- Docs/STAGE_37_ENCOUNTER_RECOVERY_OBSERVABILITY_OPERATOR_CONTROLS.md — process-local diagnostics, stable outcome codes, correlated logs, native server-only operator retry/abort controls and recovery runbook.
 - Scripts/validate_encounter_startup_coordinator.py and Scripts/Tests/test_validate_encounter_startup_coordinator.py — Stage 36 static startup/recovery validator and regression tests.
 - Scripts/validate_encounter_restore_materialization.py and Scripts/Tests/test_validate_encounter_restore_materialization.py — Stage 35 static source validator and regression tests.
 - Backend/EncounterCheckpointService/README.md — local checkpoint backend setup and server environment.
@@ -192,6 +194,7 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - one-time server-side exploration reward per stable TraversalId through UJumanjiProgressionRewardSubsystem and the existing PlayerState transaction ledger;
 - 12 traversal reward definitions with optional DT_TraversalRewards override, source CSV, Python validator, unit tests and GitHub Actions quality gate;
 - AJumanjiWorldEncounterDirector with server-side Frost Gate exploration/traversal receipt checks, existing nine-trial chapter integration, configurable bounded enemy waves and an AJumanjiBossCharacter finale;
+- UJumanjiEncounterCheckpointRuntimeSubsystem with secret-free process diagnostics, correlated outcome logs and native server-only operator retry/abort controls (Stage 37);
 - replicated FJumanjiWorldEncounterState with Trials/Combat/Boss/Reward/Completed/Failed phases and server-authoritative GameState lifecycle;
 - PlayerController server RPC for starting encounters with a server-checked interaction distance;
 - AJumanjiEnemyCharacter::OnEnemyDefeated event for server-side wave advancement and boss defeat sequencing;

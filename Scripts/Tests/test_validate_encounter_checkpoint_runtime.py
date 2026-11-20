@@ -61,8 +61,8 @@ class EncounterCheckpointRuntimeTests(unittest.TestCase):
             path = root / "Source/JumanjiUE/Public/JumanjiEncounterCheckpointRuntimeSubsystem.h"
             source = path.read_text(encoding="utf-8")
             source = source.replace(
-                "FName EncounterId = NAME_None;",
-                "FName EncounterId = NAME_None;\\n    TObjectPtr<AActor> ForbiddenActor = nullptr;",
+                "FName RewardTransactionId = NAME_None;",
+                "FName RewardTransactionId = NAME_None;\\n    TObjectPtr<AActor> ForbiddenActor = nullptr;",
                 1,
             )
             path.write_text(source, encoding="utf-8")
