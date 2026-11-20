@@ -22,14 +22,7 @@ void UJumanjiAbilityHUDSlotWidget::NativeConstruct()
         bHasCapturedPlaceholderBrush = true;
     }
 
-    if (!bHasCapturedDefaultTextColors)
-    {
-        if (AbilityNameText) DefaultAbilityNameColor = AbilityNameText->GetColorAndOpacity();
-        if (CooldownText) DefaultCooldownTextColor = CooldownText->GetColorAndOpacity();
-        if (ResourceCostText) DefaultResourceCostColor = ResourceCostText->GetColorAndOpacity();
-        if (SlotStateText) DefaultSlotStateColor = SlotStateText->GetColorAndOpacity();
-        bHasCapturedDefaultTextColors = true;
-    }
+    CaptureDefaultTextColors();
 
     if (SlotButton)
     {
@@ -105,6 +98,10 @@ void UJumanjiAbilityHUDSlotWidget::ApplyAccessibilityOptions(
     bool bInHighContrast,
     bool bInReduceMotion)
 {
+    // Capture Blueprint-authored colors before applying contrast, even when the parent
+    // HUD forwards settings before this slot's first NativeConstruct callback.
+    CaptureDefaultTextColors();
+
     TouchTargetScale = FMath::Clamp(
         FMath::IsFinite(InTouchTargetScale) ? InTouchTargetScale : 1.0f,
         0.85f,
@@ -125,6 +122,20 @@ void UJumanjiAbilityHUDSlotWidget::ApplyAccessibilityOptions(
     }
 
     UpdateAccessibilityPresentation();
+}
+
+void UJumanjiAbilityHUDSlotWidget::CaptureDefaultTextColors()
+{
+    if (bHasCapturedDefaultTextColors)
+    {
+        return;
+    }
+
+    if (AbilityNameText) DefaultAbilityNameColor = AbilityNameText->GetColorAndOpacity();
+    if (CooldownText) DefaultCooldownTextColor = CooldownText->GetColorAndOpacity();
+    if (ResourceCostText) DefaultResourceCostColor = ResourceCostText->GetColorAndOpacity();
+    if (SlotStateText) DefaultSlotStateColor = SlotStateText->GetColorAndOpacity();
+    bHasCapturedDefaultTextColors = true;
 }
 
 void UJumanjiAbilityHUDSlotWidget::UpdateAccessibilityPresentation()
