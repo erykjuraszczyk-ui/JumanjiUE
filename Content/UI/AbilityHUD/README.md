@@ -50,3 +50,18 @@ Set the default brush on AbilityIcon to a neutral placeholder. The C++ slot widg
 - No widget writes GAS attributes or applies Gameplay Effects.
 
 See `Docs/STAGE_21_ABILITY_PRESENTATION_BLUEPRINT_INTEGRATION.md` for the complete hierarchy, configuration sequence, mobile layout guidance and acceptance checklist.
+
+## Stage 22 — Mobile HUD Polish & Accessibility
+
+The native HUD exposes `ApplyMobileAccessibilitySettings(HUDScale, TouchTargetScale, HighContrast, ReduceMotion)`.
+
+- HUD scale is clamped to 0.75–1.35.
+- Individual touch-slot scale is clamped to 0.85–1.5 and scales the button hit target with its visuals.
+- High Contrast switches slot text to white/yellow semantic colors; keep an opaque/dark backing panel in the Widget Blueprint to preserve contrast.
+- Reduce Motion disables the activation pulse animation. Gameplay feedback and GAS state are unchanged.
+
+In `WBP_AbilityHUD`, wrap the complete HUD content in a `SafeZone` widget. Use anchors/constraints rather than fixed screen pixels. Build landscape and portrait arrangements with a Widget Switcher or responsive Canvas/SizeBox branches. Keep the passive card noninteractive.
+
+Recommended authoring baseline: at least 48 logical UMG units for ordinary touch targets, larger for Primary. Validate actual physical touch size after the Android DPI curve is applied. Do not interpret UMG logical units as raw device pixels.
+
+Persist the four user choices from the settings screen through the game's user-settings/SaveGame layer; this widget API applies values but does not write a profile by itself. See `Docs/STAGE_22_MOBILE_HUD_POLISH_ACCESSIBILITY.md`.
