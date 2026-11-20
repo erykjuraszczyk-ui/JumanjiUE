@@ -65,7 +65,7 @@ Przykładowe outcome:
 - `RESTORE_TIMED_OUT`
 - `OPERATOR_RETRY_REQUESTED`
 - `OPERATOR_ABORT_COMPLETED`
-- `LEASE_RELEASED`
+- `LEASE_RELEASE_REQUESTED`
 
 ErrorCode jest stałym kodem z runtime, nie dowolnym tekstem z backendu. Nie loguj response body, tokenów, ProfileId, participantKey, payloadu ani sekretów. W celu korelacji zdarzeń używaj correlation ID, EncounterId, sequence, epoch i HTTP status.
 
