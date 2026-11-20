@@ -17,6 +17,76 @@ enum class EJumanjiEncounterCheckpointSafePoint : uint8
     RewardPending
 };
 
+enum class EJumanjiEncounterRecoveryOutcome : uint8
+{
+    None,
+    SessionStarted,
+    LeaseAcquired,
+    LeaseAcquireFailed,
+    LeaseRenewalFailed,
+    CheckpointWriteStarted,
+    CheckpointWriteCommitted,
+    CheckpointWriteFailed,
+    RestoreReadStarted,
+    RestoreReadFailed,
+    RestoreCandidateStaged,
+    RestoreWaitingForParticipants,
+    RestoreCommitted,
+    RestoreRejected,
+    RestoreTimedOut,
+    OperatorRetryRequested,
+    OperatorAbortCompleted,
+    LeaseReleased
+};
+
+/** Reasons accepted by the trusted host's operator-abort integration. */
+enum class EJumanjiEncounterRecoveryAbortReason : uint8
+{
+    OperatorCancelled,
+    MaintenanceWindow,
+    ConfigurationCorrection,
+    IncidentContainment
+};
+
+/**
+ * Secret-free, process-local recovery diagnostics. This is a native C++ value
+ * object: it is not replicated, Blueprint-reflected, persisted or sent to clients.
+ */
+struct FJumanjiEncounterRecoveryDiagnostics
+{
+    FGuid CorrelationId;
+    FName EncounterId = NAME_None;
+    EJumanjiEncounterRecoveryOutcome LastOutcome = EJumanjiEncounterRecoveryOutcome::None;
+    FName LastErrorCode = NAME_None;
+    int32 LastHttpStatusCode = 0;
+    int64 CheckpointSequence = 0;
+    int64 AuthorityEpoch = 0;
+    bool bLeaseAcquiring = false;
+    bool bLeaseReady = false;
+    bool bReadInFlight = false;
+    bool bWriteInFlight = false;
+    bool bCheckpointWriteBlockedUntilResync = false;
+    bool bHasStagedRestoreCandidate = false;
+    bool bWaitingForParticipants = false;
+    bool bRestoreCommitInProgress = false;
+    bool bReleaseLeaseWhenIdle = false;
+    double RecoveryAgeSeconds = 0.0;
+    uint64 LeaseAcquisitionAttempts = 0;
+    uint64 LeaseAcquisitionFailures = 0;
+    uint64 LeaseRenewalAttempts = 0;
+    uint64 LeaseRenewalFailures = 0;
+    uint64 CheckpointWriteAttempts = 0;
+    uint64 CheckpointWriteFailures = 0;
+    uint64 RestoreReadAttempts = 0;
+    uint64 RestoreReadFailures = 0;
+    uint64 RestoreCommitAttempts = 0;
+    uint64 RestoreCommitFailures = 0;
+    uint64 RestoreCommitSuccesses = 0;
+    uint64 ParticipantWaitTimeouts = 0;
+    uint64 OperatorRetryRequests = 0;
+    uint64 OperatorAbortRequests = 0;
+};
+
 /**
  * Private, validated logical restore plan. It deliberately contains no UObject,
  * actor reference, transform, AI state, timer, profile ID, inventory or wallet.
@@ -99,6 +169,13 @@ public:
     int64 GetLastCommittedSequence() const { return LastCommittedSequence; }
 
 private:
+    void RecordRecoveryEvent(
+        EJumanjiEncounterRecoveryOutcome Outcome,
+        FName ErrorCode = NAME_None,
+        int32 HttpStatusCode = 0);
+    static FName RecoveryOutcomeCode(EJumanjiEncounterRecoveryOutcome Outcome);
+    static bool IsValidOperatorAbortReason(EJumanjiEncounterRecoveryAbortReason Reason);
+
     bool IsServerRuntime() const;
     bool ReadRequiredServerMetadata(
         FString& OutServerInstanceId,
@@ -141,6 +218,26 @@ private:
 
     UPROPERTY(Transient)
     TObjectPtr<UJumanjiEncounterCheckpointBackendSubsystem> BackendSubsystem;
+
+    FGuid RecoveryCorrelationId;
+    double RecoveryStartedAtSeconds = 0.0;
+    EJumanjiEncounterRecoveryOutcome LastRecoveryOutcome = EJumanjiEncounterRecoveryOutcome::None;
+    FName LastRecoveryErrorCode = NAME_None;
+    int32 LastRecoveryHttpStatusCode = 0;
+    uint64 LeaseAcquisitionAttempts = 0;
+    uint64 LeaseAcquisitionFailures = 0;
+    uint64 LeaseRenewalAttempts = 0;
+    uint64 LeaseRenewalFailures = 0;
+    uint64 CheckpointWriteAttempts = 0;
+    uint64 CheckpointWriteFailures = 0;
+    uint64 RestoreReadAttempts = 0;
+    uint64 RestoreReadFailures = 0;
+    uint64 RestoreCommitAttempts = 0;
+    uint64 RestoreCommitFailures = 0;
+    uint64 RestoreCommitSuccesses = 0;
+    uint64 ParticipantWaitTimeouts = 0;
+    uint64 OperatorRetryRequests = 0;
+    uint64 OperatorAbortRequests = 0;
 
     FName ActiveEncounterId = NAME_None;
     FGuid ActiveSessionId;
