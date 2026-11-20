@@ -1,0 +1,15 @@
+CaseId,InjectionPoint,InjectedFault,ExpectedOutcome,MustRemainUnchanged,ValidationLayer
+ACK_LOST_AFTER_COMMIT,HTTP response after SQLite commit,Drop successful PUT response,RECONCILE_BEFORE_RETRY,Checkpoint sequence and reward ledger,BackendIntegration
+BACKEND_RESTART_DURABILITY,Backend process boundary,Recreate service against same SQLite file and signing key,CHECKPOINT_SURVIVES_RESTART,Stored signed checkpoint payload,BackendIntegration
+SQLITE_ABORT_WRITE,SQLite checkpoint update,Abort UPDATE through a test trigger,NO_PARTIAL_CHECKPOINT_COMMIT,Checkpoint sequence and envelope,BackendIntegration
+SAME_SEQUENCE_CAS_RACE,Checkpoint compare-and-swap,Two writers submit the same expected sequence,EXACTLY_ONE_WRITER_WINS,Committed checkpoint head,BackendIntegration
+SIGNATURE_TAMPER,Stored checkpoint read,Modify one signed payload field,SIGNATURE_INVALID,GameState and world,BackendIntegration
+CHECKPOINT_EXPIRED,Stored checkpoint read,Move trusted expiry into the past,CHECKPOINT_EXPIRED,GameState and world,BackendIntegration
+BACKEND_UNREACHABLE,HTTP transport,Stop the local service socket,FAIL_CLOSED_NO_WORLD_MUTATION,GameState and active world,BackendIntegration
+LEASE_RENEWAL_LOSS,Unreal runtime lease renewal,Return transport failure or non-200 renewal response,BLOCK_WRITES_UNTIL_RESYNC,Checkpoint sequence and authority state,StaticSourceAndPIE
+MISSING_PARTICIPANT,Startup participant barrier,Withhold one authenticated checkpoint participant,WAIT_WITHOUT_PUBLISH,GameState and replicated actors,StaticSourceAndPIE
+PROFILE_REVISION_ROLLBACK,Restore profile preflight,Provide a live profile revision below checkpoint revision,REJECT_WITHOUT_PUBLISH,Profile snapshot and GameState,StaticSourceAndPIE
+REWARD_ALREADY_COMMITTED,Reward ledger reconciliation,Return an existing transaction receipt,NO_DUPLICATE_GRANT,Profile balances and inventory,StaticSourceAndServerTest
+REWARD_LEDGER_UNAVAILABLE,Reward ledger reconciliation,Fail the authoritative receipt lookup,NO_PUBLISH,GameState and replicated actors,ManualServerTest
+ACTOR_STAGING_FAILURE,Restore materialization,Fail a staged actor spawn or initialization,DESTROY_STAGED_ACTORS_NO_PUBLISH,GameState and pre-existing world actors,ManualPIE
+OPERATOR_ABORT_DURING_WAIT,Operator recovery control,Abort while only a staged candidate waits for participants,CLEAR_CANDIDATE_ONLY,GameState and active gameplay world,StaticSourceAndServerTest
