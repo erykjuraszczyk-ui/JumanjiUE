@@ -136,7 +136,7 @@ def validate_project(root: Path) -> list[str]:
     for token in (
         "!IsServerRuntime()",
         "!IsValidOperatorAbortReason(Reason)",
-        "bHasStagedRestoreCandidate || !bWaitingForRestoreParticipants",
+        "!bHasStagedRestoreCandidate || !bWaitingForRestoreParticipants",
         "bReadInFlight || bWriteInFlight",
         "World->GetTimerManager().ClearTimer(RestoreParticipantWaitTimerHandle)",
         "OPERATOR_ABORTED_STAGED_RESTORE",
