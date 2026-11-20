@@ -44,8 +44,10 @@ class RecoveryObservabilityTests(unittest.TestCase):
             root = self._copy_fixture(tmp)
             path = root / MODULE.RUNTIME_CPP
             source = path.read_text(encoding="utf-8")
-            source = source.replace("if (!IsServerRuntime() || !IsValid(EncounterDirector) || !EncounterDirector->HasAuthority())",
-                                    "if (!IsValid(EncounterDirector))", 1)
+            start = source.index("bool UJumanjiEncounterCheckpointRuntimeSubsystem::RequestOperatorRetry(")
+            end = source.index("bool UJumanjiEncounterCheckpointRuntimeSubsystem::RequestOperatorAbort(", start)
+            retry = source[start:end].replace("!IsServerRuntime()", "true", 1)
+            source = source[:start] + retry + source[end:]
             path.write_text(source, encoding="utf-8")
             self.assertTrue(any("!IsServerRuntime()" in e for e in MODULE.validate_project(root)))
 
