@@ -41,6 +41,7 @@ Open-world third-person adventure RPG prototype with a shared-world direction an
 - Stage 34 — Safe-Point Snapshot Builder & Restore Staging: server snapshot creation at trial/wave/boss/reward boundaries, lease and fencing lifecycle, opaque participant IDs, signed checkpoint preflight and a private restore candidate without world mutation.
 - Stage 35 — Encounter Restore Materialization & Atomic Publish: authenticated participant mapping, profile revision and reward-ledger reconciliation, trial/wave/boss reconstruction, restored session identity and a single server-side GameState commit before actor replication.
 - Stage 36 — Encounter Startup Coordinator & Participant Barrier: automatic server recovery after profile restore, persistent-level director discovery, staged-candidate retry after each PostLogin and bounded 180-second wait for all checkpoint participants.
+- Stage 37 — Recovery Observability & Operator Controls: secret-free process diagnostics, correlated outcome logs, bounded retry/abort server APIs, operator runbook, source validator and regression CI.
 
 ## The nine playable Great Spirits
 1. Great Spirit I — Duch Korzeni (Root / Guardian)
