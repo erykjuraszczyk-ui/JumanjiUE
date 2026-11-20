@@ -72,7 +72,6 @@ struct FJumanjiEncounterRecoveryDiagnostics
     bool bWaitingForParticipants = false;
     bool bRestoreCommitInProgress = false;
     bool bReleaseLeaseWhenIdle = false;
-    FName LastOperatorAbortReason = NAME_None;
     double RecoveryAgeSeconds = 0.0;
     uint64 LeaseAcquisitionAttempts = 0;
     uint64 LeaseAcquisitionFailures = 0;
