@@ -88,7 +88,7 @@ SOURCE_TOKENS = {
         "BackendIntegration",
         "ManualPIE",
         "Nie wykonano kompilacji Unreal Engine 5.8",
-        "lost acknowledgement",
+        "Utracona odpowiedź po commit",
     ),
     ".github/workflows/encounter-recovery-chaos.yml": (
         "validate_encounter_recovery_chaos.py",
