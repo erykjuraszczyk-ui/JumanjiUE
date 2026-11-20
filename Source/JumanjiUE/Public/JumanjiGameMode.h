@@ -15,4 +15,10 @@ public:
 
     virtual void PostLogin(APlayerController* NewPlayer) override;
     virtual void Logout(AController* Exiting) override;
+
+private:
+    /** Starts checkpoint recovery only after the current login's profile was restored. */
+    void TryStartEncounterCheckpointRecovery();
+
+    bool bCheckpointRestoreStarted = false;
 };
