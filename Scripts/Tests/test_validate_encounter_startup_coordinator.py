@@ -66,12 +66,15 @@ class EncounterStartupCoordinatorTests(unittest.TestCase):
             root = self._copy_fixture(temp_dir)
             path = root / "Source/JumanjiUE/Private/JumanjiGameMode.cpp"
             source = path.read_text(encoding="utf-8")
-            retry = source.index("if (CheckpointSubsystem->HasStagedRestoreCandidate())")
-            guard = source.index("if (bCheckpointRestoreStarted)", retry)
-            block = source[retry:guard]
-            source = source.replace(block, "", 1)
-            insert_at = source.index("    if (bCheckpointRestoreStarted)", source.index("void AJumanjiGameMode::TryStartEncounterCheckpointRecovery"))
-            source = source[:insert_at] + block + source[insert_at:]
+            retry = source.index("    if (CheckpointSubsystem->HasStagedRestoreCandidate())")
+            guard_block = (
+                "    if (bCheckpointRestoreStarted)\\n"
+                "    {\\n"
+                "        return;\\n"
+                "    }\\n\\n"
+            )
+            source = source.replace(guard_block, "", 1)
+            source = source[:retry] + guard_block + source[retry:]
             path.write_text(source, encoding="utf-8")
             errors = MODULE.validate_project(root)
             self.assertTrue(any("before applying the one-shot startup guard" in error for error in errors))
