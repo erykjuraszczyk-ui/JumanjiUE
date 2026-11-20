@@ -193,11 +193,11 @@ def _request_json(
     return result
 
 
-def _make_payload(template: dict[str, Any], encounter_id: str, server_id: str, shard_id: str, epoch: int, sequence: int) -> dict[str, Any]:
+def _make_payload(template: dict[str, Any], encounter_id: str, session_id: str, server_id: str, shard_id: str, epoch: int, sequence: int) -> dict[str, Any]:
     payload = copy.deepcopy(template)
     now = datetime.now(timezone.utc).replace(microsecond=0)
     payload["checkpointId"] = str(uuid4())
-    payload["sessionId"] = payload["sessionId"] if sequence > 1 else str(uuid4())
+    payload["sessionId"] = session_id
     payload["encounterId"] = encounter_id
     payload["checkpointSequence"] = sequence
     payload["createdAtUtc"] = _utc_text(now)
@@ -215,6 +215,7 @@ def _cycle(
     server_token: str,
     identity: dict[str, str],
     encounter_id: str,
+    session_id: str,
     lease: dict[str, Any],
     template: dict[str, Any],
     sequence: int,
@@ -224,6 +225,7 @@ def _cycle(
     payload = _make_payload(
         template,
         encounter_id,
+        session_id,
         identity["serverInstanceId"],
         identity["shardId"],
         int(lease["authorityEpoch"]),
@@ -279,6 +281,7 @@ def _worker(
     }
     path = f"/v1/encounters/{encounter_id}"
     lease: dict[str, Any] | None = None
+    session_id = str(uuid4())
     sequence = 0
     setup_ok = True
 
@@ -291,7 +294,7 @@ def _worker(
         # Warm up JSON parsing, SQLite and signing before the measured interval.
         for _ in range(warmup_iterations):
             sequence = _cycle(
-                base_url, server_token, identity, encounter_id, lease,
+                base_url, server_token, identity, encounter_id, session_id, lease,
                 template, sequence, metrics, record=False,
             )
     except Exception as error:
@@ -340,7 +343,7 @@ def _worker(
                 )
                 last_renewal = now
             sequence = _cycle(
-                base_url, server_token, identity, encounter_id, lease,
+                base_url, server_token, identity, encounter_id, session_id, lease,
                 template, sequence, metrics, record=True,
             )
     except BenchmarkRequestError:
