@@ -36,7 +36,9 @@ Open-world third-person adventure RPG prototype with a shared-world direction an
 - Stage 30 — Encounter Session Persistence & Reconnect Recovery: in-memory same-server participant registry, bounded reconnect grace window, profile-restored rejoin validation and transient PlayerState reconnect notice.
 - Stage 31 — Encounter Reconnect UX & Session QA: replicated success/expired/ended feedback, a non-persistent local HUD banner contract, bounded terminal notices and a 13-scenario network QA matrix.
 - Stage 32 — Encounter Session Checkpoint Contract & Server Recovery Design: strict versioned checkpoint envelope, signed logical payload contract, safe recovery barriers, anti-rollback/fencing requirements and recovery QA matrix; no backend or runtime resume is claimed.
-- Stage 33 — Encounter Checkpoint Backend Adapter & Lease Service Prototype: trusted server-to-server checkpoint API, Ed25519/RFC 8785 signatures, SQLite CAS/lease fencing, server-only Unreal HTTP adapter and concurrency/security tests; no live-world snapshot builder or runtime restore is claimed.
+- Stage 33 — Encounter Checkpoint Backend Adapter & Lease Service Prototype: trusted server-to-server checkpoint API, Ed25519/RFC 8785 signatures, SQLite CAS/lease fencing, server-only Unreal HTTP adapter and concurrency/security tests.
+- Stage 34 — Safe-Point Snapshot Builder & Restore Staging: server snapshot creation at trial/wave/boss/reward boundaries, lease and fencing lifecycle, opaque participant IDs, signed checkpoint preflight and a private restore candidate without world mutation.
+- Stage 35 — Encounter Restore Materialization & Atomic Publish: authenticated participant mapping, profile revision and reward-ledger reconciliation, trial/wave/boss reconstruction, restored session identity and a single server-side GameState commit before actor replication.
 
 ## The nine playable Great Spirits
 1. Great Spirit I — Duch Korzeni (Root / Guardian)
@@ -105,6 +107,8 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - Docs/STAGE_32_ENCOUNTER_SESSION_CHECKPOINT_CONTRACT.md — versioned checkpoint schema, safe-point rules, Ed25519 envelope, identity/privacy boundaries, anti-rollback lease design and recovery acceptance matrix.
 - Docs/STAGE_33_ENCOUNTER_CHECKPOINT_BACKEND_LEASE_SERVICE.md — trusted backend, lease/CAS/fencing, Ed25519 signing, Unreal adapter, local runbook and limitations.
 - Docs/STAGE_34_ENCOUNTER_SAFEPOINT_SNAPSHOT_RESTORE_STAGING.md — live-world safe-point snapshot builder, lease lifecycle, privacy boundaries, restore preflight and acceptance tests.
+- Docs/STAGE_35_ENCOUNTER_RESTORE_MATERIALIZATION_ATOMIC_PUBLISH.md — participant reconciliation, profile revision and reward receipt checks, trial/wave/boss reconstruction, server commit ordering, startup integration and known recovery limitations.
+- Scripts/validate_encounter_restore_materialization.py and Scripts/Tests/test_validate_encounter_restore_materialization.py — Stage 35 static source validator and regression tests.
 - Backend/EncounterCheckpointService/README.md — local checkpoint backend setup and server environment.
 - Scripts/validate_encounter_checkpoint_backend.py — Stage 33 backend integration contract validator.
 - Data/Encounter/EncounterReconnectSessionQAMatrix.csv — 13 reconnect outcome and network interruption scenarios.
@@ -261,7 +265,9 @@ This is a source-code foundation, not a finished game or installable Android bui
 - asynchronous asset preloading and device profiling;
 - production account authentication, secure economy backend and cross-shard transaction processing;
 - dedicated-server deployment;
-- automated resume of an in-progress encounter after server/shard migration or process restart; Stage 30 only supports same-server reconnect while the GameInstance/world remain alive and deliberately does not serialize live actors;
+- automatic invocation of Stage 35 restore from a production startup coordinator after every required authenticated participant has loaded; the native server-only BeginCheckpointRestore entry point is implemented, but the host must call it after the map and profiles are ready;
+- full actor/AI transform, player position, active attack, telegraph and timer restoration; Stage 35 restarts at authored safe spawn anchors and stores only logical chapter/wave/boss phase/health data;
+- production multi-host checkpoint consensus and an external authoritative profile service; Stage 33 backend remains SQLite WAL single-host prototype;
 - a packaged and device-tested APK/AAB.
 
 The supplied reference image is used as an art direction source. The binary image itself and Unreal binary assets are not added by the text-file GitHub workflow; add them through Git LFS with provenance/license notes.

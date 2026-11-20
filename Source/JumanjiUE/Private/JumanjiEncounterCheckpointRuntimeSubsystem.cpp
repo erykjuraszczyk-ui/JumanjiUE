@@ -304,6 +304,7 @@ void UJumanjiEncounterCheckpointRuntimeSubsystem::ClearLeaseState()
     bCheckpointWriteBlockedUntilResync = false;
     bRestoreStagingRequested = false;
     bReleaseLeaseWhenIdle = false;
+    bRestoreCommitInProgress = false;
     PendingRestoreDirector.Reset();
     bHasStagedRestoreCandidate = false;
     StagedRestoreCandidate = FJumanjiEncounterCheckpointRestoreCandidate();
@@ -780,7 +781,8 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::CaptureSafePoint(
     EJumanjiEncounterCheckpointSafePoint SafePoint,
     FName RewardTransactionId)
 {
-    if (!bLeaseReady
+    if (bRestoreCommitInProgress
+        || !bLeaseReady
         || !BackendSubsystem
         || bWriteInFlight
         || bReadInFlight
@@ -940,10 +942,213 @@ void UJumanjiEncounterCheckpointRuntimeSubsystem::HandleCheckpointRead(
     bRestoreStagingRequested = false;
     PendingRestoreDirector.Reset();
 
+    const FName RestoredEncounterId = ActiveEncounterId;
+    const int64 RestoredSequence = LastCommittedSequence;
+    FString CommitError;
+    if (!CommitStagedRestore(EncounterDirector.Get(), CommitError))
+    {
+        UE_LOG(LogTemp, Error, TEXT("JUMANJI checkpoint restore commit rejected: %s"), *CommitError);
+        bHasStagedRestoreCandidate = false;
+        StagedRestoreCandidate = FJumanjiEncounterCheckpointRestoreCandidate();
+        EndEncounterCheckpointSession(ActiveEncounterId);
+        return;
+    }
+
     UE_LOG(LogTemp, Log,
-        TEXT("JUMANJI checkpoint staged privately: encounter=%s sequence=%lld. No world state has been published."),
-        *StagedRestoreCandidate.EncounterId.ToString(),
-        StagedRestoreCandidate.CheckpointSequence);
+        TEXT("JUMANJI checkpoint restore committed: encounter=%s sequence=%lld."),
+        *RestoredEncounterId.ToString(),
+        RestoredSequence);
+}
+
+bool UJumanjiEncounterCheckpointRuntimeSubsystem::CommitStagedRestore(
+    AJumanjiWorldEncounterDirector* EncounterDirector,
+    FString& OutError)
+{
+    OutError.Reset();
+
+    if (!IsServerRuntime()
+        || !bLeaseReady
+        || bLeaseAcquiring
+        || bWriteInFlight
+        || bReadInFlight
+        || !bHasStagedRestoreCandidate
+        || !IsValid(EncounterDirector)
+        || !EncounterDirector->HasAuthority()
+        || EncounterDirector->GetEncounterId() != ActiveEncounterId
+        || !BackendSubsystem)
+    {
+        OutError = TEXT("RESTORE_COMMIT_CONTEXT_INVALID");
+        return false;
+    }
+
+    FString ServerInstanceId, ShardId, BuildId, RulesetVersion, WorldContentVersion, ParticipantSalt;
+    if (!ReadRequiredServerMetadata(
+        ServerInstanceId, ShardId, BuildId, RulesetVersion, WorldContentVersion, ParticipantSalt))
+    {
+        OutError = TEXT("RESTORE_SERVER_METADATA_INVALID");
+        return false;
+    }
+
+    const FJumanjiEncounterCheckpointRestoreCandidate Candidate = StagedRestoreCandidate;
+    if (Candidate.EncounterId != ActiveEncounterId
+        || Candidate.SessionId.IsValid() == false
+        || Candidate.ParticipantKeys.IsEmpty()
+        || Candidate.ParticipantKeys.Num() != Candidate.ParticipantProfileRevisions.Num()
+        || Candidate.ParticipantKeys.Num() > JumanjiCheckpointRuntime::MaxParticipants)
+    {
+        OutError = TEXT("RESTORE_CANDIDATE_INVALID");
+        return false;
+    }
+
+    UWorld* World = GetWorld();
+    AJumanjiGameState* GameState = World ? World->GetGameState<AJumanjiGameState>() : nullptr;
+    UJumanjiProgressionRewardSubsystem* RewardSubsystem = GetGameInstance()
+        ? GetGameInstance()->GetSubsystem<UJumanjiProgressionRewardSubsystem>()
+        : nullptr;
+    if (!GameState || !RewardSubsystem)
+    {
+        OutError = TEXT("RESTORE_RUNTIME_SUBSYSTEM_MISSING");
+        return false;
+    }
+
+    TMap<FString, AJumanjiPlayerState*> LiveParticipantsByKey;
+    TSet<FString> SeenLiveProfileIds;
+    for (APlayerState* BasePlayerState : GameState->PlayerArray)
+    {
+        AJumanjiPlayerState* PlayerState = Cast<AJumanjiPlayerState>(BasePlayerState);
+        if (!IsValid(PlayerState)
+            || !PlayerState->HasAuthority()
+            || !PlayerState->IsProfilePersistenceEnabled()
+            || PlayerState->GetPersistentProfileId().IsEmpty())
+        {
+            continue;
+        }
+
+        const FString& ProfileId = PlayerState->GetPersistentProfileId();
+        if (SeenLiveProfileIds.Contains(ProfileId))
+        {
+            OutError = TEXT("RESTORE_DUPLICATE_LIVE_PROFILE");
+            return false;
+        }
+        SeenLiveProfileIds.Add(ProfileId);
+
+        FString ParticipantKey;
+        if (!BuildOpaqueParticipantKey(ProfileId, ParticipantSalt, ParticipantKey)
+            || LiveParticipantsByKey.Contains(ParticipantKey))
+        {
+            OutError = TEXT("RESTORE_LIVE_PARTICIPANT_KEY_INVALID");
+            return false;
+        }
+        LiveParticipantsByKey.Add(ParticipantKey, PlayerState);
+    }
+
+    TArray<AJumanjiPlayerState*> Participants;
+    Participants.Reserve(Candidate.ParticipantKeys.Num());
+    for (int32 Index = 0; Index < Candidate.ParticipantKeys.Num(); ++Index)
+    {
+        const FString& ParticipantKey = Candidate.ParticipantKeys[Index];
+        AJumanjiPlayerState* const* Found = LiveParticipantsByKey.Find(ParticipantKey);
+        if (!Found || !IsValid(*Found))
+        {
+            OutError = TEXT("RESTORE_PARTICIPANT_NOT_CONNECTED_OR_AUTHENTICATED");
+            return false;
+        }
+
+        AJumanjiPlayerState* PlayerState = *Found;
+        const int64 CurrentProfileRevision = PlayerState->GetProgressionState().Revision;
+        if (CurrentProfileRevision < 0
+            || CurrentProfileRevision < Candidate.ParticipantProfileRevisions[Index])
+        {
+            OutError = TEXT("RESTORE_PROFILE_REVISION_BEHIND_CHECKPOINT");
+            return false;
+        }
+
+        const bool bTrialCheckpoint = Candidate.Phase == FName(TEXT("Trials"));
+        if (bTrialCheckpoint)
+        {
+            // A durable chapter-completion receipt proves the profile advanced
+            // beyond this partial TrialBoundary; never roll that account back.
+            if (PlayerState->HasCompletedAdventureChapter(Candidate.ChapterId))
+            {
+                OutError = TEXT("RESTORE_PROFILE_AHEAD_OF_TRIAL_CHECKPOINT");
+                return false;
+            }
+        }
+        else if (!PlayerState->HasCompletedAdventureChapter(Candidate.ChapterId))
+        {
+            OutError = TEXT("RESTORE_CHAPTER_RECEIPT_MISSING");
+            return false;
+        }
+
+        Participants.Add(PlayerState);
+    }
+
+    const bool bRewardPending =
+        Candidate.Phase == FName(TEXT("Reward"))
+        && Candidate.SafePointKind == FName(TEXT("RewardPending"));
+    if (bRewardPending)
+    {
+        if (Participants.Num() != 1
+            || Candidate.RewardDefinitionId != Candidate.EncounterId)
+        {
+            OutError = TEXT("RESTORE_REWARD_PARTICIPANT_OR_DEFINITION_INVALID");
+            return false;
+        }
+
+        AJumanjiPlayerState* RewardPlayer = Participants[0];
+        const FName ExpectedTransactionId =
+            RewardSubsystem->GetWorldEncounterRewardTransactionId(
+                RewardPlayer,
+                Candidate.EncounterId);
+        if (ExpectedTransactionId.IsNone()
+            || ExpectedTransactionId != Candidate.RewardTransactionId)
+        {
+            OutError = TEXT("RESTORE_REWARD_TRANSACTION_ID_MISMATCH");
+            return false;
+        }
+
+        // Profile transaction receipt and its balance/item mutation are persisted
+        // together. Existing receipt means the grant already happened; otherwise
+        // grant once, then require the durable idempotency receipt before publish.
+        if (!RewardPlayer->HasProcessedProfileTransaction(Candidate.RewardTransactionId))
+        {
+            if (!RewardSubsystem->GrantWorldEncounterCompletionReward(
+                RewardPlayer, Candidate.EncounterId))
+            {
+                OutError = TEXT("RESTORE_REWARD_GRANT_FAILED");
+                return false;
+            }
+        }
+
+        if (!RewardPlayer->HasProcessedProfileTransaction(Candidate.RewardTransactionId))
+        {
+            OutError = TEXT("RESTORE_REWARD_RECEIPT_NOT_COMMITTED");
+            return false;
+        }
+    }
+
+    bRestoreCommitInProgress = true;
+    const bool bMaterialized = EncounterDirector->MaterializeCheckpointRestore(Candidate, Participants);
+    bRestoreCommitInProgress = false;
+    if (!bMaterialized)
+    {
+        OutError = TEXT("RESTORE_WORLD_MATERIALIZATION_FAILED");
+        return false;
+    }
+
+    if (!bRewardPending)
+    {
+        ActiveSessionId = Candidate.SessionId;
+        bCheckpointWriteBlockedUntilResync = false;
+        bHasStagedRestoreCandidate = false;
+        StagedRestoreCandidate = FJumanjiEncounterCheckpointRestoreCandidate();
+        return true;
+    }
+
+    bHasStagedRestoreCandidate = false;
+    StagedRestoreCandidate = FJumanjiEncounterCheckpointRestoreCandidate();
+    EndEncounterCheckpointSession(ActiveEncounterId);
+    return true;
 }
 
 bool UJumanjiEncounterCheckpointRuntimeSubsystem::StageVerifiedBackendResponse(
@@ -1101,7 +1306,8 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::StageVerifiedBackendResponse(
         || FName(*BoardEventIdString) != ChapterDirector->GetBoardEventId()
         || FName(*SpawnSetIdString) != EncounterDirector->GetSpawnSetId()
         || Seed < 0 || Seed > MAX_uint32
-        || EncounterRevision < 1 || ChapterRevision < 1
+        || EncounterRevision < 1 || EncounterRevision > MAX_int32
+        || ChapterRevision < 1 || ChapterRevision > MAX_int32
         || CurrentWave < 0 || TotalWaves < 1 || TotalWaves > 100
         || TotalWaves != EncounterDirector->GetTotalWaveCount()
         || CurrentWave > TotalWaves)
@@ -1220,10 +1426,10 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::StageVerifiedBackendResponse(
             || !FMath::IsFinite(HealthFraction)
             || HealthFraction < 0.0 || HealthFraction > 1.0
             || FName(*DefinitionId) != EncounterDirector->GetBossDefinitionId()
-            || (PhaseId != TEXT("BOSS_PHASE_01")
-                && PhaseId != TEXT("BOSS_PHASE_02")
+            || (PhaseId != TEXT("BOSS_PHASE_02")
                 && PhaseId != TEXT("BOSS_PHASE_03"))
-            || PhaseRevision < 1)
+            || PhaseRevision < 1
+            || PhaseRevision > MAX_int32)
         {
             OutError = TEXT("CHECKPOINT_BOSS_SNAPSHOT_INVALID");
             return false;
@@ -1256,6 +1462,7 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::StageVerifiedBackendResponse(
             || !JumanjiCheckpointRuntime::IsParticipantKeyFormatValid(ParticipantKey)
             || !JumanjiCheckpointRuntime::ReadInteger(Participant, TEXT("profileRevision"), ProfileRevision)
             || ProfileRevision < 0
+            || ProfileRevision > MAX_int32
             || SeenParticipantKeys.Contains(ParticipantKey))
         {
             OutError = TEXT("CHECKPOINT_PARTICIPANT_ENTRY_INVALID");

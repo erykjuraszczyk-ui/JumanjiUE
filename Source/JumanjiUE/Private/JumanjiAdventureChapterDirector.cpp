@@ -425,9 +425,239 @@ bool AJumanjiAdventureChapterDirector::AreCheckpointTrialIdsConsistent(
         }
     }
 
-    return ExpectedTrialIds.Num() == CompletedTrialSet.Num()
-        ? ExpectedObjectiveIds.Num() == CompletedObjectiveSet.Num()
-        : false;
+    // Completed IDs are a subset of chapter content; partial TrialBoundary
+    // checkpoints must remain valid while preserving one-to-one ID mapping.
+    for (const FName CompletedTrialId : CompletedTrialSet)
+    {
+        if (!ExpectedTrialIds.Contains(CompletedTrialId))
+        {
+            return false;
+        }
+    }
+    for (const FName CompletedObjectiveId : CompletedObjectiveSet)
+    {
+        if (!ExpectedObjectiveIds.Contains(CompletedObjectiveId))
+        {
+            return false;
+        }
+    }
+
+    return CompletedTrialSet.Num() == CompletedObjectiveSet.Num();
+}
+
+
+bool AJumanjiAdventureChapterDirector::BuildCheckpointRestoreObjectives(
+    const TArray<FName>& CompletedTrialIds,
+    const TArray<FName>& CompletedObjectiveIds,
+    TArray<FJumanjiAdventureObjectiveState>& OutObjectives,
+    bool& bOutChapterComplete,
+    FText& OutChapterTitle,
+    FText& OutChapterDescription) const
+{
+    OutObjectives.Reset();
+    bOutChapterComplete = false;
+    OutChapterTitle = FText::GetEmpty();
+    OutChapterDescription = FText::GetEmpty();
+
+    if (ChapterId.IsNone()
+        || BoardEventId.IsNone()
+        || ChapterTitle.IsEmpty()
+        || ChapterDescription.IsEmpty()
+        || ChapterObjectives.IsEmpty()
+        || ChapterObjectives.Num() > 32
+        || ChapterObjectives.Num() != TrialActors.Num()
+        || CompletedTrialIds.Num() != CompletedObjectiveIds.Num()
+        || !AreCheckpointTrialIdsConsistent(CompletedTrialIds, CompletedObjectiveIds))
+    {
+        return false;
+    }
+
+    TSet<FName> ConfiguredObjectiveIds;
+    for (const FJumanjiAdventureObjectiveState& Configured : ChapterObjectives)
+    {
+        if (Configured.ObjectiveId.IsNone()
+            || Configured.DisplayName.IsEmpty()
+            || Configured.RequiredProgress < 1
+            || Configured.RequiredProgress > 1000
+            || ConfiguredObjectiveIds.Contains(Configured.ObjectiveId))
+        {
+            return false;
+        }
+        ConfiguredObjectiveIds.Add(Configured.ObjectiveId);
+    }
+
+    TSet<FName> TrialObjectiveIds;
+    for (const AJumanjiTrialActor* Trial : TrialActors)
+    {
+        if (!IsValid(Trial)
+            || Trial->GetWorld() != GetWorld()
+            || Trial->GetObjectiveId().IsNone()
+            || TrialObjectiveIds.Contains(Trial->GetObjectiveId()))
+        {
+            return false;
+        }
+
+        const FJumanjiAdventureObjectiveState* MatchingObjective =
+            ChapterObjectives.FindByPredicate(
+                [Trial](const FJumanjiAdventureObjectiveState& Entry)
+                {
+                    return Entry.ObjectiveId == Trial->GetObjectiveId();
+                });
+        if (!MatchingObjective
+            || MatchingObjective->RequiredProgress != Trial->GetStepCount())
+        {
+            return false;
+        }
+        TrialObjectiveIds.Add(Trial->GetObjectiveId());
+    }
+
+    if (ConfiguredObjectiveIds.Num() != TrialObjectiveIds.Num())
+    {
+        return false;
+    }
+    for (const FName ObjectiveId : ConfiguredObjectiveIds)
+    {
+        if (!TrialObjectiveIds.Contains(ObjectiveId))
+        {
+            return false;
+        }
+    }
+
+    TSet<FName> CompletedObjectives;
+    for (const FName ObjectiveId : CompletedObjectiveIds)
+    {
+        if (ObjectiveId.IsNone() || CompletedObjectives.Contains(ObjectiveId))
+        {
+            return false;
+        }
+        CompletedObjectives.Add(ObjectiveId);
+    }
+
+    OutObjectives.Reserve(ChapterObjectives.Num());
+    for (const FJumanjiAdventureObjectiveState& Configured : ChapterObjectives)
+    {
+        if (Configured.ObjectiveId.IsNone()
+            || Configured.RequiredProgress < 1
+            || Configured.RequiredProgress > 1000)
+        {
+            OutObjectives.Reset();
+            return false;
+        }
+
+        FJumanjiAdventureObjectiveState Restored = Configured;
+        const bool bCompleted = CompletedObjectives.Contains(Configured.ObjectiveId);
+        Restored.CurrentProgress = bCompleted ? Restored.RequiredProgress : 0;
+        Restored.bCompleted = bCompleted;
+        OutObjectives.Add(MoveTemp(Restored));
+    }
+
+    bOutChapterComplete = CompletedObjectives.Num() == ChapterObjectives.Num();
+    OutChapterTitle = ChapterTitle;
+    OutChapterDescription = ChapterDescription;
+    return OutObjectives.Num() == ChapterObjectives.Num();
+}
+
+bool AJumanjiAdventureChapterDirector::CanApplyCheckpointTrialStates(
+    const TArray<FName>& CompletedTrialIds,
+    const TArray<FName>& CompletedObjectiveIds) const
+{
+    TArray<FJumanjiAdventureObjectiveState> IgnoredObjectives;
+    bool bIgnoredComplete = false;
+    FText IgnoredTitle;
+    FText IgnoredDescription;
+    if (!HasAuthority()
+        || !BuildCheckpointRestoreObjectives(
+            CompletedTrialIds,
+            CompletedObjectiveIds,
+            IgnoredObjectives,
+            bIgnoredComplete,
+            IgnoredTitle,
+            IgnoredDescription))
+    {
+        return false;
+    }
+
+    for (const AJumanjiTrialActor* Trial : TrialActors)
+    {
+        if (!IsValid(Trial)
+            || Trial->GetWorld() != GetWorld()
+            || !Trial->CanApplyCheckpointRestoreState())
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool AJumanjiAdventureChapterDirector::ApplyCheckpointTrialStates(
+    const TArray<FName>& CompletedTrialIds,
+    const TArray<FName>& CompletedObjectiveIds)
+{
+    if (!CanApplyCheckpointTrialStates(CompletedTrialIds, CompletedObjectiveIds))
+    {
+        return false;
+    }
+
+    TSet<FName> CompletedTrials;
+    for (const FName TrialId : CompletedTrialIds)
+    {
+        CompletedTrials.Add(TrialId);
+    }
+
+    for (AJumanjiTrialActor* Trial : TrialActors)
+    {
+        if (!IsValid(Trial)
+            || !Trial->ApplyCheckpointRestoreState(
+                CompletedTrials.Contains(Trial->GetCheckpointTrialId())))
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+void AJumanjiAdventureChapterDirector::PublishCheckpointTrialStates()
+{
+    if (!HasAuthority())
+    {
+        return;
+    }
+
+    for (AJumanjiTrialActor* Trial : TrialActors)
+    {
+        if (IsValid(Trial))
+        {
+            Trial->PublishCheckpointRestoreState();
+        }
+    }
+}
+
+bool AJumanjiAdventureChapterDirector::BindForCheckpointRestoredActiveChapter()
+{
+    if (!HasAuthority())
+    {
+        return false;
+    }
+
+    UWorld* World = GetWorld();
+    AJumanjiGameState* BoardGameState = World
+        ? World->GetGameState<AJumanjiGameState>()
+        : nullptr;
+    if (!BoardGameState
+        || BoardGameState->GetAdventureChapterState().ChapterId != ChapterId
+        || BoardGameState->GetAdventureChapterState().BoardEventId != BoardEventId
+        || BoardGameState->GetAdventureChapterState().Phase != EJumanjiAdventureChapterPhase::Active
+        || !BoardGameState->IsBoardEventActive()
+        || BoardGameState->GetActiveBoardEventId() != BoardEventId)
+    {
+        return false;
+    }
+
+    BoardGameState->OnAdventureObjectivesChanged.AddUniqueDynamic(
+        this,
+        &AJumanjiAdventureChapterDirector::HandleAdventureObjectivesChanged);
+    bListeningForObjectiveChanges = true;
+    return true;
 }
 
 bool AJumanjiAdventureChapterDirector::HasNoTrialsInProgress() const

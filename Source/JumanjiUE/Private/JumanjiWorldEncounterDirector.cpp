@@ -145,6 +145,411 @@ bool AJumanjiWorldEncounterDirector::CanRetryEncounter() const
         && State.Phase == EJumanjiWorldEncounterPhase::Failed;
 }
 
+
+bool AJumanjiWorldEncounterDirector::BeginCheckpointRestore()
+{
+    if (!HasAuthority()
+        || bEncounterActive
+        || !ValidateConfiguration()
+        || !SpawnedEncounterActors.IsEmpty())
+    {
+        return false;
+    }
+
+    const UWorld* World = GetWorld();
+    const AJumanjiGameState* GameState = World
+        ? World->GetGameState<AJumanjiGameState>()
+        : nullptr;
+    if (!GameState
+        || (GameState->GetWorldEncounterState().Phase != EJumanjiWorldEncounterPhase::Inactive
+            && GameState->GetWorldEncounterState().Phase != EJumanjiWorldEncounterPhase::Failed))
+    {
+        return false;
+    }
+
+    UJumanjiEncounterCheckpointRuntimeSubsystem* CheckpointSubsystem = GetGameInstance()
+        ? GetGameInstance()->GetSubsystem<UJumanjiEncounterCheckpointRuntimeSubsystem>()
+        : nullptr;
+    return CheckpointSubsystem && CheckpointSubsystem->BeginRestoreStaging(this);
+}
+
+bool AJumanjiWorldEncounterDirector::MaterializeCheckpointRestore(
+    const FJumanjiEncounterCheckpointRestoreCandidate& Candidate,
+    const TArray<AJumanjiPlayerState*>& Participants)
+{
+    if (!HasAuthority()
+        || bEncounterActive
+        || !ValidateConfiguration()
+        || !SpawnedEncounterActors.IsEmpty()
+        || Participants.IsEmpty()
+        || Candidate.EncounterId != EncounterId
+        || Candidate.ChapterId != RequiredChapterId
+        || Candidate.BoardEventId != AdventureChapterDirector->GetBoardEventId()
+        || Candidate.SpawnSetId != SpawnSetId
+        || Candidate.EncounterSeed != EncounterSeed
+        || Candidate.TotalWaves != Waves.Num()
+        || Candidate.EncounterRevision < 1
+        || Candidate.ChapterRevision < 1)
+    {
+        return false;
+    }
+
+    UWorld* World = GetWorld();
+    AJumanjiGameState* GameState = World
+        ? World->GetGameState<AJumanjiGameState>()
+        : nullptr;
+    UJumanjiWorldEncounterSessionSubsystem* SessionSubsystem = GetGameInstance()
+        ? GetGameInstance()->GetSubsystem<UJumanjiWorldEncounterSessionSubsystem>()
+        : nullptr;
+    if (!GameState || !SessionSubsystem
+        || (GameState->GetWorldEncounterState().Phase != EJumanjiWorldEncounterPhase::Inactive
+            && !(GameState->GetWorldEncounterState().Phase == EJumanjiWorldEncounterPhase::Failed
+                && GameState->GetWorldEncounterState().EncounterId == EncounterId))
+        || GameState->IsBoardEventActive()
+        || (GameState->GetAdventureChapterState().Phase == EJumanjiAdventureChapterPhase::Active
+            && GameState->GetWorldEncounterState().Phase != EJumanjiWorldEncounterPhase::Failed))
+    {
+        return false;
+    }
+
+    const FName TrialPhase(TEXT("Trials"));
+    const FName CombatPhase(TEXT("Combat"));
+    const FName BossPhase(TEXT("Boss"));
+    const FName RewardPhase(TEXT("Reward"));
+    const bool bTrialCheckpoint = Candidate.Phase == TrialPhase
+        && Candidate.SafePointKind == FName(TEXT("TrialBoundary"));
+    const bool bWaveCheckpoint = Candidate.Phase == CombatPhase
+        && Candidate.SafePointKind == FName(TEXT("WaveBoundary"));
+    const bool bBossCheckpoint = Candidate.Phase == BossPhase
+        && Candidate.SafePointKind == FName(TEXT("BossPhaseBoundary"));
+    const bool bRewardCheckpoint = Candidate.Phase == RewardPhase
+        && Candidate.SafePointKind == FName(TEXT("RewardPending"));
+    if (!bTrialCheckpoint && !bWaveCheckpoint && !bBossCheckpoint && !bRewardCheckpoint)
+    {
+        return false;
+    }
+
+    TArray<FJumanjiAdventureObjectiveState> RestoredObjectives;
+    bool bChapterComplete = false;
+    FText RestoredChapterTitle;
+    FText RestoredChapterDescription;
+    if (!AdventureChapterDirector->BuildCheckpointRestoreObjectives(
+        Candidate.CompletedTrialIds,
+        Candidate.CompletedObjectiveIds,
+        RestoredObjectives,
+        bChapterComplete,
+        RestoredChapterTitle,
+        RestoredChapterDescription)
+        || !AdventureChapterDirector->CanApplyCheckpointTrialStates(
+            Candidate.CompletedTrialIds,
+            Candidate.CompletedObjectiveIds))
+    {
+        return false;
+    }
+
+    if ((bTrialCheckpoint && Candidate.CurrentWave != 0)
+        || (bWaveCheckpoint
+            && (Candidate.CurrentWave < 1 || Candidate.CurrentWave > Waves.Num()))
+        || (bBossCheckpoint
+            && (Candidate.CurrentWave != 0
+                || Candidate.BossDefinitionId != BossDefinitionId
+                || (Candidate.BossPhaseId != FName(TEXT("BOSS_PHASE_02"))
+                    && Candidate.BossPhaseId != FName(TEXT("BOSS_PHASE_03")))
+                || !FMath::IsFinite(Candidate.BossHealthFraction)
+                || Candidate.BossHealthFraction <= 0.0f
+                || Candidate.BossHealthFraction > 1.0f
+                || Candidate.BossPhaseRevision < 1
+                || !bChapterComplete))
+        || (bRewardCheckpoint
+            && (Candidate.CurrentWave != 0
+                || !bChapterComplete
+                || Candidate.RewardDefinitionId != EncounterId
+                || Candidate.RewardTransactionId.IsNone()
+                || Participants.Num() != 1)))
+    {
+        return false;
+    }
+
+    if ((bWaveCheckpoint || bBossCheckpoint || bRewardCheckpoint) && !bChapterComplete)
+    {
+        return false;
+    }
+
+    EJumanjiWorldEncounterPhase TargetPhase = EJumanjiWorldEncounterPhase::Trials;
+    int32 RestoreWaveIndex = INDEX_NONE;
+    bool bSpawnBoss = false;
+    bool bCompleteImmediately = false;
+
+    if (bTrialCheckpoint)
+    {
+        if (bChapterComplete)
+        {
+            // The final trial may have committed its checkpoint before the
+            // chapter-complete event; resume from wave one, never a stuck Trials phase.
+            TargetPhase = EJumanjiWorldEncounterPhase::Combat;
+            RestoreWaveIndex = 0;
+        }
+    }
+    else if (bWaveCheckpoint)
+    {
+        if (Candidate.CurrentWave < Waves.Num())
+        {
+            TargetPhase = EJumanjiWorldEncounterPhase::Combat;
+            RestoreWaveIndex = Candidate.CurrentWave; // completed one-based wave -> next zero-based index
+        }
+        else
+        {
+            TargetPhase = EJumanjiWorldEncounterPhase::Boss;
+            bSpawnBoss = true;
+        }
+    }
+    else if (bBossCheckpoint)
+    {
+        TargetPhase = EJumanjiWorldEncounterPhase::Boss;
+        bSpawnBoss = true;
+    }
+    else
+    {
+        TargetPhase = EJumanjiWorldEncounterPhase::Completed;
+        bCompleteImmediately = true;
+    }
+
+    TArray<AJumanjiEnemyCharacter*> StagedEnemies;
+    AJumanjiBossCharacter* StagedBoss = nullptr;
+    auto DestroyStagedActors = [&]()
+    {
+        for (AJumanjiEnemyCharacter* Enemy : StagedEnemies)
+        {
+            if (IsValid(Enemy))
+            {
+                Enemy->Destroy();
+            }
+        }
+        StagedEnemies.Reset();
+        if (IsValid(StagedBoss))
+        {
+            StagedBoss->Destroy();
+            StagedBoss = nullptr;
+        }
+    };
+
+    if (TargetPhase == EJumanjiWorldEncounterPhase::Combat)
+    {
+        if (!Waves.IsValidIndex(RestoreWaveIndex))
+        {
+            return false;
+        }
+
+        const FJumanjiEmeraldJungleEncounterWave& Wave = Waves[RestoreWaveIndex];
+        for (const FJumanjiEncounterEnemySpawn& Spawn : Wave.Spawns)
+        {
+            for (int32 SpawnIndex = 0; SpawnIndex < Spawn.Count; ++SpawnIndex)
+            {
+                FVector Offset = FVector::ZeroVector;
+                if (Spawn.Count > 1 && Spawn.SpreadRadius > 0.0f)
+                {
+                    const float Angle = (2.0f * PI * SpawnIndex) / Spawn.Count;
+                    Offset = FVector(
+                        FMath::Cos(Angle) * Spawn.SpreadRadius,
+                        FMath::Sin(Angle) * Spawn.SpreadRadius,
+                        0.0f);
+                }
+
+                FTransform SpawnTransform = Spawn.SpawnPoint->GetActorTransform();
+                SpawnTransform.AddToTranslation(Offset);
+
+                FActorSpawnParameters SpawnParameters;
+                SpawnParameters.SpawnCollisionHandlingOverride =
+                    ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
+                SpawnParameters.Owner = this;
+
+                AJumanjiEnemyCharacter* Enemy = World->SpawnActor<AJumanjiEnemyCharacter>(
+                    Spawn.EnemyClass,
+                    SpawnTransform,
+                    SpawnParameters);
+                if (!IsValid(Enemy))
+                {
+                    DestroyStagedActors();
+                    return false;
+                }
+
+                Enemy->SetReplicates(false);
+                StagedEnemies.Add(Enemy);
+            }
+        }
+
+        if (StagedEnemies.IsEmpty() || StagedEnemies.Num() > 64)
+        {
+            DestroyStagedActors();
+            return false;
+        }
+    }
+    else if (bSpawnBoss)
+    {
+        FActorSpawnParameters SpawnParameters;
+        SpawnParameters.SpawnCollisionHandlingOverride =
+            ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
+        SpawnParameters.Owner = this;
+
+        StagedBoss = World->SpawnActor<AJumanjiBossCharacter>(
+            BossClass,
+            BossSpawnPoint->GetActorTransform(),
+            SpawnParameters);
+        if (!IsValid(StagedBoss))
+        {
+            DestroyStagedActors();
+            return false;
+        }
+
+        StagedBoss->SetReplicates(false);
+        if (bBossCheckpoint)
+        {
+            const uint8 RestoredPhase = Candidate.BossPhaseId == FName(TEXT("BOSS_PHASE_03")) ? 3 : 2;
+            if (!StagedBoss->ApplyCheckpointRestoreState(
+                Candidate.BossHealthFraction,
+                RestoredPhase,
+                Candidate.BossPhaseRevision))
+            {
+                DestroyStagedActors();
+                return false;
+            }
+        }
+    }
+
+    // Establish session membership before changing trial state. A failed
+    // membership check therefore leaves all chapter actors untouched.
+    if (!bCompleteImmediately
+        && !SessionSubsystem->BeginRestoredEncounterSession(
+            EncounterId,
+            Candidate.SessionId,
+            Participants))
+    {
+        DestroyStagedActors();
+        return false;
+    }
+
+    if (!AdventureChapterDirector->ApplyCheckpointTrialStates(
+        Candidate.CompletedTrialIds,
+        Candidate.CompletedObjectiveIds))
+    {
+        if (!bCompleteImmediately)
+        {
+            SessionSubsystem->EndEncounterSession(EncounterId);
+        }
+        DestroyStagedActors();
+        return false;
+    }
+
+    const int32 PublishedWave = TargetPhase == EJumanjiWorldEncounterPhase::Combat
+        ? RestoreWaveIndex + 1
+        : 0;
+    const int32 PublishedEnemyCount = TargetPhase == EJumanjiWorldEncounterPhase::Combat
+        ? StagedEnemies.Num()
+        : (TargetPhase == EJumanjiWorldEncounterPhase::Boss ? 1 : 0);
+
+    // Stage the director's complete in-memory view before GameState emits
+    // delegates, so callbacks never observe a partially initialized encounter.
+    bEncounterActive = !bCompleteImmediately;
+    ActiveWaveIndex = TargetPhase == EJumanjiWorldEncounterPhase::Combat
+        ? RestoreWaveIndex
+        : INDEX_NONE;
+    ActiveEnemies.Reset();
+    ActiveBoss = StagedBoss;
+    SpawnedEncounterActors.Reset();
+    for (AJumanjiEnemyCharacter* Enemy : StagedEnemies)
+    {
+        ActiveEnemies.Add(Enemy);
+        SpawnedEncounterActors.Add(Enemy);
+    }
+    if (IsValid(StagedBoss))
+    {
+        SpawnedEncounterActors.Add(StagedBoss);
+    }
+
+    if (!GameState->ApplyEncounterCheckpointRestore(
+        EncounterId,
+        Waves.Num(),
+        TargetPhase,
+        PublishedWave,
+        PublishedEnemyCount,
+        StagedBoss,
+        RequiredChapterId,
+        AdventureChapterDirector->GetBoardEventId(),
+        RestoredChapterTitle,
+        RestoredChapterDescription,
+        RestoredObjectives,
+        Candidate.EncounterRevision,
+        Candidate.ChapterRevision))
+    {
+        if (!bCompleteImmediately)
+        {
+            SessionSubsystem->EndEncounterSession(EncounterId);
+        }
+        bEncounterActive = false;
+        ActiveWaveIndex = INDEX_NONE;
+        ActiveEnemies.Reset();
+        ActiveBoss = nullptr;
+        SpawnedEncounterActors.Reset();
+        DestroyStagedActors();
+        return false;
+    }
+
+    for (AJumanjiEnemyCharacter* Enemy : StagedEnemies)
+    {
+        Enemy->OnEnemyDefeated.AddUniqueDynamic(
+            this,
+            &AJumanjiWorldEncounterDirector::HandleEnemyDefeated);
+    }
+
+    if (IsValid(ActiveBoss))
+    {
+        ActiveBoss->OnEnemyDefeated.AddUniqueDynamic(
+            this,
+            &AJumanjiWorldEncounterDirector::HandleEnemyDefeated);
+        ActiveBoss->OnBossPhaseChanged.AddUniqueDynamic(
+            this,
+            &AJumanjiWorldEncounterDirector::HandleBossPhaseChanged);
+    }
+
+    if (TargetPhase == EJumanjiWorldEncounterPhase::Trials)
+    {
+        if (!AdventureChapterDirector->BindForCheckpointRestoredActiveChapter())
+        {
+            UE_LOG(LogTemp, Error,
+                TEXT("JUMANJI restore: chapter listener binding failed after authoritative publication."));
+        }
+        GameState->OnAdventureChapterChanged.AddUniqueDynamic(
+            this,
+            &AJumanjiWorldEncounterDirector::HandleAdventureChapterChanged);
+        bListeningForChapterChanges = true;
+        GameState->OnAdventureObjectivesChanged.AddUniqueDynamic(
+            this,
+            &AJumanjiWorldEncounterDirector::HandleAdventureObjectivesChanged);
+        bListeningForObjectiveChanges = true;
+    }
+
+    AdventureChapterDirector->PublishCheckpointTrialStates();
+
+    for (AJumanjiEnemyCharacter* Enemy : StagedEnemies)
+    {
+        Enemy->SetReplicates(true);
+        Enemy->ForceNetUpdate();
+    }
+    if (IsValid(ActiveBoss))
+    {
+        ActiveBoss->SetReplicates(true);
+        ActiveBoss->ForceNetUpdate();
+    }
+
+    BP_OnEncounterPhaseChanged(TargetPhase);
+    if (bCompleteImmediately)
+    {
+        BP_OnEncounterCompleted();
+    }
+    ForceNetUpdate();
+    return true;
+}
+
 bool AJumanjiWorldEncounterDirector::StartEncounter(AJumanjiPlayerState* InitiatingPlayer)
 {
     if (!HasAuthority()

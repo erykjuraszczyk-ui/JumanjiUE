@@ -11,6 +11,7 @@ class AJumanjiAdventureChapterDirector;
 class AJumanjiBossCharacter;
 class AJumanjiEnemyCharacter;
 class AJumanjiPlayerState;
+struct FJumanjiEncounterCheckpointRestoreCandidate;
 
 USTRUCT(BlueprintType)
 struct JUMANJIUE_API FJumanjiEncounterEnemySpawn
@@ -69,6 +70,14 @@ public:
 
     UFUNCTION(BlueprintPure, Category = "JUMANJI|Encounter")
     bool CanRetryEncounter() const;
+
+    /** Trusted server entry point; deliberately not a UFUNCTION/RPC/Blueprint action. */
+    bool BeginCheckpointRestore();
+
+    /** Called only after participant identity and profile ledger preflight succeeds. */
+    bool MaterializeCheckpointRestore(
+        const FJumanjiEncounterCheckpointRestoreCandidate& Candidate,
+        const TArray<AJumanjiPlayerState*>& Participants);
 
     AJumanjiAdventureChapterDirector* GetAdventureChapterDirector() const { return AdventureChapterDirector; }
     FName GetBossDefinitionId() const { return BossDefinitionId; }

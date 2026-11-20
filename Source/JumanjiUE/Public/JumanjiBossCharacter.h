@@ -96,6 +96,9 @@ public:
     UFUNCTION(BlueprintPure, Category = "JUMANJI|Boss")
     float GetBossHealthFraction() const;
 
+    /** Trusted server-only materialization from a validated logical checkpoint. */
+    bool ApplyCheckpointRestoreState(float HealthFraction, uint8 RestoredPhase, int32 RestoredPhaseRevision);
+
     UFUNCTION(BlueprintPure, Category = "JUMANJI|Boss|Telegraph")
     FJumanjiBossTelegraphState GetBossTelegraphState() const { return BossTelegraphState; }
 
@@ -177,4 +180,5 @@ private:
 
     FTimerHandle TelegraphWarningTimerHandle;
     FTimerHandle TelegraphActiveTimerHandle;
+    bool bApplyingCheckpointRestoreState = false;
 };

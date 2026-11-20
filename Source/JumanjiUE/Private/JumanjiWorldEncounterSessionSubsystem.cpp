@@ -133,6 +133,53 @@ bool UJumanjiWorldEncounterSessionSubsystem::BeginEncounterSession(
     return true;
 }
 
+bool UJumanjiWorldEncounterSessionSubsystem::BeginRestoredEncounterSession(
+    FName EncounterId,
+    FGuid RestoredSessionId,
+    const TArray<AJumanjiPlayerState*>& RestoredParticipants)
+{
+    constexpr int32 MaxRestoredParticipants = 64;
+
+    if (EncounterId.IsNone()
+        || !RestoredSessionId.IsValid()
+        || !ActiveEncounterId.IsNone()
+        || RestoredParticipants.IsEmpty()
+        || RestoredParticipants.Num() > MaxRestoredParticipants)
+    {
+        return false;
+    }
+
+    TSet<FString> UniqueProfileIds;
+    for (const AJumanjiPlayerState* PlayerState : RestoredParticipants)
+    {
+        if (!IsValid(PlayerState)
+            || !PlayerState->HasAuthority()
+            || !IsValidProfileKey(PlayerState->GetPersistentProfileId())
+            || UniqueProfileIds.Contains(PlayerState->GetPersistentProfileId()))
+        {
+            return false;
+        }
+
+        UniqueProfileIds.Add(PlayerState->GetPersistentProfileId());
+    }
+
+    PruneRecentlyEndedParticipants();
+    ActiveEncounterId = EncounterId;
+    ActiveSessionId = RestoredSessionId;
+    ParticipantProfileIds = UniqueProfileIds;
+    ConnectedProfileIds = UniqueProfileIds;
+    DisconnectedAtUtc.Reset();
+    ReconnectRevision = 0;
+
+    for (const FString& ProfileId : UniqueProfileIds)
+    {
+        RecentlyEndedEncounterIds.Remove(ProfileId);
+        RecentlyEndedAtUtc.Remove(ProfileId);
+        RecentlyEndedPhases.Remove(ProfileId);
+    }
+    return true;
+}
+
 bool UJumanjiWorldEncounterSessionSubsystem::RegisterConnectedParticipant(
     AJumanjiPlayerState* PlayerState)
 {

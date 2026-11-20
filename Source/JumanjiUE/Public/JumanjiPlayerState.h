@@ -77,6 +77,7 @@ public:
     /** Server-only identity binding established by GameMode after login. */
     void SetPersistentProfileId(const FString& InProfileId);
     const FString& GetPersistentProfileId() const { return PersistentProfileId; }
+    bool IsProfilePersistenceEnabled() const { return bProfilePersistenceEnabled; }
     void RequestProfileSave();
 
     /** Prevents fallback state from overwriting an existing unreadable profile slot. */
