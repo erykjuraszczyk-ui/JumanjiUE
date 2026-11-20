@@ -28,6 +28,7 @@ REQUIRED = {
         "if (!IsServerRuntime()",
         "EncounterDirector->HasAuthority()",
         "OPERATOR_RETRY_NOT_A_STAGED_OR_IDLE_RECOVERY",
+        "EncounterDirector->GetLevel() != OperatorWorld->GetPersistentLevel()",
         "bHasStagedRestoreCandidate && bWaitingForRestoreParticipants",
         "JUMANJI_RECOVERY correlation=%s outcome=%s encounter=%s sequence=%lld epoch=%lld http=%d error=%s operatorReason=%s",
         "OPERATOR_ABORTED_STAGED_RESTORE",
@@ -118,6 +119,7 @@ def validate_project(root: Path) -> list[str]:
     for token in (
         "!IsServerRuntime()",
         "!EncounterDirector->HasAuthority()",
+        "EncounterDirector->GetLevel() != OperatorWorld->GetPersistentLevel()",
         "bLeaseAcquiring || bReadInFlight || bWriteInFlight || bRestoreCommitInProgress",
         "OPERATOR_RETRY_NOT_A_STAGED_OR_IDLE_RECOVERY",
         "TryCommitStagedRestore(EncounterDirector)",
