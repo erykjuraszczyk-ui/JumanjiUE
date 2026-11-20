@@ -68,10 +68,10 @@ class EncounterStartupCoordinatorTests(unittest.TestCase):
             source = path.read_text(encoding="utf-8")
             retry = source.index("    if (CheckpointSubsystem->HasStagedRestoreCandidate())")
             guard_block = (
-                "    if (bCheckpointRestoreStarted)\\n"
-                "    {\\n"
-                "        return;\\n"
-                "    }\\n\\n"
+                "    if (bCheckpointRestoreStarted)\n"
+                "    {\n"
+                "        return;\n"
+                "    }\n\n"
             )
             source = source.replace(guard_block, "", 1)
             source = source[:retry] + guard_block + source[retry:]
