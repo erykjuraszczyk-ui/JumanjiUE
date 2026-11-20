@@ -165,6 +165,15 @@ public:
     UFUNCTION(BlueprintCallable, Category = "JUMANJI|Ability HUD")
     void ClearTargetFocus();
 
+    /** Applies local-only mobile HUD accessibility preferences. */
+    UFUNCTION(BlueprintCallable, Category = "JUMANJI|Ability HUD|Accessibility")
+    void ApplyMobileAccessibilitySettings(
+        float InHUDScale,
+        float InTouchTargetScale,
+        bool bInHighContrastMode,
+        bool bInReduceMotion
+    );
+
     UFUNCTION(BlueprintPure, Category = "JUMANJI|Ability HUD")
     AActor* GetTargetFocus() const { return TargetFocus.Get(); }
 
@@ -181,6 +190,18 @@ protected:
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "JUMANJI|Ability HUD", meta = (ClampMin = "100.0", ClampMax = "5000.0"))
     float MaxTargetFocusDistance = 2500.0f;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "JUMANJI|Ability HUD|Accessibility", meta = (ClampMin = "0.75", ClampMax = "1.35"))
+    float DefaultHUDScale = 1.0f;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "JUMANJI|Ability HUD|Accessibility", meta = (ClampMin = "0.85", ClampMax = "1.5"))
+    float DefaultTouchTargetScale = 1.0f;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "JUMANJI|Ability HUD|Accessibility")
+    bool bDefaultHighContrastMode = false;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "JUMANJI|Ability HUD|Accessibility")
+    bool bDefaultReduceMotion = false;
 
     UPROPERTY(meta = (BindWidgetOptional))
     TObjectPtr<UJumanjiAbilityHUDSlotWidget> PrimarySlotWidget;
@@ -215,6 +236,7 @@ private:
     void RefreshAbilityHUD();
     void ApplySlotStatesToBoundWidgets(const TArray<FJumanjiAbilityHUDSlotState>& SlotStates);
     void ReportSlotFeedback(EJumanjiAbilitySlot Slot, EJumanjiAbilityHUDFeedback Feedback, const FText& Message);
+    void ApplyAccessibilityOptionsToSlots();
 
     UFUNCTION()
     void HandleAbilitySlotPressed(EJumanjiAbilitySlot Slot);
