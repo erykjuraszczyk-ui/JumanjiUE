@@ -32,7 +32,7 @@ Snapshot zawiera:
 ### Dane celowo wykluczone
 
 Snapshot nie zawiera:
-- lease tokenu, bearer credential, podpisu ani klucza prywatnego;
+- lease tokenu (`LeaseToken`), bearer credential, podpisu ani klucza prywatnego;
 - surowego ProfileId, participantKey, danych konta lub identyfikatorów platformowych;
 - JSON checkpointu, payloadu, nagród, sald ani inventory;
 - referencji UObject/AActor, transformów, AI, timerów lub stanu World.
