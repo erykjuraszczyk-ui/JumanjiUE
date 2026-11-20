@@ -58,7 +58,7 @@ SOURCE_REQUIREMENTS = {
         "p95",
         "p99",
         "nie jest wynikiem multi-region",
-        "Nie wpisuj fikcyjnych wyników",
+        "Nie wpisujemy fikcyjnych wartości",
     ),
     ".github/workflows/encounter-recovery-benchmarks.yml": (
         "benchmark_encounter_checkpoint_recovery.py",
