@@ -24,6 +24,7 @@ Open-world third-person adventure RPG prototype with a shared-world direction an
 - Stage 19 — Ability Presentation Asset Pack: 45-slot icon manifest, nine Great Spirit palettes, radial cooldown material specification, UI audio feedback and Gameplay Cue/VFX authoring contract.
 - Stage 20 — Ability Presentation Runtime Integration: validated manifest DataTable reader, stable AbilityId binding, soft-reference presentation data and HUD integration without changing GAS authority.
 - Stage 21 — Ability Presentation Blueprint Integration: reusable native slot widget, five BindWidgetOptional slots, asynchronous icon/material/audio loading, radial cooldown parameters and per-slot feedback routing.
+- Stage 22 — Mobile HUD Polish & Accessibility (Ability HUD track): local HUD/touch scaling, high-contrast text mode, reduced-motion option, SafeZone/portrait-landscape Blueprint contract and Android usability QA.
 - Stage 21 — Emerald Jungle World Authoring Pack: import-ready region/landmark DataTable CSVs, 29-row greybox placement ledger and World Partition assembly manifest.
 - Stage 22 — Emerald Jungle Greybox Validation & Mobile Performance: source-data validator, unit/integration tests, GitHub Actions quality gate and Android profiling run template.
 - Stage 23 — Emerald Jungle Traversal Interactions & Off-Mesh Links: Smart Link traversal actors, four contextual movement types, server-authoritative traversal component and client request validation.
@@ -80,6 +81,7 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - Docs/STAGE_19_ABILITY_PRESENTATION_ASSET_PACK.md — 45 ability icon definitions, palettes, cooldown material, feedback audio/VFX contract and Unreal Editor acceptance checklist.
 - Docs/STAGE_20_ABILITY_PRESENTATION_RUNTIME.md — manifest DataTable import, AbilityId class binding, HUD presentation metadata and acceptance checklist.
 - Docs/STAGE_21_ABILITY_PRESENTATION_BLUEPRINT_INTEGRATION.md — WBP_AbilityHUD/WBP_AbilitySlot hierarchy, mobile layout, asynchronous assets and Blueprint acceptance checklist.
+- Docs/STAGE_22_MOBILE_HUD_POLISH_ACCESSIBILITY.md — SafeZone, responsive landscape/portrait layouts, user-accessible scaling, contrast, reduced motion, optional haptics adapter and Android QA.
 - Content/UI/AbilityPresentation/README.md — asset import, naming and per-ability assignment workflow.
 - Content/UI/AbilityHUD/README.md — WBP_AbilityHUD/WBP_AbilitySlot asset hierarchy and exact BindWidget names.
 - Content/UI/AbilityPresentation/AbilityPresentationManifest.csv — 45 stable ability presentation records.
@@ -221,6 +223,7 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - UJumanjiAbilityPresentationSubsystem with validated ability presentation DataTable lookup and soft-reference conversion;
 - UJumanjiAbilityHUDSlotWidget reusable slot base with async icon/material/audio loading, cooldown MID parameters, placeholder fallback and slot touch event;
 - five optional child-slot bindings in UJumanjiAbilityHUDWidget with per-slot feedback routing and delegate cleanup;
+- local mobile HUD accessibility controls for overall scale, touch-target scale, high-contrast text and reduced-motion feedback (Stage 22 Ability HUD track);
 - ability HUD slot snapshots enriched with per-ability palette, icon, cooldown material, audio references and Gameplay Cue tag.
 - PlayerController creation of the configured ability HUD for the local player.
 - replicated encounter snapshot now carries the spawned AJumanjiBossCharacter reference for local presentation;
