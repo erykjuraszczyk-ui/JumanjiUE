@@ -1,0 +1,6 @@
+"Profile","DurationSeconds","Workers","LeaseTtlSeconds","WarmupIterations","UseCase","Acceptance"
+"Smoke","3","2","120","1","GitHub Actions functional smoke run","All HTTP operations succeed; write/read pairs greater than zero"
+"Baseline","60","4","120","3","Repeatable local reference on a named host and storage device","Record p50/p95/p99 and pairs per second; zero failures"
+"Load","180","12","120","3","Concurrent server workload and SQLite write serialization","Record throughput and tail latency; zero unexpected failures"
+"Soak30","1800","8","120","3","Thirty-minute stability and lease-renewal endurance","No memory growth from unbounded latency samples; zero unexpected failures"
+"Soak60","3600","8","120","3","One-hour endurance run","No lease loss or unexpected errors; compare early/middle/late p95"
