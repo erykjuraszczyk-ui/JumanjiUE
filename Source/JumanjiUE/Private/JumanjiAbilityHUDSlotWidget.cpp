@@ -22,6 +22,15 @@ void UJumanjiAbilityHUDSlotWidget::NativeConstruct()
         bHasCapturedPlaceholderBrush = true;
     }
 
+    if (!bHasCapturedDefaultTextColors)
+    {
+        if (AbilityNameText) DefaultAbilityNameColor = AbilityNameText->GetColorAndOpacity();
+        if (CooldownText) DefaultCooldownTextColor = CooldownText->GetColorAndOpacity();
+        if (ResourceCostText) DefaultResourceCostColor = ResourceCostText->GetColorAndOpacity();
+        if (SlotStateText) DefaultSlotStateColor = SlotStateText->GetColorAndOpacity();
+        bHasCapturedDefaultTextColors = true;
+    }
+
     if (SlotButton)
     {
         SlotButton->OnClicked.AddDynamic(this, &UJumanjiAbilityHUDSlotWidget::HandleSlotButtonClicked);
@@ -89,6 +98,64 @@ void UJumanjiAbilityHUDSlotWidget::SetSlotState(const FJumanjiAbilityHUDSlotStat
     }
 
     UpdateCooldownMaterial();
+}
+
+void UJumanjiAbilityHUDSlotWidget::ApplyAccessibilityOptions(
+    float InTouchTargetScale,
+    bool bInHighContrast,
+    bool bInReduceMotion)
+{
+    TouchTargetScale = FMath::Clamp(
+        FMath::IsFinite(InTouchTargetScale) ? InTouchTargetScale : 1.0f,
+        0.85f,
+        1.5f
+    );
+    bHighContrastMode = bInHighContrast;
+    bReduceMotion = bInReduceMotion;
+
+    if (SlotButton)
+    {
+        // UMG render transforms are applied to the visual and its hit-test geometry.
+        SlotButton->SetRenderScale(FVector2D(TouchTargetScale, TouchTargetScale));
+    }
+
+    if (bReduceMotion && ActivationPulseAnimation && IsAnimationPlaying(ActivationPulseAnimation))
+    {
+        StopAnimation(ActivationPulseAnimation);
+    }
+
+    UpdateAccessibilityPresentation();
+}
+
+void UJumanjiAbilityHUDSlotWidget::UpdateAccessibilityPresentation()
+{
+    const FSlateColor HighContrastPrimary(FLinearColor::White);
+    const FSlateColor HighContrastSecondary(FLinearColor(1.0f, 0.90f, 0.45f, 1.0f));
+
+    if (AbilityNameText)
+    {
+        AbilityNameText->SetColorAndOpacity(
+            bHighContrastMode ? HighContrastPrimary : DefaultAbilityNameColor
+        );
+    }
+    if (CooldownText)
+    {
+        CooldownText->SetColorAndOpacity(
+            bHighContrastMode ? HighContrastPrimary : DefaultCooldownTextColor
+        );
+    }
+    if (ResourceCostText)
+    {
+        ResourceCostText->SetColorAndOpacity(
+            bHighContrastMode ? HighContrastSecondary : DefaultResourceCostColor
+        );
+    }
+    if (SlotStateText)
+    {
+        SlotStateText->SetColorAndOpacity(
+            bHighContrastMode ? HighContrastSecondary : DefaultSlotStateColor
+        );
+    }
 }
 
 void UJumanjiAbilityHUDSlotWidget::HandleSlotButtonClicked()
@@ -322,7 +389,9 @@ void UJumanjiAbilityHUDSlotWidget::UpdateTextAndState()
 
 void UJumanjiAbilityHUDSlotWidget::PlayFeedback(EJumanjiAbilityHUDFeedback Feedback)
 {
-    if (Feedback == EJumanjiAbilityHUDFeedback::Activated && ActivationPulseAnimation)
+    if (Feedback == EJumanjiAbilityHUDFeedback::Activated
+        && ActivationPulseAnimation
+        && !bReduceMotion)
     {
         PlayAnimation(ActivationPulseAnimation);
     }
