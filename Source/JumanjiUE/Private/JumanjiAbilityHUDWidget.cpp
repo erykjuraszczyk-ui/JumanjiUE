@@ -83,6 +83,13 @@ void UJumanjiAbilityHUDWidget::NativeConstruct()
         &UJumanjiAbilityHUDWidget::HandleAbilitySlotFeedback
     );
 
+    ApplyMobileAccessibilitySettings(
+        DefaultHUDScale,
+        DefaultTouchTargetScale,
+        bDefaultHighContrastMode,
+        bDefaultReduceMotion
+    );
+
     TryBindAbilitySystem();
     RefreshAbilityHUD();
 }
@@ -147,6 +154,53 @@ void UJumanjiAbilityHUDWidget::NativeTick(
                 > FMath::Square(MaxTargetFocusDistance))
         {
             ClearTargetFocus();
+        }
+    }
+}
+
+void UJumanjiAbilityHUDWidget::ApplyMobileAccessibilitySettings(
+    float InHUDScale,
+    float InTouchTargetScale,
+    bool bInHighContrastMode,
+    bool bInReduceMotion)
+{
+    DefaultHUDScale = FMath::Clamp(
+        FMath::IsFinite(InHUDScale) ? InHUDScale : 1.0f,
+        0.75f,
+        1.35f
+    );
+    DefaultTouchTargetScale = FMath::Clamp(
+        FMath::IsFinite(InTouchTargetScale) ? InTouchTargetScale : 1.0f,
+        0.85f,
+        1.5f
+    );
+    bDefaultHighContrastMode = bInHighContrastMode;
+    bDefaultReduceMotion = bInReduceMotion;
+
+    SetRenderScale(FVector2D(DefaultHUDScale, DefaultHUDScale));
+    ApplyAccessibilityOptionsToSlots();
+}
+
+void UJumanjiAbilityHUDWidget::ApplyAccessibilityOptionsToSlots()
+{
+    const TArray<UJumanjiAbilityHUDSlotWidget*> SlotWidgets =
+    {
+        PrimarySlotWidget,
+        ActiveSlotWidget,
+        PassiveSlotWidget,
+        UltimateSlotWidget,
+        DodgeSlotWidget
+    };
+
+    for (UJumanjiAbilityHUDSlotWidget* SlotWidget : SlotWidgets)
+    {
+        if (SlotWidget)
+        {
+            SlotWidget->ApplyAccessibilityOptions(
+                DefaultTouchTargetScale,
+                bDefaultHighContrastMode,
+                bDefaultReduceMotion
+            );
         }
     }
 }
