@@ -80,6 +80,15 @@ public:
     /** Acquire a recovery lease, read the signed checkpoint and preflight it into private staging. */
     bool BeginRestoreStaging(AJumanjiWorldEncounterDirector* EncounterDirector);
 
+    /**
+     * Retry the staged server restore after another participant has completed
+     * authentication and profile restoration. A missing participant is pending,
+     * not a permanent checkpoint failure.
+     */
+    bool TryCommitStagedRestore(AJumanjiWorldEncounterDirector* EncounterDirector);
+
+    bool IsWaitingForRestoreParticipants() const { return bWaitingForRestoreParticipants; }
+
     bool HasStagedRestoreCandidate() const { return bHasStagedRestoreCandidate; }
     const FJumanjiEncounterCheckpointRestoreCandidate& GetStagedRestoreCandidate() const
     {
@@ -126,6 +135,7 @@ private:
     void HandleCheckpointRead(const struct FJumanjiCheckpointBackendResponse& Response,
         TWeakObjectPtr<AJumanjiWorldEncounterDirector> EncounterDirector);
     void HandleCheckpointWrite(const struct FJumanjiCheckpointBackendResponse& Response, int64 WrittenSequence);
+    void HandleRestoreParticipantWaitExpired();
     void RenewLease();
     void ClearLeaseState();
 
@@ -146,8 +156,10 @@ private:
     bool bReleaseLeaseWhenIdle = false;
     bool bHasStagedRestoreCandidate = false;
     bool bRestoreCommitInProgress = false;
+    bool bWaitingForRestoreParticipants = false;
 
     TWeakObjectPtr<AJumanjiWorldEncounterDirector> PendingRestoreDirector;
     FTimerHandle LeaseRenewalTimerHandle;
+    FTimerHandle RestoreParticipantWaitTimerHandle;
     FJumanjiEncounterCheckpointRestoreCandidate StagedRestoreCandidate;
 };

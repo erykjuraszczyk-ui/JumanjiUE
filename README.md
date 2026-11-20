@@ -39,6 +39,7 @@ Open-world third-person adventure RPG prototype with a shared-world direction an
 - Stage 33 — Encounter Checkpoint Backend Adapter & Lease Service Prototype: trusted server-to-server checkpoint API, Ed25519/RFC 8785 signatures, SQLite CAS/lease fencing, server-only Unreal HTTP adapter and concurrency/security tests.
 - Stage 34 — Safe-Point Snapshot Builder & Restore Staging: server snapshot creation at trial/wave/boss/reward boundaries, lease and fencing lifecycle, opaque participant IDs, signed checkpoint preflight and a private restore candidate without world mutation.
 - Stage 35 — Encounter Restore Materialization & Atomic Publish: authenticated participant mapping, profile revision and reward-ledger reconciliation, trial/wave/boss reconstruction, restored session identity and a single server-side GameState commit before actor replication.
+- Stage 36 — Encounter Startup Coordinator & Participant Barrier: automatic server recovery after profile restore, persistent-level director discovery, staged-candidate retry after each PostLogin and bounded 180-second wait for all checkpoint participants.
 
 ## The nine playable Great Spirits
 1. Great Spirit I — Duch Korzeni (Root / Guardian)
@@ -108,6 +109,8 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - Docs/STAGE_33_ENCOUNTER_CHECKPOINT_BACKEND_LEASE_SERVICE.md — trusted backend, lease/CAS/fencing, Ed25519 signing, Unreal adapter, local runbook and limitations.
 - Docs/STAGE_34_ENCOUNTER_SAFEPOINT_SNAPSHOT_RESTORE_STAGING.md — live-world safe-point snapshot builder, lease lifecycle, privacy boundaries, restore preflight and acceptance tests.
 - Docs/STAGE_35_ENCOUNTER_RESTORE_MATERIALIZATION_ATOMIC_PUBLISH.md — participant reconciliation, profile revision and reward receipt checks, trial/wave/boss reconstruction, server commit ordering, startup integration and known recovery limitations.
+- Docs/STAGE_36_ENCOUNTER_STARTUP_COORDINATOR_PARTICIPANT_BARRIER.md — automatic PostLogin recovery startup, persistent-level director selection, staged participant barrier, bounded timeout and host acceptance tests.
+- Scripts/validate_encounter_startup_coordinator.py and Scripts/Tests/test_validate_encounter_startup_coordinator.py — Stage 36 static startup/recovery validator and regression tests.
 - Scripts/validate_encounter_restore_materialization.py and Scripts/Tests/test_validate_encounter_restore_materialization.py — Stage 35 static source validator and regression tests.
 - Backend/EncounterCheckpointService/README.md — local checkpoint backend setup and server environment.
 - Scripts/validate_encounter_checkpoint_backend.py — Stage 33 backend integration contract validator.
@@ -236,6 +239,11 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - UJumanjiEncounterCheckpointBackendSubsystem native-only async HTTP adapter; client net mode is rejected and server credentials/identity are read from process environment.
 - Trusted Python checkpoint service prototype with Ed25519/RFC 8785 signing, signature verification, bounded leases, monotonically increasing fencing epoch and SQLite compare-and-swap.
 - Checkpoint backend unit tests for concurrency, lease fencing, stale sequence, signature tampering and server authentication; Stage 33 GitHub Actions workflow.
+- AJumanjiGameMode PostLogin invokes the trusted checkpoint startup coordinator only after identity binding, profile restoration and same-server reconnect processing;
+- persistent-level director discovery requires exactly one AJumanjiWorldEncounterDirector and rejects ambiguous/missing world configuration;
+- staged checkpoint restores wait for every checkpoint participant to authenticate and restore their profile; later PostLogin callbacks retry commit without discarding the candidate;
+- bounded 180-second participant barrier timeout clears the private candidate and releases the recovery lease without publishing partial GameState;
+- Stage 36 source validator, regression tests and GitHub Actions workflow.
 
 ## Not yet included
 This is a source-code foundation, not a finished game or installable Android build. The repository still needs:
@@ -265,7 +273,7 @@ This is a source-code foundation, not a finished game or installable Android bui
 - asynchronous asset preloading and device profiling;
 - production account authentication, secure economy backend and cross-shard transaction processing;
 - dedicated-server deployment;
-- automatic invocation of Stage 35 restore from a production startup coordinator after every required authenticated participant has loaded; the native server-only BeginCheckpointRestore entry point is implemented, but the host must call it after the map and profiles are ready;
+- production asynchronous profile-service integration: the current AJumanjiGameMode hook runs after the prototype's synchronous local profile restore; a future remote profile adapter must invoke the coordinator only after its authenticated profile load completes;
 - full actor/AI transform, player position, active attack, telegraph and timer restoration; Stage 35 restarts at authored safe spawn anchors and stores only logical chapter/wave/boss phase/health data;
 - production multi-host checkpoint consensus and an external authoritative profile service; Stage 33 backend remains SQLite WAL single-host prototype;
 - a packaged and device-tested APK/AAB.

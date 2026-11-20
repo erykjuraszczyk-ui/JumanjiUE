@@ -1,0 +1,50 @@
+name: Encounter Startup Coordinator Validation
+
+on:
+  pull_request:
+    paths:
+      - "Source/JumanjiUE/**"
+      - "Docs/STAGE_36_ENCOUNTER_STARTUP_COORDINATOR_PARTICIPANT_BARRIER.md"
+      - "Scripts/validate_encounter_startup_coordinator.py"
+      - "Scripts/Tests/test_validate_encounter_startup_coordinator.py"
+      - ".github/workflows/encounter-startup-coordinator.yml"
+  push:
+    branches: [main]
+    paths:
+      - "Source/JumanjiUE/**"
+      - "Docs/STAGE_36_ENCOUNTER_STARTUP_COORDINATOR_PARTICIPANT_BARRIER.md"
+      - "Scripts/validate_encounter_startup_coordinator.py"
+      - "Scripts/Tests/test_validate_encounter_startup_coordinator.py"
+      - ".github/workflows/encounter-startup-coordinator.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate-encounter-startup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate Stage 32 checkpoint schema
+        run: python Scripts/validate_encounter_checkpoint_contract.py
+      - name: Validate Stage 34 checkpoint runtime
+        run: python Scripts/validate_encounter_checkpoint_runtime.py
+      - name: Validate Stage 35 atomic materialization
+        run: python Scripts/validate_encounter_restore_materialization.py
+      - name: Validate Stage 36 startup coordinator
+        run: python Scripts/validate_encounter_startup_coordinator.py
+      - name: Run Stage 34 regression tests
+        run: python -m unittest discover -s Scripts/Tests -p "test_validate_encounter_checkpoint_runtime.py" -v
+      - name: Run Stage 35 regression tests
+        run: python -m unittest discover -s Scripts/Tests -p "test_validate_encounter_restore_materialization.py" -v
+      - name: Run Stage 36 regression tests
+        run: python -m unittest discover -s Scripts/Tests -p "test_validate_encounter_startup_coordinator.py" -v
+      - name: Run backend lease and fencing tests
+        run: |
+          python -m pip install -r Backend/EncounterCheckpointService/requirements.txt
+          python -m unittest discover -s Scripts/Tests -p "test_encounter_checkpoint_service.py" -v

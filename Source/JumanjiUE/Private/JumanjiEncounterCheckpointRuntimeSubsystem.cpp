@@ -307,11 +307,13 @@ void UJumanjiEncounterCheckpointRuntimeSubsystem::ClearLeaseState()
     bRestoreCommitInProgress = false;
     PendingRestoreDirector.Reset();
     bHasStagedRestoreCandidate = false;
+    bWaitingForRestoreParticipants = false;
     StagedRestoreCandidate = FJumanjiEncounterCheckpointRestoreCandidate();
 
     if (UWorld* World = GetWorld())
     {
         World->GetTimerManager().ClearTimer(LeaseRenewalTimerHandle);
+        World->GetTimerManager().ClearTimer(RestoreParticipantWaitTimerHandle);
     }
 }
 
@@ -940,24 +942,97 @@ void UJumanjiEncounterCheckpointRuntimeSubsystem::HandleCheckpointRead(
     LastCommittedSequence = StagedRestoreCandidate.CheckpointSequence;
     bCheckpointWriteBlockedUntilResync = false;
     bRestoreStagingRequested = false;
-    PendingRestoreDirector.Reset();
+    PendingRestoreDirector = EncounterDirector;
 
+    // The first authenticated participant may arrive before the rest of the
+    // checkpoint party. Keep the verified candidate private and its lease alive
+    // until GameMode notifies us that another profile has finished loading.
+    TryCommitStagedRestore(EncounterDirector.Get());
+}
+
+bool UJumanjiEncounterCheckpointRuntimeSubsystem::TryCommitStagedRestore(
+    AJumanjiWorldEncounterDirector* EncounterDirector)
+{
+    if (!IsServerRuntime()
+        || !IsValid(EncounterDirector)
+        || !EncounterDirector->HasAuthority()
+        || !bLeaseReady
+        || !bHasStagedRestoreCandidate
+        || EncounterDirector->GetEncounterId() != ActiveEncounterId)
+    {
+        return false;
+    }
+
+    PendingRestoreDirector = EncounterDirector;
     const FName RestoredEncounterId = ActiveEncounterId;
     const int64 RestoredSequence = LastCommittedSequence;
-    FString CommitError;
-    if (!CommitStagedRestore(EncounterDirector.Get(), CommitError))
+
+    FString Error;
+    if (CommitStagedRestore(EncounterDirector, Error))
     {
-        UE_LOG(LogTemp, Error, TEXT("JUMANJI checkpoint restore commit rejected: %s"), *CommitError);
-        bHasStagedRestoreCandidate = false;
-        StagedRestoreCandidate = FJumanjiEncounterCheckpointRestoreCandidate();
-        EndEncounterCheckpointSession(ActiveEncounterId);
+        if (UWorld* World = GetWorld())
+        {
+            World->GetTimerManager().ClearTimer(RestoreParticipantWaitTimerHandle);
+        }
+        bWaitingForRestoreParticipants = false;
+        PendingRestoreDirector.Reset();
+
+        UE_LOG(LogTemp, Log,
+            TEXT("JUMANJI checkpoint restore committed: encounter=%s sequence=%lld."),
+            *RestoredEncounterId.ToString(),
+            RestoredSequence);
+        return true;
+    }
+
+    if (Error == TEXT("RESTORE_PARTICIPANT_NOT_CONNECTED_OR_AUTHENTICATED"))
+    {
+        if (!bWaitingForRestoreParticipants)
+        {
+            if (UWorld* World = GetWorld())
+            {
+                World->GetTimerManager().SetTimer(
+                    RestoreParticipantWaitTimerHandle,
+                    this,
+                    &UJumanjiEncounterCheckpointRuntimeSubsystem::HandleRestoreParticipantWaitExpired,
+                    180.0f,
+                    false);
+            }
+        }
+
+        bWaitingForRestoreParticipants = true;
+        UE_LOG(LogTemp, Log,
+            TEXT("JUMANJI checkpoint restore is staged; waiting for every authenticated participant to finish profile loading."));
+        return false;
+    }
+
+    UE_LOG(LogTemp, Error,
+        TEXT("JUMANJI checkpoint restore commit rejected permanently: %s"),
+        *Error);
+
+    bWaitingForRestoreParticipants = false;
+    bHasStagedRestoreCandidate = false;
+    StagedRestoreCandidate = FJumanjiEncounterCheckpointRestoreCandidate();
+    PendingRestoreDirector.Reset();
+    EndEncounterCheckpointSession(ActiveEncounterId);
+    return false;
+}
+
+void UJumanjiEncounterCheckpointRuntimeSubsystem::HandleRestoreParticipantWaitExpired()
+{
+    if (!bWaitingForRestoreParticipants || !bHasStagedRestoreCandidate)
+    {
         return;
     }
 
-    UE_LOG(LogTemp, Log,
-        TEXT("JUMANJI checkpoint restore committed: encounter=%s sequence=%lld."),
-        *RestoredEncounterId.ToString(),
-        RestoredSequence);
+    bWaitingForRestoreParticipants = false;
+    bHasStagedRestoreCandidate = false;
+    StagedRestoreCandidate = FJumanjiEncounterCheckpointRestoreCandidate();
+    PendingRestoreDirector.Reset();
+
+    UE_LOG(LogTemp, Warning,
+        TEXT("JUMANJI checkpoint restore expired: the complete authenticated participant group did not reconnect within 180 seconds."));
+
+    EndEncounterCheckpointSession(ActiveEncounterId);
 }
 
 bool UJumanjiEncounterCheckpointRuntimeSubsystem::CommitStagedRestore(
