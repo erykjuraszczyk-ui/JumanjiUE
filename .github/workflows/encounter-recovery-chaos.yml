@@ -1,0 +1,68 @@
+name: Encounter Recovery Chaos & Failure Injection
+
+on:
+  pull_request:
+    paths:
+      - "Backend/EncounterCheckpointService/**"
+      - "Source/JumanjiUE/**"
+      - "Docs/STAGE_37_ENCOUNTER_RECOVERY_OBSERVABILITY_OPERATOR_CONTROLS.md"
+      - "Docs/STAGE_38_RECOVERY_CHAOS_TESTING_FAILURE_INJECTION.md"
+      - "Data/Encounter/EncounterRecoveryChaosMatrix.csv"
+      - "Scripts/validate_encounter_recovery_chaos.py"
+      - "Scripts/Tests/test_encounter_checkpoint_chaos.py"
+      - "Scripts/Tests/test_validate_encounter_recovery_chaos.py"
+      - ".github/workflows/encounter-recovery-chaos.yml"
+      - "README.md"
+  push:
+    branches: [main]
+    paths:
+      - "Backend/EncounterCheckpointService/**"
+      - "Source/JumanjiUE/**"
+      - "Docs/STAGE_38_RECOVERY_CHAOS_TESTING_FAILURE_INJECTION.md"
+      - "Data/Encounter/EncounterRecoveryChaosMatrix.csv"
+      - "Scripts/validate_encounter_recovery_chaos.py"
+      - "Scripts/Tests/test_encounter_checkpoint_chaos.py"
+      - "Scripts/Tests/test_validate_encounter_recovery_chaos.py"
+      - ".github/workflows/encounter-recovery-chaos.yml"
+      - "README.md"
+
+permissions:
+  contents: read
+
+jobs:
+  recovery-chaos:
+    name: Backend failure injection and recovery regression
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install checkpoint backend dependencies
+        run: python -m pip install -r Backend/EncounterCheckpointService/requirements.txt
+      - name: Validate Stage 38 chaos matrix and source contracts
+        run: python Scripts/validate_encounter_recovery_chaos.py
+      - name: Run Stage 38 validator regression tests
+        run: python -m unittest discover -s Scripts/Tests -p "test_validate_encounter_recovery_chaos.py" -v
+      - name: Run Stage 38 backend failure injection
+        run: python -m unittest discover -s Scripts/Tests -p "test_encounter_checkpoint_chaos.py" -v
+      - name: Re-run Stage 33 backend lease, CAS and signature suite
+        run: python -m unittest discover -s Scripts/Tests -p "test_encounter_checkpoint_service.py" -v
+      - name: Revalidate checkpoint and recovery contracts Stage 32-37
+        run: |
+          python Scripts/validate_encounter_checkpoint_contract.py
+          python Scripts/validate_encounter_checkpoint_backend.py
+          python Scripts/validate_encounter_checkpoint_runtime.py
+          python Scripts/validate_encounter_restore_materialization.py
+          python Scripts/validate_encounter_startup_coordinator.py
+          python Scripts/validate_encounter_recovery_observability.py
+      - name: Run Stage 32-37 regression suites
+        run: |
+          python -m unittest discover -s Scripts/Tests -p "test_validate_encounter_checkpoint_contract.py" -v
+          python -m unittest discover -s Scripts/Tests -p "test_validate_encounter_checkpoint_runtime.py" -v
+          python -m unittest discover -s Scripts/Tests -p "test_validate_encounter_restore_materialization.py" -v
+          python -m unittest discover -s Scripts/Tests -p "test_validate_encounter_startup_coordinator.py" -v
+          python -m unittest discover -s Scripts/Tests -p "test_validate_encounter_recovery_observability.py" -v
+          python -m unittest discover -s Scripts/Tests -p "test_validate_encounter_recovery_chaos.py" -v
