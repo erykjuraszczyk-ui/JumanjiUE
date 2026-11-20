@@ -113,6 +113,7 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - Docs/STAGE_34_ENCOUNTER_SAFEPOINT_SNAPSHOT_RESTORE_STAGING.md — live-world safe-point snapshot builder, lease lifecycle, privacy boundaries, restore preflight and acceptance tests.
 - Docs/STAGE_35_ENCOUNTER_RESTORE_MATERIALIZATION_ATOMIC_PUBLISH.md — participant reconciliation, profile revision and reward receipt checks, trial/wave/boss reconstruction, server commit ordering, startup integration and known recovery limitations.
 - Docs/STAGE_36_ENCOUNTER_STARTUP_COORDINATOR_PARTICIPANT_BARRIER.md — automatic PostLogin recovery startup, persistent-level director selection, staged participant barrier, bounded timeout and host acceptance tests.
+- Docs/STAGE_37_ENCOUNTER_RECOVERY_OBSERVABILITY_OPERATOR_CONTROLS.md — process-local diagnostics, stable outcome codes, correlated logs, native server-only operator retry/abort controls and recovery runbook.
 - Scripts/validate_encounter_startup_coordinator.py and Scripts/Tests/test_validate_encounter_startup_coordinator.py — Stage 36 static startup/recovery validator and regression tests.
 - Scripts/validate_encounter_restore_materialization.py and Scripts/Tests/test_validate_encounter_restore_materialization.py — Stage 35 static source validator and regression tests.
 - Backend/EncounterCheckpointService/README.md — local checkpoint backend setup and server environment.
