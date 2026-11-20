@@ -42,6 +42,7 @@ Open-world third-person adventure RPG prototype with a shared-world direction an
 - Stage 35 — Encounter Restore Materialization & Atomic Publish: authenticated participant mapping, profile revision and reward-ledger reconciliation, trial/wave/boss reconstruction, restored session identity and a single server-side GameState commit before actor replication.
 - Stage 36 — Encounter Startup Coordinator & Participant Barrier: automatic server recovery after profile restore, persistent-level director discovery, staged-candidate retry after each PostLogin and bounded 180-second wait for all checkpoint participants.
 - Stage 37 — Recovery Observability & Operator Controls: secret-free process diagnostics, correlated outcome logs, bounded retry/abort server APIs, operator runbook, source validator and regression CI.
+- Stage 38 — Recovery Chaos Testing & Failure Injection: lost-write-acknowledgement recovery, backend restart durability, SQLite rollback, sequence CAS races, signature/TTL tampering, transport failure and explicit Unreal PIE/manual fault scenarios.
 
 ## The nine playable Great Spirits
 1. Great Spirit I — Duch Korzeni (Root / Guardian)
@@ -114,6 +115,10 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - Docs/STAGE_35_ENCOUNTER_RESTORE_MATERIALIZATION_ATOMIC_PUBLISH.md — participant reconciliation, profile revision and reward receipt checks, trial/wave/boss reconstruction, server commit ordering, startup integration and known recovery limitations.
 - Docs/STAGE_36_ENCOUNTER_STARTUP_COORDINATOR_PARTICIPANT_BARRIER.md — automatic PostLogin recovery startup, persistent-level director selection, staged participant barrier, bounded timeout and host acceptance tests.
 - Docs/STAGE_37_ENCOUNTER_RECOVERY_OBSERVABILITY_OPERATOR_CONTROLS.md — process-local diagnostics, stable outcome codes, correlated logs, native server-only operator retry/abort controls and recovery runbook.
+- Docs/STAGE_38_RECOVERY_CHAOS_TESTING_FAILURE_INJECTION.md — fault-injection scope, backend integration tests, Unreal manual test run sheet, acceptance criteria and evidence limitations.
+- Data/Encounter/EncounterRecoveryChaosMatrix.csv — 14 backend, lease, participant, ledger and materialization failure scenarios.
+- Scripts/validate_encounter_recovery_chaos.py and Scripts/Tests/test_validate_encounter_recovery_chaos.py — Stage 38 source/matrix contract validator and regression tests.
+- Scripts/Tests/test_encounter_checkpoint_chaos.py — Stage 38 HTTP/SQLite failure injection for dropped acknowledgements, restart durability, atomic writes, CAS races, signature, expiry and transport failures.
 - Scripts/validate_encounter_startup_coordinator.py and Scripts/Tests/test_validate_encounter_startup_coordinator.py — Stage 36 static startup/recovery validator and regression tests.
 - Scripts/validate_encounter_restore_materialization.py and Scripts/Tests/test_validate_encounter_restore_materialization.py — Stage 35 static source validator and regression tests.
 - Backend/EncounterCheckpointService/README.md — local checkpoint backend setup and server environment.
@@ -250,6 +255,7 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - staged checkpoint restores wait for every checkpoint participant to authenticate and restore their profile; later PostLogin callbacks retry commit without discarding the candidate;
 - bounded 180-second participant barrier timeout clears the private candidate and releases the recovery lease without publishing partial GameState;
 - Stage 36 source validator, regression tests and GitHub Actions workflow.
+- Stage 38 chaos matrix validator, HTTP/SQLite failure-injection suite and a dedicated GitHub Actions workflow re-running the Stage 32–37 recovery gates.
 
 ## Not yet included
 This is a source-code foundation, not a finished game or installable Android build. The repository still needs:
