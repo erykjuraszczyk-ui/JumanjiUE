@@ -231,9 +231,10 @@ void UJumanjiEncounterCheckpointRuntimeSubsystem::RecordRecoveryEvent(
     else
     {
         UE_LOG(LogTemp, Log,
-            TEXT("JUMANJI_RECOVERY correlation=%s outcome=%s encounter=%s sequence=%lld epoch=%lld http=%d error=%s"),
+            TEXT("JUMANJI_RECOVERY correlation=%s outcome=%s encounter=%s sequence=%lld epoch=%lld http=%d error=%s operatorReason=%s"),
             *Correlation, *OutcomeCode.ToString(), *Encounter,
-            LastCommittedSequence, AuthorityEpoch, HttpStatusCode, *ErrorCode.ToString());
+            LastCommittedSequence, AuthorityEpoch, HttpStatusCode, *ErrorCode.ToString(),
+            *LastOperatorAbortReason.ToString());
     }
 }
 
