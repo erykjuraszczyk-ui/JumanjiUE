@@ -37,7 +37,7 @@ enum class EJumanjiEncounterRecoveryOutcome : uint8
     RestoreTimedOut,
     OperatorRetryRequested,
     OperatorAbortCompleted,
-    LeaseReleased
+    LeaseReleaseRequested
 };
 
 /** Reasons accepted by the trusted host's operator-abort integration. */
@@ -238,6 +238,7 @@ private:
     TObjectPtr<UJumanjiEncounterCheckpointBackendSubsystem> BackendSubsystem;
 
     FGuid RecoveryCorrelationId;
+    FName LastRecoveryEncounterId = NAME_None;
     double RecoveryStartedAtSeconds = 0.0;
     EJumanjiEncounterRecoveryOutcome LastRecoveryOutcome = EJumanjiEncounterRecoveryOutcome::None;
     FName LastRecoveryErrorCode = NAME_None;
