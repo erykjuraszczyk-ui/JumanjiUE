@@ -1,0 +1,56 @@
+name: Encounter Recovery Observability & Operator Controls
+
+on:
+  pull_request:
+    paths:
+      - "Source/JumanjiUE/Public/JumanjiEncounterCheckpointRuntimeSubsystem.h"
+      - "Source/JumanjiUE/Private/JumanjiEncounterCheckpointRuntimeSubsystem.cpp"
+      - "Docs/STAGE_37_ENCOUNTER_RECOVERY_OBSERVABILITY_OPERATOR_CONTROLS.md"
+      - "Scripts/validate_encounter_recovery_observability.py"
+      - "Scripts/Tests/test_validate_encounter_recovery_observability.py"
+      - ".github/workflows/encounter-recovery-observability.yml"
+      - "Source/JumanjiUE/**"
+  push:
+    branches: [main]
+    paths:
+      - "Source/JumanjiUE/**"
+      - "Docs/STAGE_37_ENCOUNTER_RECOVERY_OBSERVABILITY_OPERATOR_CONTROLS.md"
+      - "Scripts/validate_encounter_recovery_observability.py"
+      - "Scripts/Tests/test_validate_encounter_recovery_observability.py"
+      - ".github/workflows/encounter-recovery-observability.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate-recovery-observability:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate Stage 37 operator and diagnostics contract
+        run: python Scripts/validate_encounter_recovery_observability.py
+      - name: Run Stage 37 regression tests
+        run: python -m unittest discover -s Scripts/Tests -p "test_validate_encounter_recovery_observability.py" -v
+      - name: Revalidate checkpoint schema and runtime
+        run: |
+          python Scripts/validate_encounter_checkpoint_contract.py
+          python Scripts/validate_encounter_checkpoint_runtime.py
+      - name: Revalidate atomic materialization and startup coordinator
+        run: |
+          python Scripts/validate_encounter_restore_materialization.py
+          python Scripts/validate_encounter_startup_coordinator.py
+      - name: Run recovery regression suites
+        run: |
+          python -m unittest discover -s Scripts/Tests -p "test_validate_encounter_checkpoint_contract.py" -v
+          python -m unittest discover -s Scripts/Tests -p "test_validate_encounter_checkpoint_runtime.py" -v
+          python -m unittest discover -s Scripts/Tests -p "test_validate_encounter_restore_materialization.py" -v
+          python -m unittest discover -s Scripts/Tests -p "test_validate_encounter_startup_coordinator.py" -v
+      - name: Run Stage 33 backend lease/fencing suite
+        run: |
+          python -m pip install -r Backend/EncounterCheckpointService/requirements.txt
+          python -m unittest discover -s Scripts/Tests -p "test_encounter_checkpoint_service.py" -v
