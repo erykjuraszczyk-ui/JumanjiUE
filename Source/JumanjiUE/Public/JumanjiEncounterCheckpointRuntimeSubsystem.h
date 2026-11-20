@@ -22,6 +22,7 @@ enum class EJumanjiEncounterRecoveryOutcome : uint8
     None,
     SessionStarted,
     LeaseAcquired,
+    LeaseRenewed,
     LeaseAcquireFailed,
     LeaseRenewalFailed,
     CheckpointWriteStarted,
@@ -58,6 +59,7 @@ struct FJumanjiEncounterRecoveryDiagnostics
     FName EncounterId = NAME_None;
     EJumanjiEncounterRecoveryOutcome LastOutcome = EJumanjiEncounterRecoveryOutcome::None;
     FName LastErrorCode = NAME_None;
+    FName LastOperatorAbortReason = NAME_None;
     int32 LastHttpStatusCode = 0;
     int64 CheckpointSequence = 0;
     int64 AuthorityEpoch = 0;
@@ -70,6 +72,7 @@ struct FJumanjiEncounterRecoveryDiagnostics
     bool bWaitingForParticipants = false;
     bool bRestoreCommitInProgress = false;
     bool bReleaseLeaseWhenIdle = false;
+    FName LastOperatorAbortReason = NAME_None;
     double RecoveryAgeSeconds = 0.0;
     uint64 LeaseAcquisitionAttempts = 0;
     uint64 LeaseAcquisitionFailures = 0;
@@ -168,6 +171,22 @@ public:
     bool IsCheckpointLeaseReady() const { return bLeaseReady; }
     int64 GetLastCommittedSequence() const { return LastCommittedSequence; }
 
+    /** Secret-free process-local counters and state. Native C++ only. */
+    FJumanjiEncounterRecoveryDiagnostics GetRecoveryDiagnostics() const;
+
+    /**
+     * Trusted host/operator integration only. Caller must authenticate and
+     * authorize the operator before invoking this native server-only method.
+     */
+    bool RequestOperatorRetry(
+        AJumanjiWorldEncounterDirector* EncounterDirector,
+        FString& OutError);
+
+    /** Cancels only a staged restore waiting for authenticated participants. */
+    bool RequestOperatorAbort(
+        EJumanjiEncounterRecoveryAbortReason Reason,
+        FString& OutError);
+
 private:
     void RecordRecoveryEvent(
         EJumanjiEncounterRecoveryOutcome Outcome,
@@ -223,6 +242,7 @@ private:
     double RecoveryStartedAtSeconds = 0.0;
     EJumanjiEncounterRecoveryOutcome LastRecoveryOutcome = EJumanjiEncounterRecoveryOutcome::None;
     FName LastRecoveryErrorCode = NAME_None;
+    FName LastOperatorAbortReason = NAME_None;
     int32 LastRecoveryHttpStatusCode = 0;
     uint64 LeaseAcquisitionAttempts = 0;
     uint64 LeaseAcquisitionFailures = 0;
@@ -238,6 +258,8 @@ private:
     uint64 ParticipantWaitTimeouts = 0;
     uint64 OperatorRetryRequests = 0;
     uint64 OperatorAbortRequests = 0;
+    int64 LastKnownCheckpointSequence = 0;
+    int64 LastKnownAuthorityEpoch = 0;
 
     FName ActiveEncounterId = NAME_None;
     FGuid ActiveSessionId;
