@@ -82,7 +82,7 @@ SOURCE_TOKENS = {
     "Docs/STAGE_37_ENCOUNTER_RECOVERY_OBSERVABILITY_OPERATOR_CONTROLS.md": (
         "RequestOperatorAbort",
         "GetRecoveryDiagnostics",
-        "nie może przerwać aktywnego gameplay encounteru",
+        "Nie może przerwać aktywnego gameplay encounteru",
     ),
     "Docs/STAGE_38_RECOVERY_CHAOS_TESTING_FAILURE_INJECTION.md": (
         "BackendIntegration",
