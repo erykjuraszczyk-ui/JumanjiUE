@@ -964,6 +964,8 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::TryCommitStagedRestore(
     }
 
     PendingRestoreDirector = EncounterDirector;
+    const FName RestoredEncounterId = ActiveEncounterId;
+    const int64 RestoredSequence = LastCommittedSequence;
 
     FString Error;
     if (CommitStagedRestore(EncounterDirector, Error))
@@ -977,8 +979,8 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::TryCommitStagedRestore(
 
         UE_LOG(LogTemp, Log,
             TEXT("JUMANJI checkpoint restore committed: encounter=%s sequence=%lld."),
-            *ActiveEncounterId.ToString(),
-            LastCommittedSequence);
+            *RestoredEncounterId.ToString(),
+            RestoredSequence);
         return true;
     }
 
