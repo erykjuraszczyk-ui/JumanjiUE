@@ -29,7 +29,7 @@ REQUIRED = {
         "EncounterDirector->HasAuthority()",
         "OPERATOR_RETRY_NOT_A_STAGED_OR_IDLE_RECOVERY",
         "bHasStagedRestoreCandidate && bWaitingForRestoreParticipants",
-        "JUMANJI_RECOVERY correlation=%s outcome=%s encounter=%s sequence=%lld epoch=%lld http=%d error=%s",
+        "JUMANJI_RECOVERY correlation=%s outcome=%s encounter=%s sequence=%lld epoch=%lld http=%d error=%s operatorReason=%s",
         "OPERATOR_ABORTED_STAGED_RESTORE",
         "LastKnownCheckpointSequence",
         "LastKnownAuthorityEpoch",
