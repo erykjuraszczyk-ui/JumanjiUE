@@ -286,7 +286,10 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::RequestOperatorRetry(
     FString& OutError)
 {
     OutError.Reset();
-    if (!IsServerRuntime() || !IsValid(EncounterDirector) || !EncounterDirector->HasAuthority())
+    const UWorld* OperatorWorld = GetWorld();
+    if (!IsServerRuntime() || !IsValid(EncounterDirector) || !EncounterDirector->HasAuthority()
+        || !OperatorWorld || EncounterDirector->GetWorld() != OperatorWorld
+        || EncounterDirector->GetLevel() != OperatorWorld->GetPersistentLevel())
     {
         OutError = TEXT("OPERATOR_RETRY_SERVER_CONTEXT_INVALID");
         return false;
@@ -624,11 +627,14 @@ void UJumanjiEncounterCheckpointRuntimeSubsystem::HandleLeaseAcquired(
                 PendingRestoreDirector));
         if (!bReadStarted)
         {
-            bReadInFlight = false;
+            if (bReadInFlight)
+            {
+                bReadInFlight = false;
+                ++RestoreReadFailures;
+                RecordRecoveryEvent(EJumanjiEncounterRecoveryOutcome::RestoreReadFailed,
+                    FName(TEXT("BACKEND_READ_REQUEST_NOT_STARTED")));
+            }
             bRestoreStagingRequested = false;
-            ++RestoreReadFailures;
-            RecordRecoveryEvent(EJumanjiEncounterRecoveryOutcome::RestoreReadFailed,
-                FName(TEXT("BACKEND_READ_REQUEST_NOT_STARTED")));
             EndEncounterCheckpointSession(ActiveEncounterId);
         }
     }
@@ -1087,11 +1093,14 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::CaptureSafePoint(
 
     if (!bStarted)
     {
-        bWriteInFlight = false;
-        bCheckpointWriteBlockedUntilResync = true;
-        ++CheckpointWriteFailures;
-        RecordRecoveryEvent(EJumanjiEncounterRecoveryOutcome::CheckpointWriteFailed,
-            FName(TEXT("CHECKPOINT_WRITE_REQUEST_NOT_STARTED")));
+        if (bWriteInFlight)
+        {
+            bWriteInFlight = false;
+            bCheckpointWriteBlockedUntilResync = true;
+            ++CheckpointWriteFailures;
+            RecordRecoveryEvent(EJumanjiEncounterRecoveryOutcome::CheckpointWriteFailed,
+                FName(TEXT("CHECKPOINT_WRITE_REQUEST_NOT_STARTED")));
+        }
         if (bReleaseLeaseWhenIdle)
         {
             EndEncounterCheckpointSession(ActiveEncounterId);
