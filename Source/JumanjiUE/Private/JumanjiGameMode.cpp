@@ -1,5 +1,9 @@
 #include "JumanjiGameMode.h"
 
+#include "EngineUtils.h"
+#include "JumanjiEncounterCheckpointRuntimeSubsystem.h"
+#include "JumanjiWorldEncounterDirector.h"
+
 #include "JumanjiCharacter.h"
 #include "JumanjiGameState.h"
 #include "JumanjiPlayerController.h"
@@ -162,6 +166,114 @@ void AJumanjiGameMode::PostLogin(APlayerController* NewPlayer)
                     *FeedbackState.EncounterId.ToString());
             }
         }
+    }
+
+    // This runs after the synchronous identity binding and profile restore above.
+    TryStartEncounterCheckpointRecovery();
+}
+
+void AJumanjiGameMode::TryStartEncounterCheckpointRecovery()
+{
+    if (!HasAuthority())
+    {
+        return;
+    }
+
+    UWorld* World = GetWorld();
+    ULevel* PersistentLevel = World ? World->GetPersistentLevel() : nullptr;
+    if (!World || !PersistentLevel)
+    {
+        return;
+    }
+
+    AJumanjiWorldEncounterDirector* EncounterDirector = nullptr;
+    int32 PersistentDirectorCount = 0;
+    for (TActorIterator<AJumanjiWorldEncounterDirector> It(World); It; ++It)
+    {
+        if (!IsValid(*It) || It->GetLevel() != PersistentLevel)
+        {
+            continue;
+        }
+
+        EncounterDirector = *It;
+        ++PersistentDirectorCount;
+    }
+
+    if (PersistentDirectorCount == 0)
+    {
+        // The host may call PostLogin before the configured world actor is available.
+        return;
+    }
+
+    if (PersistentDirectorCount != 1)
+    {
+        UE_LOG(LogTemp, Error,
+            TEXT("JUMANJI checkpoint recovery requires exactly one persistent-level encounter director; found %d."),
+            PersistentDirectorCount);
+        return;
+    }
+
+    AJumanjiGameState* GameState = World->GetGameState<AJumanjiGameState>();
+    if (!GameState)
+    {
+        return;
+    }
+
+    const EJumanjiWorldEncounterPhase CurrentPhase =
+        GameState->GetWorldEncounterState().Phase;
+    if (CurrentPhase != EJumanjiWorldEncounterPhase::Inactive
+        && CurrentPhase != EJumanjiWorldEncounterPhase::Failed)
+    {
+        return;
+    }
+
+    UGameInstance* GameInstance = GetGameInstance();
+    UJumanjiEncounterCheckpointRuntimeSubsystem* CheckpointSubsystem = GameInstance
+        ? GameInstance->GetSubsystem<UJumanjiEncounterCheckpointRuntimeSubsystem>()
+        : nullptr;
+    if (!CheckpointSubsystem)
+    {
+        return;
+    }
+
+    // A verified candidate may have arrived before the final party member.
+    // Retry its commit after each subsequent profile restore, before testing
+    // the one-shot startup guard.
+    if (CheckpointSubsystem->HasStagedRestoreCandidate())
+    {
+        CheckpointSubsystem->TryCommitStagedRestore(EncounterDirector);
+        return;
+    }
+
+    if (bCheckpointRestoreStarted)
+    {
+        return;
+    }
+
+    bool bHasEligibleProfile = false;
+    for (APlayerState* BasePlayerState : GameState->PlayerArray)
+    {
+        const AJumanjiPlayerState* PlayerState = Cast<AJumanjiPlayerState>(BasePlayerState);
+        if (IsValid(PlayerState)
+            && PlayerState->IsProfilePersistenceEnabled()
+            && !PlayerState->GetPersistentProfileId().IsEmpty())
+        {
+            bHasEligibleProfile = true;
+            break;
+        }
+    }
+
+    if (!bHasEligibleProfile)
+    {
+        return;
+    }
+
+    if (EncounterDirector->BeginCheckpointRestore())
+    {
+        bCheckpointRestoreStarted = true;
+        UE_LOG(LogTemp, Log,
+            TEXT("JUMANJI checkpoint recovery started after authenticated profile restoration for encounter '%s'."),
+            *EncounterDirector->GetEncounterId().ToString());
     }
 }
 
