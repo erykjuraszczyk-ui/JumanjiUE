@@ -42,6 +42,10 @@ public:
     UFUNCTION(BlueprintCallable, Category = "JUMANJI|Ability HUD|Slot")
     void PlayFeedback(EJumanjiAbilityHUDFeedback Feedback);
 
+    /** Applies local touch-target, contrast and motion preferences. Does not affect gameplay. */
+    UFUNCTION(BlueprintCallable, Category = "JUMANJI|Ability HUD|Accessibility")
+    void ApplyAccessibilityOptions(float TouchTargetScale, bool bHighContrast, bool bReduceMotion);
+
     UPROPERTY(BlueprintAssignable, Category = "JUMANJI|Ability HUD|Slot")
     FJumanjiAbilitySlotPressedEvent OnSlotPressed;
 
@@ -94,6 +98,8 @@ private:
     void PlaySoundAsync(const TSoftObjectPtr<USoundBase>& Sound);
     void UpdateCooldownMaterial();
     void UpdateTextAndState();
+    void CaptureDefaultTextColors();
+    void UpdateAccessibilityPresentation();
 
     UPROPERTY(Transient)
     FJumanjiAbilityHUDSlotState CurrentState;
@@ -111,4 +117,12 @@ private:
     FSoftObjectPath RequestedAudioPath;
     bool bHasReceivedState = false;
     bool bHasCapturedPlaceholderBrush = false;
+    bool bHasCapturedDefaultTextColors = false;
+    bool bHighContrastMode = false;
+    bool bReduceMotion = false;
+    float TouchTargetScale = 1.0f;
+    FSlateColor DefaultAbilityNameColor;
+    FSlateColor DefaultCooldownTextColor;
+    FSlateColor DefaultResourceCostColor;
+    FSlateColor DefaultSlotStateColor;
 };
