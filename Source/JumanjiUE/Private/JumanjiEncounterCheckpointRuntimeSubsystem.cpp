@@ -220,17 +220,17 @@ void UJumanjiEncounterCheckpointRuntimeSubsystem::RecordRecoveryEvent(
         || Outcome == EJumanjiEncounterRecoveryOutcome::RestoreRejected
         || Outcome == EJumanjiEncounterRecoveryOutcome::RestoreTimedOut;
 
-    const TCHAR* Format = TEXT(
-        "JUMANJI_RECOVERY correlation=%s outcome=%s encounter=%s sequence=%lld epoch=%lld http=%d error=%s");
     if (bFailure)
     {
-        UE_LOG(LogTemp, Warning, Format,
+        UE_LOG(LogTemp, Warning,
+            TEXT("JUMANJI_RECOVERY correlation=%s outcome=%s encounter=%s sequence=%lld epoch=%lld http=%d error=%s"),
             *Correlation, *OutcomeCode.ToString(), *Encounter,
             LastCommittedSequence, AuthorityEpoch, HttpStatusCode, *ErrorCode.ToString());
     }
     else
     {
-        UE_LOG(LogTemp, Log, Format,
+        UE_LOG(LogTemp, Log,
+            TEXT("JUMANJI_RECOVERY correlation=%s outcome=%s encounter=%s sequence=%lld epoch=%lld http=%d error=%s"),
             *Correlation, *OutcomeCode.ToString(), *Encounter,
             LastCommittedSequence, AuthorityEpoch, HttpStatusCode, *ErrorCode.ToString());
     }
@@ -514,6 +514,7 @@ void UJumanjiEncounterCheckpointRuntimeSubsystem::EndEncounterCheckpointSession(
 
     if (bLeaseReady && BackendSubsystem && !LeaseToken.IsEmpty())
     {
+        RecordRecoveryEvent(EJumanjiEncounterRecoveryOutcome::LeaseReleased);
         BackendSubsystem->ReleaseLease(
             ActiveEncounterId,
             LeaseToken,
