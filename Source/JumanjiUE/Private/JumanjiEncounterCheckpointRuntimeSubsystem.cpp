@@ -16,6 +16,7 @@
 #include "Serialization/JsonSerializer.h"
 #include "IO/IoHash.h"
 #include "HAL/PlatformMisc.h"
+#include "HAL/PlatformTime.h"
 #include "Engine/GameInstance.h"
 #include "Engine/World.h"
 #include "TimerManager.h"
@@ -151,6 +152,211 @@ namespace JumanjiCheckpointRuntime
     }
 }
 
+FName UJumanjiEncounterCheckpointRuntimeSubsystem::RecoveryOutcomeCode(
+    EJumanjiEncounterRecoveryOutcome Outcome)
+{
+    switch (Outcome)
+    {
+    case EJumanjiEncounterRecoveryOutcome::SessionStarted: return FName(TEXT("SESSION_STARTED"));
+    case EJumanjiEncounterRecoveryOutcome::LeaseAcquired: return FName(TEXT("LEASE_ACQUIRED"));
+    case EJumanjiEncounterRecoveryOutcome::LeaseAcquireFailed: return FName(TEXT("LEASE_ACQUIRE_FAILED"));
+    case EJumanjiEncounterRecoveryOutcome::LeaseRenewalFailed: return FName(TEXT("LEASE_RENEWAL_FAILED"));
+    case EJumanjiEncounterRecoveryOutcome::CheckpointWriteStarted: return FName(TEXT("CHECKPOINT_WRITE_STARTED"));
+    case EJumanjiEncounterRecoveryOutcome::CheckpointWriteCommitted: return FName(TEXT("CHECKPOINT_WRITE_COMMITTED"));
+    case EJumanjiEncounterRecoveryOutcome::CheckpointWriteFailed: return FName(TEXT("CHECKPOINT_WRITE_FAILED"));
+    case EJumanjiEncounterRecoveryOutcome::RestoreReadStarted: return FName(TEXT("RESTORE_READ_STARTED"));
+    case EJumanjiEncounterRecoveryOutcome::RestoreReadFailed: return FName(TEXT("RESTORE_READ_FAILED"));
+    case EJumanjiEncounterRecoveryOutcome::RestoreCandidateStaged: return FName(TEXT("RESTORE_CANDIDATE_STAGED"));
+    case EJumanjiEncounterRecoveryOutcome::RestoreWaitingForParticipants: return FName(TEXT("RESTORE_WAITING_FOR_PARTICIPANTS"));
+    case EJumanjiEncounterRecoveryOutcome::RestoreCommitted: return FName(TEXT("RESTORE_COMMITTED"));
+    case EJumanjiEncounterRecoveryOutcome::RestoreRejected: return FName(TEXT("RESTORE_REJECTED"));
+    case EJumanjiEncounterRecoveryOutcome::RestoreTimedOut: return FName(TEXT("RESTORE_TIMED_OUT"));
+    case EJumanjiEncounterRecoveryOutcome::OperatorRetryRequested: return FName(TEXT("OPERATOR_RETRY_REQUESTED"));
+    case EJumanjiEncounterRecoveryOutcome::OperatorAbortCompleted: return FName(TEXT("OPERATOR_ABORT_COMPLETED"));
+    case EJumanjiEncounterRecoveryOutcome::LeaseReleased: return FName(TEXT("LEASE_RELEASED"));
+    case EJumanjiEncounterRecoveryOutcome::None:
+    default: return NAME_None;
+    }
+}
+
+bool UJumanjiEncounterCheckpointRuntimeSubsystem::IsValidOperatorAbortReason(
+    EJumanjiEncounterRecoveryAbortReason Reason)
+{
+    switch (Reason)
+    {
+    case EJumanjiEncounterRecoveryAbortReason::OperatorCancelled:
+    case EJumanjiEncounterRecoveryAbortReason::MaintenanceWindow:
+    case EJumanjiEncounterRecoveryAbortReason::ConfigurationCorrection:
+    case EJumanjiEncounterRecoveryAbortReason::IncidentContainment:
+        return true;
+    default:
+        return false;
+    }
+}
+
+void UJumanjiEncounterCheckpointRuntimeSubsystem::RecordRecoveryEvent(
+    EJumanjiEncounterRecoveryOutcome Outcome,
+    FName ErrorCode,
+    int32 HttpStatusCode)
+{
+    LastRecoveryOutcome = Outcome;
+    LastRecoveryErrorCode = ErrorCode;
+    LastRecoveryHttpStatusCode = HttpStatusCode;
+
+    const FName OutcomeCode = RecoveryOutcomeCode(Outcome);
+    const FString Correlation = RecoveryCorrelationId.IsValid()
+        ? RecoveryCorrelationId.ToString(EGuidFormats::DigitsWithHyphens)
+        : TEXT("none");
+    const FString Encounter = ActiveEncounterId.IsNone()
+        ? TEXT("none")
+        : ActiveEncounterId.ToString();
+
+    const bool bFailure =
+        Outcome == EJumanjiEncounterRecoveryOutcome::LeaseAcquireFailed
+        || Outcome == EJumanjiEncounterRecoveryOutcome::LeaseRenewalFailed
+        || Outcome == EJumanjiEncounterRecoveryOutcome::CheckpointWriteFailed
+        || Outcome == EJumanjiEncounterRecoveryOutcome::RestoreReadFailed
+        || Outcome == EJumanjiEncounterRecoveryOutcome::RestoreRejected
+        || Outcome == EJumanjiEncounterRecoveryOutcome::RestoreTimedOut;
+
+    const TCHAR* Format = TEXT(
+        "JUMANJI_RECOVERY correlation=%s outcome=%s encounter=%s sequence=%lld epoch=%lld http=%d error=%s");
+    if (bFailure)
+    {
+        UE_LOG(LogTemp, Warning, Format,
+            *Correlation, *OutcomeCode.ToString(), *Encounter,
+            LastCommittedSequence, AuthorityEpoch, HttpStatusCode, *ErrorCode.ToString());
+    }
+    else
+    {
+        UE_LOG(LogTemp, Log, Format,
+            *Correlation, *OutcomeCode.ToString(), *Encounter,
+            LastCommittedSequence, AuthorityEpoch, HttpStatusCode, *ErrorCode.ToString());
+    }
+}
+
+FJumanjiEncounterRecoveryDiagnostics
+UJumanjiEncounterCheckpointRuntimeSubsystem::GetRecoveryDiagnostics() const
+{
+    FJumanjiEncounterRecoveryDiagnostics Snapshot;
+    Snapshot.CorrelationId = RecoveryCorrelationId;
+    Snapshot.EncounterId = ActiveEncounterId;
+    Snapshot.LastOutcome = LastRecoveryOutcome;
+    Snapshot.LastErrorCode = LastRecoveryErrorCode;
+    Snapshot.LastHttpStatusCode = LastRecoveryHttpStatusCode;
+    Snapshot.CheckpointSequence = LastCommittedSequence;
+    Snapshot.AuthorityEpoch = AuthorityEpoch;
+    Snapshot.bLeaseAcquiring = bLeaseAcquiring;
+    Snapshot.bLeaseReady = bLeaseReady;
+    Snapshot.bReadInFlight = bReadInFlight;
+    Snapshot.bWriteInFlight = bWriteInFlight;
+    Snapshot.bCheckpointWriteBlockedUntilResync = bCheckpointWriteBlockedUntilResync;
+    Snapshot.bHasStagedRestoreCandidate = bHasStagedRestoreCandidate;
+    Snapshot.bWaitingForParticipants = bWaitingForRestoreParticipants;
+    Snapshot.bRestoreCommitInProgress = bRestoreCommitInProgress;
+    Snapshot.bReleaseLeaseWhenIdle = bReleaseLeaseWhenIdle;
+    Snapshot.RecoveryAgeSeconds = RecoveryStartedAtSeconds > 0.0
+        ? FMath::Max(0.0, FPlatformTime::Seconds() - RecoveryStartedAtSeconds)
+        : 0.0;
+    Snapshot.LeaseAcquisitionAttempts = LeaseAcquisitionAttempts;
+    Snapshot.LeaseAcquisitionFailures = LeaseAcquisitionFailures;
+    Snapshot.LeaseRenewalAttempts = LeaseRenewalAttempts;
+    Snapshot.LeaseRenewalFailures = LeaseRenewalFailures;
+    Snapshot.CheckpointWriteAttempts = CheckpointWriteAttempts;
+    Snapshot.CheckpointWriteFailures = CheckpointWriteFailures;
+    Snapshot.RestoreReadAttempts = RestoreReadAttempts;
+    Snapshot.RestoreReadFailures = RestoreReadFailures;
+    Snapshot.RestoreCommitAttempts = RestoreCommitAttempts;
+    Snapshot.RestoreCommitFailures = RestoreCommitFailures;
+    Snapshot.RestoreCommitSuccesses = RestoreCommitSuccesses;
+    Snapshot.ParticipantWaitTimeouts = ParticipantWaitTimeouts;
+    Snapshot.OperatorRetryRequests = OperatorRetryRequests;
+    Snapshot.OperatorAbortRequests = OperatorAbortRequests;
+    return Snapshot;
+}
+
+bool UJumanjiEncounterCheckpointRuntimeSubsystem::RequestOperatorRetry(
+    AJumanjiWorldEncounterDirector* EncounterDirector,
+    FString& OutError)
+{
+    OutError.Reset();
+    if (!IsServerRuntime() || !IsValid(EncounterDirector) || !EncounterDirector->HasAuthority())
+    {
+        OutError = TEXT("OPERATOR_RETRY_SERVER_CONTEXT_INVALID");
+        return false;
+    }
+
+    if (bLeaseAcquiring || bReadInFlight || bWriteInFlight || bRestoreCommitInProgress)
+    {
+        OutError = TEXT("OPERATOR_RETRY_OPERATION_IN_FLIGHT");
+        return false;
+    }
+
+    ++OperatorRetryRequests;
+    if (bHasStagedRestoreCandidate && bLeaseReady
+        && EncounterDirector->GetEncounterId() == ActiveEncounterId)
+    {
+        RecordRecoveryEvent(EJumanjiEncounterRecoveryOutcome::OperatorRetryRequested);
+        // A false return can mean the participant barrier remains open. That is
+        // a valid pending state, not an instruction to publish partial progress.
+        TryCommitStagedRestore(EncounterDirector);
+        return true;
+    }
+
+    if (!ActiveEncounterId.IsNone())
+    {
+        EndEncounterCheckpointSession(ActiveEncounterId);
+    }
+
+    if (!BeginRestoreStaging(EncounterDirector))
+    {
+        RecordRecoveryEvent(
+            EJumanjiEncounterRecoveryOutcome::RestoreReadFailed,
+            FName(TEXT("OPERATOR_RETRY_COULD_NOT_START")));
+        OutError = TEXT("OPERATOR_RETRY_COULD_NOT_START");
+        return false;
+    }
+
+    RecordRecoveryEvent(EJumanjiEncounterRecoveryOutcome::OperatorRetryRequested);
+    return true;
+}
+
+bool UJumanjiEncounterCheckpointRuntimeSubsystem::RequestOperatorAbort(
+    EJumanjiEncounterRecoveryAbortReason Reason,
+    FString& OutError)
+{
+    OutError.Reset();
+    if (!IsServerRuntime() || !IsValidOperatorAbortReason(Reason))
+    {
+        OutError = TEXT("OPERATOR_ABORT_SERVER_CONTEXT_OR_REASON_INVALID");
+        return false;
+    }
+
+    if (!bHasStagedRestoreCandidate || !bWaitingForRestoreParticipants
+        || !bLeaseReady || bLeaseAcquiring || bReadInFlight || bWriteInFlight
+        || bRestoreCommitInProgress || ActiveEncounterId.IsNone())
+    {
+        OutError = TEXT("OPERATOR_ABORT_NO_STAGED_PARTICIPANT_WAIT");
+        return false;
+    }
+
+    ++OperatorAbortRequests;
+    if (UWorld* World = GetWorld())
+    {
+        World->GetTimerManager().ClearTimer(RestoreParticipantWaitTimerHandle);
+    }
+
+    bWaitingForRestoreParticipants = false;
+    bHasStagedRestoreCandidate = false;
+    StagedRestoreCandidate = FJumanjiEncounterCheckpointRestoreCandidate();
+    PendingRestoreDirector.Reset();
+    RecordRecoveryEvent(
+        EJumanjiEncounterRecoveryOutcome::OperatorAbortCompleted,
+        FName(TEXT("OPERATOR_ABORTED_STAGED_RESTORE")));
+    EndEncounterCheckpointSession(ActiveEncounterId);
+    return true;
+}
+
 void UJumanjiEncounterCheckpointRuntimeSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
     Super::Initialize(Collection);
@@ -232,8 +438,12 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::BeginEncounterCheckpointSessio
     }
 
     ClearLeaseState();
+    RecoveryCorrelationId = FGuid::NewGuid();
+    RecoveryStartedAtSeconds = FPlatformTime::Seconds();
     ActiveEncounterId = EncounterId;
     ActiveSessionId = SessionSubsystem->GetActiveSessionId();
+    ++LeaseAcquisitionAttempts;
+    RecordRecoveryEvent(EJumanjiEncounterRecoveryOutcome::SessionStarted);
     BackendSubsystem = GetGameInstance()
         ? GetGameInstance()->GetSubsystem<UJumanjiEncounterCheckpointBackendSubsystem>()
         : nullptr;
@@ -333,6 +543,9 @@ void UJumanjiEncounterCheckpointRuntimeSubsystem::HandleLeaseAcquired(
         || !JumanjiCheckpointRuntime::ReadInteger(Body, TEXT("authorityEpoch"), NewEpoch)
         || NewEpoch < 1)
     {
+        ++LeaseAcquisitionFailures;
+        RecordRecoveryEvent(EJumanjiEncounterRecoveryOutcome::LeaseAcquireFailed,
+            FName(TEXT("BACKEND_LEASE_ACQUIRE_FAILED")), Response.HttpStatusCode);
         UE_LOG(LogTemp, Warning,
             TEXT("JUMANJI checkpoint: backend lease acquisition failed; snapshot writes remain disabled."));
         bLeaseReady = false;
@@ -346,6 +559,7 @@ void UJumanjiEncounterCheckpointRuntimeSubsystem::HandleLeaseAcquired(
     LeaseToken = MoveTemp(NewLeaseToken);
     AuthorityEpoch = NewEpoch;
     bLeaseReady = true;
+    RecordRecoveryEvent(EJumanjiEncounterRecoveryOutcome::LeaseAcquired, NAME_None, Response.HttpStatusCode);
     bCheckpointWriteBlockedUntilResync = false;
 
     if (UWorld* World = GetWorld())
@@ -366,6 +580,8 @@ void UJumanjiEncounterCheckpointRuntimeSubsystem::HandleLeaseAcquired(
 
     if (bRestoreStagingRequested && PendingRestoreDirector.IsValid())
     {
+        ++RestoreReadAttempts;
+        RecordRecoveryEvent(EJumanjiEncounterRecoveryOutcome::RestoreReadStarted);
         bReadInFlight = true;
         const bool bReadStarted = BackendSubsystem->ReadCheckpoint(
             ActiveEncounterId,
@@ -379,6 +595,9 @@ void UJumanjiEncounterCheckpointRuntimeSubsystem::HandleLeaseAcquired(
         {
             bReadInFlight = false;
             bRestoreStagingRequested = false;
+            ++RestoreReadFailures;
+            RecordRecoveryEvent(EJumanjiEncounterRecoveryOutcome::RestoreReadFailed,
+                FName(TEXT("BACKEND_READ_REQUEST_NOT_STARTED")));
             EndEncounterCheckpointSession(ActiveEncounterId);
         }
     }
@@ -391,6 +610,7 @@ void UJumanjiEncounterCheckpointRuntimeSubsystem::RenewLease()
         return;
     }
 
+    ++LeaseRenewalAttempts;
     BackendSubsystem->RenewLease(
         ActiveEncounterId,
         LeaseToken,
@@ -407,6 +627,11 @@ void UJumanjiEncounterCheckpointRuntimeSubsystem::RenewLease()
 
                 if (!Response.bTransportSucceeded || Response.HttpStatusCode != 200)
                 {
+                    ++WeakThis->LeaseRenewalFailures;
+                    WeakThis->RecordRecoveryEvent(
+                        EJumanjiEncounterRecoveryOutcome::LeaseRenewalFailed,
+                        FName(TEXT("BACKEND_LEASE_RENEWAL_FAILED")),
+                        Response.HttpStatusCode);
                     UE_LOG(LogTemp, Error,
                         TEXT("JUMANJI checkpoint: lease renewal failed; checkpoint writes are fenced off."));
                     WeakThis->bLeaseReady = false;
@@ -416,6 +641,13 @@ void UJumanjiEncounterCheckpointRuntimeSubsystem::RenewLease()
                     {
                         World->GetTimerManager().ClearTimer(WeakThis->LeaseRenewalTimerHandle);
                     }
+                }
+                else
+                {
+                    WeakThis->RecordRecoveryEvent(
+                        EJumanjiEncounterRecoveryOutcome::LeaseAcquired,
+                        NAME_None,
+                        Response.HttpStatusCode);
                 }
             }));
 }
@@ -804,6 +1036,8 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::CaptureSafePoint(
     }
 
     bWriteInFlight = true;
+    ++CheckpointWriteAttempts;
+    RecordRecoveryEvent(EJumanjiEncounterRecoveryOutcome::CheckpointWriteStarted);
     const bool bStarted = BackendSubsystem->WriteCheckpoint(
         ActiveEncounterId,
         LeaseToken,
@@ -824,6 +1058,9 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::CaptureSafePoint(
     {
         bWriteInFlight = false;
         bCheckpointWriteBlockedUntilResync = true;
+        ++CheckpointWriteFailures;
+        RecordRecoveryEvent(EJumanjiEncounterRecoveryOutcome::CheckpointWriteFailed,
+            FName(TEXT("CHECKPOINT_WRITE_REQUEST_NOT_STARTED")));
         if (bReleaseLeaseWhenIdle)
         {
             EndEncounterCheckpointSession(ActiveEncounterId);
@@ -841,6 +1078,8 @@ void UJumanjiEncounterCheckpointRuntimeSubsystem::HandleCheckpointWrite(
     {
         LastCommittedSequence = WrittenSequence;
         bCheckpointWriteBlockedUntilResync = false;
+        RecordRecoveryEvent(EJumanjiEncounterRecoveryOutcome::CheckpointWriteCommitted,
+            NAME_None, Response.HttpStatusCode);
         UE_LOG(LogTemp, Log, TEXT("JUMANJI checkpoint committed: encounter=%s sequence=%lld."),
             *ActiveEncounterId.ToString(), LastCommittedSequence);
         if (bReleaseLeaseWhenIdle)
@@ -853,6 +1092,9 @@ void UJumanjiEncounterCheckpointRuntimeSubsystem::HandleCheckpointWrite(
     // A timeout may occur after the backend committed the CAS. Never retry the
     // same sequence blindly; first read the signed head and reconcile it.
     bCheckpointWriteBlockedUntilResync = true;
+    ++CheckpointWriteFailures;
+    RecordRecoveryEvent(EJumanjiEncounterRecoveryOutcome::CheckpointWriteFailed,
+        FName(TEXT("BACKEND_CHECKPOINT_WRITE_FAILED_OR_AMBIGUOUS")), Response.HttpStatusCode);
     if (bReleaseLeaseWhenIdle)
     {
         EndEncounterCheckpointSession(ActiveEncounterId);
@@ -891,7 +1133,11 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::BeginRestoreStaging(
     }
 
     ClearLeaseState();
+    RecoveryCorrelationId = FGuid::NewGuid();
+    RecoveryStartedAtSeconds = FPlatformTime::Seconds();
     ActiveEncounterId = EncounterDirector->GetEncounterId();
+    ++LeaseAcquisitionAttempts;
+    RecordRecoveryEvent(EJumanjiEncounterRecoveryOutcome::SessionStarted);
     PendingRestoreDirector = EncounterDirector;
     bRestoreStagingRequested = true;
     bLeaseAcquiring = true;
@@ -919,6 +1165,9 @@ void UJumanjiEncounterCheckpointRuntimeSubsystem::HandleCheckpointRead(
     if (!Response.bTransportSucceeded || Response.HttpStatusCode != 200
         || !EncounterDirector.IsValid())
     {
+        ++RestoreReadFailures;
+        RecordRecoveryEvent(EJumanjiEncounterRecoveryOutcome::RestoreReadFailed,
+            FName(TEXT("BACKEND_CHECKPOINT_READ_FAILED")), Response.HttpStatusCode);
         UE_LOG(LogTemp, Warning,
             TEXT("JUMANJI checkpoint restore staging read failed (HTTP %d)."),
             Response.HttpStatusCode);
@@ -931,6 +1180,9 @@ void UJumanjiEncounterCheckpointRuntimeSubsystem::HandleCheckpointRead(
     FString Error;
     if (!StageVerifiedBackendResponse(Response.ResponseBody, EncounterDirector.Get(), Error))
     {
+        ++RestoreReadFailures;
+        RecordRecoveryEvent(EJumanjiEncounterRecoveryOutcome::RestoreReadFailed,
+            FName(TEXT("CHECKPOINT_PREFLIGHT_REJECTED")));
         UE_LOG(LogTemp, Error, TEXT("JUMANJI checkpoint restore preflight rejected: %s"), *Error);
         bRestoreStagingRequested = false;
         PendingRestoreDirector.Reset();
@@ -940,6 +1192,7 @@ void UJumanjiEncounterCheckpointRuntimeSubsystem::HandleCheckpointRead(
     }
 
     LastCommittedSequence = StagedRestoreCandidate.CheckpointSequence;
+    RecordRecoveryEvent(EJumanjiEncounterRecoveryOutcome::RestoreCandidateStaged);
     bCheckpointWriteBlockedUntilResync = false;
     bRestoreStagingRequested = false;
     PendingRestoreDirector = EncounterDirector;
@@ -964,6 +1217,7 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::TryCommitStagedRestore(
     }
 
     PendingRestoreDirector = EncounterDirector;
+    ++RestoreCommitAttempts;
     const FName RestoredEncounterId = ActiveEncounterId;
     const int64 RestoredSequence = LastCommittedSequence;
 
@@ -977,6 +1231,8 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::TryCommitStagedRestore(
         bWaitingForRestoreParticipants = false;
         PendingRestoreDirector.Reset();
 
+        ++RestoreCommitSuccesses;
+        RecordRecoveryEvent(EJumanjiEncounterRecoveryOutcome::RestoreCommitted);
         UE_LOG(LogTemp, Log,
             TEXT("JUMANJI checkpoint restore committed: encounter=%s sequence=%lld."),
             *RestoredEncounterId.ToString(),
@@ -999,12 +1255,20 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::TryCommitStagedRestore(
             }
         }
 
+        if (!bWaitingForRestoreParticipants)
+        {
+            RecordRecoveryEvent(EJumanjiEncounterRecoveryOutcome::RestoreWaitingForParticipants,
+                FName(TEXT("RESTORE_PARTICIPANT_NOT_CONNECTED_OR_AUTHENTICATED")));
+        }
         bWaitingForRestoreParticipants = true;
         UE_LOG(LogTemp, Log,
             TEXT("JUMANJI checkpoint restore is staged; waiting for every authenticated participant to finish profile loading."));
         return false;
     }
 
+    ++RestoreCommitFailures;
+    RecordRecoveryEvent(EJumanjiEncounterRecoveryOutcome::RestoreRejected,
+        FName(TEXT("CHECKPOINT_RESTORE_COMMIT_REJECTED")));
     UE_LOG(LogTemp, Error,
         TEXT("JUMANJI checkpoint restore commit rejected permanently: %s"),
         *Error);
@@ -1028,6 +1292,9 @@ void UJumanjiEncounterCheckpointRuntimeSubsystem::HandleRestoreParticipantWaitEx
     bHasStagedRestoreCandidate = false;
     StagedRestoreCandidate = FJumanjiEncounterCheckpointRestoreCandidate();
     PendingRestoreDirector.Reset();
+    ++ParticipantWaitTimeouts;
+    RecordRecoveryEvent(EJumanjiEncounterRecoveryOutcome::RestoreTimedOut,
+        FName(TEXT("RESTORE_PARTICIPANT_BARRIER_TIMEOUT")));
 
     UE_LOG(LogTemp, Warning,
         TEXT("JUMANJI checkpoint restore expired: the complete authenticated participant group did not reconnect within 180 seconds."));
