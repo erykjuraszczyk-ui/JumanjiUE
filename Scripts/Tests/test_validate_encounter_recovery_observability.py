@@ -68,7 +68,7 @@ class RecoveryObservabilityTests(unittest.TestCase):
             source = source.replace("!bHasStagedRestoreCandidate || !bWaitingForRestoreParticipants",
                                     "!bHasStagedRestoreCandidate", 1)
             path.write_text(source, encoding="utf-8")
-            self.assertTrue(any("bHasStagedRestoreCandidate || !bWaitingForParticipants" in e
+            self.assertTrue(any("!bHasStagedRestoreCandidate || !bWaitingForRestoreParticipants" in e
                                 for e in MODULE.validate_project(root)))
 
     def test_runtime_header_cannot_add_blueprint_exposure(self) -> None:
