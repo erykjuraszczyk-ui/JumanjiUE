@@ -193,6 +193,7 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - one-time server-side exploration reward per stable TraversalId through UJumanjiProgressionRewardSubsystem and the existing PlayerState transaction ledger;
 - 12 traversal reward definitions with optional DT_TraversalRewards override, source CSV, Python validator, unit tests and GitHub Actions quality gate;
 - AJumanjiWorldEncounterDirector with server-side Frost Gate exploration/traversal receipt checks, existing nine-trial chapter integration, configurable bounded enemy waves and an AJumanjiBossCharacter finale;
+- UJumanjiEncounterCheckpointRuntimeSubsystem with secret-free process diagnostics, correlated outcome logs and native server-only operator retry/abort controls (Stage 37);
 - replicated FJumanjiWorldEncounterState with Trials/Combat/Boss/Reward/Completed/Failed phases and server-authoritative GameState lifecycle;
 - PlayerController server RPC for starting encounters with a server-checked interaction distance;
 - AJumanjiEnemyCharacter::OnEnemyDefeated event for server-side wave advancement and boss defeat sequencing;
