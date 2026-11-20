@@ -98,6 +98,7 @@ private:
     void PlaySoundAsync(const TSoftObjectPtr<USoundBase>& Sound);
     void UpdateCooldownMaterial();
     void UpdateTextAndState();
+    void CaptureDefaultTextColors();
     void UpdateAccessibilityPresentation();
 
     UPROPERTY(Transient)
