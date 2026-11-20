@@ -174,7 +174,7 @@ FName UJumanjiEncounterCheckpointRuntimeSubsystem::RecoveryOutcomeCode(
     case EJumanjiEncounterRecoveryOutcome::RestoreTimedOut: return FName(TEXT("RESTORE_TIMED_OUT"));
     case EJumanjiEncounterRecoveryOutcome::OperatorRetryRequested: return FName(TEXT("OPERATOR_RETRY_REQUESTED"));
     case EJumanjiEncounterRecoveryOutcome::OperatorAbortCompleted: return FName(TEXT("OPERATOR_ABORT_COMPLETED"));
-    case EJumanjiEncounterRecoveryOutcome::LeaseReleased: return FName(TEXT("LEASE_RELEASED"));
+    case EJumanjiEncounterRecoveryOutcome::LeaseReleaseRequested: return FName(TEXT("LEASE_RELEASE_REQUESTED"));
     case EJumanjiEncounterRecoveryOutcome::None:
     default: return NAME_None;
     }
@@ -223,9 +223,10 @@ void UJumanjiEncounterCheckpointRuntimeSubsystem::RecordRecoveryEvent(
     if (bFailure)
     {
         UE_LOG(LogTemp, Warning,
-            TEXT("JUMANJI_RECOVERY correlation=%s outcome=%s encounter=%s sequence=%lld epoch=%lld http=%d error=%s"),
+            TEXT("JUMANJI_RECOVERY correlation=%s outcome=%s encounter=%s sequence=%lld epoch=%lld http=%d error=%s operatorReason=%s"),
             *Correlation, *OutcomeCode.ToString(), *Encounter,
-            LastCommittedSequence, AuthorityEpoch, HttpStatusCode, *ErrorCode.ToString());
+            LastCommittedSequence, AuthorityEpoch, HttpStatusCode, *ErrorCode.ToString(),
+            *LastOperatorAbortReason.ToString());
     }
     else
     {
@@ -241,7 +242,7 @@ UJumanjiEncounterCheckpointRuntimeSubsystem::GetRecoveryDiagnostics() const
 {
     FJumanjiEncounterRecoveryDiagnostics Snapshot;
     Snapshot.CorrelationId = RecoveryCorrelationId;
-    Snapshot.EncounterId = ActiveEncounterId;
+    Snapshot.EncounterId = ActiveEncounterId.IsNone() ? LastRecoveryEncounterId : ActiveEncounterId;
     Snapshot.LastOutcome = LastRecoveryOutcome;
     Snapshot.LastErrorCode = LastRecoveryErrorCode;
     Snapshot.LastOperatorAbortReason = LastOperatorAbortReason;
@@ -464,6 +465,7 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::BeginEncounterCheckpointSessio
     ClearLeaseState();
     RecoveryCorrelationId = FGuid::NewGuid();
     RecoveryStartedAtSeconds = FPlatformTime::Seconds();
+    LastRecoveryEncounterId = EncounterId;
     ActiveEncounterId = EncounterId;
     ActiveSessionId = SessionSubsystem->GetActiveSessionId();
     ++LeaseAcquisitionAttempts;
@@ -514,7 +516,7 @@ void UJumanjiEncounterCheckpointRuntimeSubsystem::EndEncounterCheckpointSession(
 
     if (bLeaseReady && BackendSubsystem && !LeaseToken.IsEmpty())
     {
-        RecordRecoveryEvent(EJumanjiEncounterRecoveryOutcome::LeaseReleased);
+        RecordRecoveryEvent(EJumanjiEncounterRecoveryOutcome::LeaseReleaseRequested);
         BackendSubsystem->ReleaseLease(
             ActiveEncounterId,
             LeaseToken,
@@ -1164,6 +1166,7 @@ bool UJumanjiEncounterCheckpointRuntimeSubsystem::BeginRestoreStaging(
     ClearLeaseState();
     RecoveryCorrelationId = FGuid::NewGuid();
     RecoveryStartedAtSeconds = FPlatformTime::Seconds();
+    LastRecoveryEncounterId = EncounterDirector->GetEncounterId();
     ActiveEncounterId = EncounterDirector->GetEncounterId();
     ++LeaseAcquisitionAttempts;
     RecordRecoveryEvent(EJumanjiEncounterRecoveryOutcome::SessionStarted);
