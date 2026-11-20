@@ -84,6 +84,20 @@ class RecoveryObservabilityTests(unittest.TestCase):
             path.write_text(source, encoding="utf-8")
             self.assertTrue(any("no UFUNCTION is allowed" in e for e in MODULE.validate_project(root)))
 
+    def test_operator_retry_requires_persistent_level_director(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = self._copy_fixture(tmp)
+            path = root / MODULE.RUNTIME_CPP
+            source = path.read_text(encoding="utf-8")
+            source = source.replace(
+                "|| EncounterDirector->GetLevel() != OperatorWorld->GetPersistentLevel()",
+                "",
+                1,
+            )
+            path.write_text(source, encoding="utf-8")
+            self.assertTrue(any("GetLevel() != OperatorWorld->GetPersistentLevel()" in e
+                                for e in MODULE.validate_project(root)))
+
 
 if __name__ == "__main__":
     unittest.main()
