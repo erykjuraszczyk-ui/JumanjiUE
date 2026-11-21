@@ -11,8 +11,10 @@ from pathlib import Path
 from uuid import uuid4
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+from cryptography.hazmat.primitives import serialization
 
 from Backend.EncounterCheckpointService.service import CheckpointServiceError, EncounterCheckpointBackend
+from Scripts.migrate_encounter_checkpoint_store import migrate_sqlite_store
 
 ROOT = Path(__file__).resolve().parents[2]
 SERVER_ID = "srv-test-eu-01"
@@ -114,6 +116,91 @@ class PostgreSQLCheckpointProviderTests(unittest.TestCase):
                 },
             )
         self.assertEqual(stale.exception.code, "LEASE_INVALID")
+
+    def test_sqlite_migration_carries_signed_checkpoint_but_not_lease(self) -> None:
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            old_key = Ed25519PrivateKey.generate()
+            source_path = root / "legacy.sqlite3"
+            source = EncounterCheckpointBackend(source_path, old_key, "LEGACY-KEY-01")
+            migration_encounter = f"ENCOUNTER_MIG_{uuid4().hex[:10].upper()}"
+            old_identity = {"serverInstanceId": SERVER_ID, "shardId": SHARD_ID}
+            old_lease = source.acquire_lease(
+                migration_encounter,
+                {**old_identity, "ttlSeconds": 45},
+            )
+            fixture = json.loads(
+                (ROOT / "Data/Encounter/EncounterCheckpointExample.json").read_text(encoding="utf-8")
+            )["payload"]
+            payload = copy.deepcopy(fixture)
+            now = datetime.now(timezone.utc).replace(microsecond=0)
+            payload["encounterId"] = migration_encounter
+            payload["checkpointId"] = str(uuid4())
+            payload["sessionId"] = str(uuid4())
+            payload["checkpointSequence"] = 1
+            payload["createdAtUtc"] = now.isoformat().replace("+00:00", "Z")
+            payload["expiresAtUtc"] = (now + timedelta(minutes=20)).isoformat().replace("+00:00", "Z")
+            payload["authority"]["serverInstanceId"] = SERVER_ID
+            payload["authority"]["shardId"] = SHARD_ID
+            payload["authority"]["authorityEpoch"] = old_lease["authorityEpoch"]
+            source.write_checkpoint(
+                migration_encounter,
+                {
+                    **old_identity,
+                    "leaseToken": old_lease["leaseToken"],
+                    "authorityEpoch": old_lease["authorityEpoch"],
+                    "expectedSequence": 0,
+                    "payload": payload,
+                },
+            )
+
+            old_public_path = root / "legacy-public-key.pem"
+            old_public_path.write_bytes(
+                old_key.public_key().public_bytes(
+                    encoding=serialization.Encoding.PEM,
+                    format=serialization.PublicFormat.SubjectPublicKeyInfo,
+                )
+            )
+            keyring_path = root / "keyring.json"
+            keyring_path.write_text(
+                json.dumps({
+                    "keys": [{
+                        "keyId": "LEGACY-KEY-01",
+                        "publicKeyFile": str(old_public_path),
+                    }]
+                }),
+                encoding="utf-8",
+            )
+            target = EncounterCheckpointBackend(
+                None,
+                Ed25519PrivateKey.generate(),
+                "POSTGRES-MIGRATED-KEY",
+                database_url=self.database_url,
+                verification_keyring_path=keyring_path,
+                allow_insecure_database=os.environ.get("JUMANJI_CHECKPOINT_ALLOW_INSECURE_DATABASE") == "true",
+            )
+
+            report = migrate_sqlite_store(source_path, target)
+            self.assertEqual(report["imported"], 1)
+            self.assertEqual(report["activeLeasesTransferred"], 0)
+
+            new_lease = target.acquire_lease(
+                migration_encounter,
+                {**self.identity, "ttlSeconds": 45},
+            )
+            self.assertEqual(new_lease["authorityEpoch"], old_lease["authorityEpoch"] + 1)
+            restored = target.read_checkpoint(
+                migration_encounter,
+                {
+                    **self.identity,
+                    "leaseToken": new_lease["leaseToken"],
+                    "authorityEpoch": new_lease["authorityEpoch"],
+                },
+            )
+            self.assertEqual(restored["envelope"]["integrity"]["keyId"], "LEGACY-KEY-01")
+            self.assertEqual(restored["envelope"]["payload"]["checkpointId"], payload["checkpointId"])
 
     def test_postgres_concurrent_acquire_has_one_owner(self) -> None:
         other = EncounterCheckpointBackend(
