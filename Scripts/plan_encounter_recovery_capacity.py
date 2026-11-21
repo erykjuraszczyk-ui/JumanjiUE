@@ -70,6 +70,13 @@ def _load_inventory(path: Path | None) -> tuple[dict[str, Any] | None, str]:
     missing = [key for key in required if inventory.get(key) in (None, "")]
     if missing:
         raise CapacityPlanningError("Host inventory is incomplete: " + ", ".join(missing))
+    placeholder_values = ("REPLACE_", "TODO", "UNKNOWN")
+    if any(
+        isinstance(inventory[key], str)
+        and inventory[key].strip().upper().startswith(placeholder_values)
+        for key in required
+    ):
+        raise CapacityPlanningError("Host inventory still contains placeholder values")
     sensitive_names = ("hostname", "ipaddress", "profileid", "token", "password", "privatekey", "secret")
     if any(any(sensitive in str(key).casefold() for sensitive in sensitive_names) for key in inventory):
         raise CapacityPlanningError("Host inventory contains a forbidden identity or secret field")
@@ -113,6 +120,15 @@ def build_capacity_plan(
         raise CapacityPlanningError("Benchmark host fingerprint is incomplete")
     if str(environment["database_journal_mode"]).upper() != str(profile.get("RequiredJournalMode", "WAL")).upper():
         raise CapacityPlanningError("Benchmark journal mode does not match the profile")
+    if inventory:
+        if inventory.get("hostRole") != "single-host-checkpoint-prototype":
+            raise CapacityPlanningError("Stage 39 SQLite loopback evidence must be tied to a single-host prototype inventory")
+        if inventory.get("benchmarkReportSha256", "").casefold() != report_sha256.casefold():
+            raise CapacityPlanningError("Host inventory benchmarkReportSha256 does not match the supplied report")
+        if inventory.get("pythonVersion") != environment.get("python"):
+            raise CapacityPlanningError("Host inventory Python version does not match the benchmark report")
+        if inventory.get("sqliteVersion") != environment.get("sqlite_version"):
+            raise CapacityPlanningError("Host inventory SQLite version does not match the benchmark report")
 
     try:
         minimum_duration = int(profile["MinimumDurationSeconds"])
