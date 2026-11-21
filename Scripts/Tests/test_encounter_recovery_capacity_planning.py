@@ -98,6 +98,12 @@ class EncounterRecoveryCapacityPlanningTests(unittest.TestCase):
         with self.assertRaises(CapacityPlanningError):
             build_capacity_plan(report, self.profile, "e" * 64)
 
+    def test_capacity_can_be_zero_when_checkpoint_cadence_cannot_be_met(self) -> None:
+        report = synthetic_report(workers=4)
+        report["throughput"]["successful_checkpoint_pairs_per_second"] = 0.001
+        plan = build_capacity_plan(report, self.profile, "0" * 64)
+        self.assertEqual(plan["capacityEnvelope"]["projectedSafeConcurrentEncounters"], 0)
+
     def test_profile_minimums_are_enforced(self) -> None:
         report = synthetic_report(workers=2)
         with self.assertRaises(CapacityPlanningError):
