@@ -66,7 +66,7 @@ class Stage41RepositoryTests(unittest.TestCase):
               - "8787:8787"
         """
         import re
-        self.assertIsNotNone(re.search(r"(?m)^\\s+ports\\s*:", compose))
+        self.assertIsNotNone(re.search(r"(?m)^\s+ports\s*:", compose))
 
 
 if __name__ == "__main__":
