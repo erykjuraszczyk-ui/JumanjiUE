@@ -16,6 +16,14 @@ on:
       - "Docs/STAGE_39_RECOVERY_LOAD_SOAK_PERFORMANCE_BENCHMARKS.md"
       - ".github/workflows/encounter-recovery-benchmarks.yml"
       - ".github/workflows/encounter-recovery-chaos.yml"
+      - "Data/Encounter/EncounterRecoverySLOProfiles.csv"
+      - "Data/Encounter/EncounterRecoveryHostInventoryTemplate.json"
+      - "Scripts/plan_encounter_recovery_capacity.py"
+      - "Scripts/validate_encounter_recovery_capacity_slo.py"
+      - "Scripts/Tests/test_encounter_recovery_capacity_planning.py"
+      - "Scripts/Tests/test_validate_encounter_recovery_capacity_slo.py"
+      - "Docs/STAGE_40_RECOVERY_CAPACITY_PLANNING_SLO_BASELINES.md"
+      - ".github/workflows/encounter-recovery-capacity-slo.yml"
       - "README.md"
   push:
     branches: [main]
@@ -33,6 +41,14 @@ on:
       - "Docs/STAGE_39_RECOVERY_LOAD_SOAK_PERFORMANCE_BENCHMARKS.md"
       - ".github/workflows/encounter-recovery-benchmarks.yml"
       - ".github/workflows/encounter-recovery-chaos.yml"
+      - "Data/Encounter/EncounterRecoverySLOProfiles.csv"
+      - "Data/Encounter/EncounterRecoveryHostInventoryTemplate.json"
+      - "Scripts/plan_encounter_recovery_capacity.py"
+      - "Scripts/validate_encounter_recovery_capacity_slo.py"
+      - "Scripts/Tests/test_encounter_recovery_capacity_planning.py"
+      - "Scripts/Tests/test_validate_encounter_recovery_capacity_slo.py"
+      - "Docs/STAGE_40_RECOVERY_CAPACITY_PLANNING_SLO_BASELINES.md"
+      - ".github/workflows/encounter-recovery-capacity-slo.yml"
       - "README.md"
 
 permissions:
@@ -95,3 +111,24 @@ jobs:
           python -m unittest discover -s Scripts/Tests -p "test_validate_encounter_restore_materialization.py" -v
           python -m unittest discover -s Scripts/Tests -p "test_validate_encounter_startup_coordinator.py" -v
           python -m unittest discover -s Scripts/Tests -p "test_validate_encounter_recovery_observability.py" -v
+
+      - name: Validate Stage 40 SLO profiles and host inventory
+        run: python Scripts/validate_encounter_recovery_capacity_slo.py
+      - name: Run Stage 40 governance and capacity tests
+        run: |
+          python -m unittest discover -s Scripts/Tests -p "test_validate_encounter_recovery_capacity_slo.py" -v
+          python -m unittest discover -s Scripts/Tests -p "test_encounter_recovery_capacity_planning.py" -v
+      - name: Build Stage 40 CI-only capacity plan from Stage 39 smoke
+        run: |
+          mkdir -p Artifacts/Stage40
+          python Scripts/plan_encounter_recovery_capacity.py \
+            --report Artifacts/recovery-benchmark-smoke.json \
+            --profile CI-SMOKE \
+            --output Artifacts/Stage40/ci-smoke-capacity-plan.json
+      - name: Upload Stage 40 planning smoke
+        uses: actions/upload-artifact@v4
+        with:
+          name: encounter-recovery-capacity-stage40
+          path: Artifacts/Stage40/ci-smoke-capacity-plan.json
+          if-no-files-found: error
+          retention-days: 14
