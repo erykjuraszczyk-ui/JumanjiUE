@@ -140,7 +140,7 @@ Następnie stosuje współczynnik wykorzystania i wybiera najmniejszy wynik:
 
 ~~~text
 projectedSafeConcurrentEncounters =
-  max(1, floor(
+  max(0, floor(
     min(
       pairRate * checkpointCadence,
       checkpointCadenceMs / (writeP99 + readP99),
@@ -149,7 +149,7 @@ projectedSafeConcurrentEncounters =
   ))
 ~~~
 
-To **konserwatywny wskaźnik planistyczny**, a nie model kolejkowania ani gwarantowana pojemność produkcyjna.
+To **konserwatywny wskaźnik planistyczny**, a nie model kolejkowania ani gwarantowana pojemność produkcyjna. Wynik 0 oznacza, że przepustowość/latency nie mieszczą nawet jednej sesji przy zadanej kadencji; nie podbijamy go sztucznie do 1.
 
 Ważne granice:
 - planner nigdy nie ekstrapoluje ponad liczbę workerów przetestowanych w raporcie;
