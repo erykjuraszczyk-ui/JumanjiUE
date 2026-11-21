@@ -61,7 +61,8 @@
     "activeKeyIdEnvironment": "JUMANJI_CHECKPOINT_KEY_ID",
     "oldPublicKeysLoadedFrom": "JUMANJI_CHECKPOINT_VERIFY_KEYRING_FILE",
     "overlapRotationSupported": true,
-    "automatedRotationOrRevocation": false
+    "automatedRotationOrRevocation": false,
+    "kmsOrHsmIntegrated": false
   },
   "migration": {
     "tool": "Scripts/migrate_encounter_checkpoint_store.py",
