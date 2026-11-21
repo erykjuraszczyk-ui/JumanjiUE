@@ -31,7 +31,7 @@ REQUIRED_PATHS = (
 REQUIRED_PROVIDER_MARKERS = (
     "class _PostgresConnectionAdapter",
     "psycopg.connect(",
-    "sslmode != \"verify-full\"",
+    "ssl_mode != \"verify-full\"",
     "FOR UPDATE",
     "ON CONFLICT (encounter_id) DO NOTHING",
     "checkpoint_schema_migrations",
