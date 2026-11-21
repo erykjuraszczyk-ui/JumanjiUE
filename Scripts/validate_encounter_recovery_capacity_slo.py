@@ -50,8 +50,8 @@ SOURCE_REQUIREMENTS = {
         "benchmarkCommitSha", "benchmarkReportSha256",
     ),
     "Docs/STAGE_40_RECOVERY_CAPACITY_PLANNING_SLO_BASELINES.md": (
-        "nie są zatwierdzone", "UNBASELINED", "p95", "p99",
-        "nie wolno ekstrapolować", "Stage 39",
+        "Nie ma zatwierdzonych wartości", "UNBASELINED", "p95", "p99",
+        "nigdy nie ekstrapoluje", "Stage 39",
     ),
     ".github/workflows/encounter-recovery-capacity-slo.yml": (
         "plan_encounter_recovery_capacity.py", "test_encounter_recovery_capacity_planning.py",
