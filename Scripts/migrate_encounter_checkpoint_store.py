@@ -130,7 +130,7 @@ def main() -> int:
     rendered = json.dumps(report, indent=2, sort_keys=True)
     if args.report:
         args.report.parent.mkdir(parents=True, exist_ok=True)
-        args.report.write_text(rendered + "\\n", encoding="utf-8")
+        args.report.write_text(rendered + "\n", encoding="utf-8")
     print(rendered)
     return 0
 
