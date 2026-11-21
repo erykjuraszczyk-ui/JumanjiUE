@@ -133,7 +133,7 @@ class EncounterRecoveryCapacityPlanningTests(unittest.TestCase):
             "pythonVersion": "3.12.test",
             "sqliteVersion": "3.test",
             "benchmarkCommitSha": "abcdef0123456789",
-            "benchmarkReportSha256": "1" * 64,
+            "benchmarkReportSha256": "2" * 64,
         }
         with_inventory = build_capacity_plan(
             synthetic_report(), profile, "2" * 64, inventory, "3" * 64
