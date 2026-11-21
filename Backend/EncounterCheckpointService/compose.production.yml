@@ -82,8 +82,6 @@ services:
         uid: "10001"
         gid: "10001"
         mode: 0444
-    networks:
-      - checkpoint-ingress
     healthcheck:
       test:
         - CMD
