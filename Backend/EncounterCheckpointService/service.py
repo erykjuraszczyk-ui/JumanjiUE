@@ -290,6 +290,97 @@ class EncounterCheckpointBackend:
         finally:
             connection.close()
 
+    def import_checkpoint_record(
+        self,
+        encounter_id: str,
+        checkpoint_sequence: int,
+        authority_epoch: int,
+        envelope_json: str,
+    ) -> bool:
+        """Import one verified checkpoint. Active lease ownership is never copied."""
+        if self.storage_kind != "postgresql":
+            raise RuntimeError("Checkpoint migration destination must be PostgreSQL")
+        self._validate_encounter_id(encounter_id)
+
+        try:
+            envelope = json.loads(envelope_json)
+        except (TypeError, json.JSONDecodeError):
+            raise CheckpointServiceError(422, "MIGRATION_ENVELOPE_INVALID", "Source checkpoint envelope is invalid JSON") from None
+        errors = validate_envelope(envelope, now=datetime.now(timezone.utc))
+        if errors:
+            raise CheckpointServiceError(422, "MIGRATION_ENVELOPE_INVALID", "Source checkpoint failed contract validation", errors[:12])
+
+        payload = envelope["payload"]
+        integrity = envelope["integrity"]
+        verification_key = self.verification_keys.get(integrity.get("keyId", ""))
+        if verification_key is None or integrity.get("algorithm") != "Ed25519":
+            raise CheckpointServiceError(422, "MIGRATION_SIGNING_KEY_UNKNOWN", "Source checkpoint signing key is not in the verification keyring")
+
+        unsigned = {
+            "envelopeVersion": envelope["envelopeVersion"],
+            "payload": payload,
+            "integrity": {
+                "algorithm": integrity["algorithm"],
+                "keyId": integrity["keyId"],
+            },
+        }
+        try:
+            verification_key.verify(_decode_signature(integrity["signature"]), rfc8785.dumps(unsigned))
+        except (InvalidSignature, ValueError):
+            raise CheckpointServiceError(422, "MIGRATION_SIGNATURE_INVALID", "Source checkpoint signature verification failed") from None
+
+        if (
+            payload.get("encounterId") != encounter_id
+            or payload.get("checkpointSequence") != checkpoint_sequence
+            or payload.get("authority", {}).get("authorityEpoch") != authority_epoch
+            or checkpoint_sequence < 1
+            or authority_epoch < 1
+        ):
+            raise CheckpointServiceError(422, "MIGRATION_HEAD_MISMATCH", "Source row metadata does not match the signed checkpoint payload")
+
+        expires_at = _parse_utc_epoch(payload["expiresAtUtc"])
+        stored_envelope = json.dumps(envelope, ensure_ascii=False, separators=(",", ":"), allow_nan=False)
+        connection = self._connect()
+        try:
+            connection.execute("BEGIN IMMEDIATE")
+            existing = connection.execute(
+                "SELECT * FROM encounter_checkpoint_state WHERE encounter_id = ?",
+                (encounter_id,),
+            ).fetchone()
+            if existing is not None:
+                if (
+                    int(existing["checkpoint_sequence"]) == checkpoint_sequence
+                    and int(existing["authority_epoch"]) == authority_epoch
+                    and existing["checkpoint_envelope_json"] == stored_envelope
+                ):
+                    connection.commit()
+                    return False
+                raise CheckpointServiceError(409, "MIGRATION_DESTINATION_CONFLICT", "Destination already contains different state for this encounter")
+
+            connection.execute(
+                """
+                INSERT INTO encounter_checkpoint_state (
+                    encounter_id,
+                    checkpoint_sequence,
+                    authority_epoch,
+                    lease_server_instance_id,
+                    lease_shard_id,
+                    lease_token_hash,
+                    lease_expires_at,
+                    checkpoint_envelope_json,
+                    checkpoint_expires_at
+                ) VALUES (?, ?, ?, NULL, NULL, NULL, 0, ?, ?)
+                """,
+                (encounter_id, checkpoint_sequence, authority_epoch, stored_envelope, expires_at),
+            )
+            connection.commit()
+            return True
+        except Exception:
+            connection.rollback()
+            raise
+        finally:
+            connection.close()
+
     @staticmethod
     def _exact_fields(body: object, expected: set[str]) -> dict[str, Any]:
         if not isinstance(body, dict) or set(body) != expected:
