@@ -7,6 +7,7 @@ import csv
 import hashlib
 import json
 import math
+import re
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -86,6 +87,12 @@ def _load_inventory(path: Path | None) -> tuple[dict[str, Any] | None, str]:
             raise ValueError
     except ValueError:
         raise CapacityPlanningError("Host inventory measuredAtUtc must be timezone-aware ISO-8601") from None
+    if not re.fullmatch(r"[A-Za-z0-9_-]{3,64}", str(inventory["hostId"])):
+        raise CapacityPlanningError("Host inventory hostId must be a non-identifying 3-64 character label")
+    if not re.fullmatch(r"[0-9a-fA-F]{7,40}", str(inventory["benchmarkCommitSha"])):
+        raise CapacityPlanningError("Host inventory benchmarkCommitSha must be a hexadecimal commit SHA")
+    if not re.fullmatch(r"[0-9a-fA-F]{64}", str(inventory["benchmarkReportSha256"])):
+        raise CapacityPlanningError("Host inventory benchmarkReportSha256 must be a 64-character SHA-256")
     for key in ("physicalCoreCount", "logicalProcessorCount"):
         if type(inventory[key]) is not int or inventory[key] <= 0:
             raise CapacityPlanningError(f"Host inventory {key} must be a positive integer")
@@ -190,7 +197,7 @@ def build_capacity_plan(
     latency_limit = cadence_ms / component_p99_sum
     tested_worker_limit = float(workers)
     raw_limit = min(throughput_limit, latency_limit, tested_worker_limit)
-    safe_encounters = max(1, math.floor(raw_limit * utilization))
+    safe_encounters = max(0, math.floor(raw_limit * utilization))
 
     status = str(profile.get("Status", "UNBASELINED")).upper()
     slo_assessment = "NOT_ASSESSED"
