@@ -33,7 +33,7 @@ services:
       JUMANJI_CHECKPOINT_MTLS_REQUIRED: "true"
     volumes:
       - type: bind
-        source: ${CHECKPOINT_VERIFY_KEYRING_FILE:?set CHECKPOINT_VERIFY_KEYRING_FILE}
+        source: ${CHECKPOINT_VERIFY_KEYRING_DIRECTORY:?set CHECKPOINT_VERIFY_KEYRING_DIRECTORY}
         target: /run/config/checkpoint-verification-keyring.json
         read_only: true
     secrets:
@@ -52,6 +52,11 @@ services:
         uid: "10001"
         gid: "10001"
         mode: 0400
+      - source: checkpoint_postgres_ca
+        target: checkpoint-postgres-ca.pem
+        uid: "10001"
+        gid: "10001"
+        mode: 0444
       - source: checkpoint_server_certificate
         target: checkpoint-server-certificate.pem
         uid: "10001"
@@ -104,6 +109,8 @@ secrets:
     file: ${CHECKPOINT_SIGNING_PRIVATE_KEY_FILE:?set CHECKPOINT_SIGNING_PRIVATE_KEY_FILE}
   checkpoint_database_url:
     file: ${CHECKPOINT_DATABASE_URL_FILE:?set CHECKPOINT_DATABASE_URL_FILE}
+  checkpoint_postgres_ca:
+    file: ${CHECKPOINT_POSTGRES_CA_FILE:?set CHECKPOINT_POSTGRES_CA_FILE}
   checkpoint_server_certificate:
     file: ${CHECKPOINT_SERVER_CERTIFICATE_FILE:?set CHECKPOINT_SERVER_CERTIFICATE_FILE}
   checkpoint_server_private_key:
