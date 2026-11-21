@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "hostId": "REPLACE_WITH_NON_IDENTIFYING_HOST_ID",
+  "hostRole": "single-host-checkpoint-prototype",
+  "measuredAtUtc": null,
+  "osName": null,
+  "osVersion": null,
+  "cpuModel": null,
+  "physicalCoreCount": null,
+  "logicalProcessorCount": null,
+  "memoryGiB": null,
+  "storageModel": null,
+  "storageType": null,
+  "filesystem": null,
+  "pythonVersion": null,
+  "sqliteVersion": null,
+  "benchmarkCommitSha": null,
+  "benchmarkReportSha256": null,
+  "operatorNotes": "Fill from the actual host before treating a report as reusable evidence. Do not include hostnames, IP addresses, account IDs or secrets."
+}
