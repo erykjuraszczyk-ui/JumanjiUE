@@ -11,6 +11,7 @@ from datetime import datetime, timedelta, timezone
 from http.server import ThreadingHTTPServer
 from pathlib import Path
 from urllib.error import HTTPError
+
 from urllib.request import Request, urlopen
 from uuid import uuid4
 
@@ -187,6 +188,60 @@ class EncounterCheckpointBackendTests(unittest.TestCase):
         with self.assertRaises(HTTPError) as error:
             urlopen(request, timeout=3)
         self.assertEqual(error.exception.code, 401)
+
+    def test_signing_key_rotation_keeps_old_checkpoint_readable(self) -> None:
+        from cryptography.hazmat.primitives import serialization
+
+        original_payload = self.make_payload()
+        self.backend.write_checkpoint(
+            ENCOUNTER_ID,
+            self.make_write_request(original_payload, 0),
+        )
+
+        replacement_key = Ed25519PrivateKey.generate()
+        old_public_path = Path(self.temp_dir.name) / "old-public-key.pem"
+        old_public_path.write_bytes(
+            self.key.public_key().public_bytes(
+                encoding=serialization.Encoding.PEM,
+                format=serialization.PublicFormat.SubjectPublicKeyInfo,
+            )
+        )
+        keyring_path = Path(self.temp_dir.name) / "verify-keyring.json"
+        keyring_path.write_text(
+            json.dumps({
+                "keys": [{
+                    "keyId": "UNIT-TEST-KEY-01",
+                    "publicKeyFile": str(old_public_path),
+                }]
+            }),
+            encoding="utf-8",
+        )
+
+        rotated_backend = EncounterCheckpointBackend(
+            self.backend.database_path,
+            replacement_key,
+            "UNIT-TEST-KEY-02",
+            verification_keyring_path=keyring_path,
+        )
+        old_read = rotated_backend.read_checkpoint(
+            ENCOUNTER_ID,
+            self.make_read_request(),
+        )
+        self.assertEqual(old_read["envelope"]["integrity"]["keyId"], "UNIT-TEST-KEY-01")
+
+        next_payload = self.make_payload(sequence=2)
+        rotated_backend.write_checkpoint(
+            ENCOUNTER_ID,
+            self.make_write_request(next_payload, expected_sequence=1),
+        )
+        new_read = rotated_backend.read_checkpoint(
+            ENCOUNTER_ID,
+            self.make_read_request(),
+        )
+        self.assertEqual(new_read["envelope"]["integrity"]["keyId"], "UNIT-TEST-KEY-02")
+
+    def test_storage_readiness_query_succeeds(self) -> None:
+        self.backend.check_ready()
 
     def test_integral_json_numbers_from_unreal_are_accepted(self) -> None:
         acquired = self.backend.acquire_lease(
