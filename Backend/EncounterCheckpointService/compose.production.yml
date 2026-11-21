@@ -34,7 +34,7 @@ services:
     volumes:
       - type: bind
         source: ${CHECKPOINT_VERIFY_KEYRING_DIRECTORY:?set CHECKPOINT_VERIFY_KEYRING_DIRECTORY}
-        target: /run/config/checkpoint-verification-keyring.json
+        target: /run/config
         read_only: true
     secrets:
       - source: checkpoint_server_token
