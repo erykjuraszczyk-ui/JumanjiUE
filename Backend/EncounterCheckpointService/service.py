@@ -142,8 +142,10 @@ class EncounterCheckpointBackend:
             ssl_mode = query.get("sslmode", [""])[0]
             if ssl_mode != "verify-full" and not allow_insecure_database:
                 raise ValueError("PostgreSQL requires sslmode=verify-full outside explicit development/test mode")
-            self._load_verification_keyring(verification_keyring_path)
 
+        # Old public keys are useful for either provider while old envelopes
+        # remain in a local SQLite test store or the shared PostgreSQL store.
+        self._load_verification_keyring(verification_keyring_path)
         self.initialize()
 
     @staticmethod
@@ -207,17 +209,21 @@ class EncounterCheckpointBackend:
         if not isinstance(loaded, Ed25519PrivateKey):
             raise RuntimeError("Configured signing key is not an Ed25519 private key")
 
+        keyring_path = Path(keyring_value) if keyring_value else None
         if database_url:
             backend = cls(
                 None, loaded, key_id,
                 database_url=database_url,
-                verification_keyring_path=Path(keyring_value) if keyring_value else None,
+                verification_keyring_path=keyring_path,
                 allow_insecure_database=allow_insecure,
             )
         else:
-            if keyring_value:
-                raise RuntimeError("Verification key rotation is configured only with the shared PostgreSQL provider")
-            backend = cls(database_path, loaded, key_id)
+            backend = cls(
+                database_path,
+                loaded,
+                key_id,
+                verification_keyring_path=keyring_path,
+            )
         return backend, server_token
 
     def _connect(self):
