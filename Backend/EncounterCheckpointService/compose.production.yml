@@ -57,6 +57,11 @@ services:
         uid: "10001"
         gid: "10001"
         mode: 0444
+      - source: checkpoint_postgres_ca
+        target: checkpoint-postgres-ca.pem
+        uid: "10001"
+        gid: "10001"
+        mode: 0444
       - source: checkpoint_server_certificate
         target: checkpoint-server-certificate.pem
         uid: "10001"
@@ -109,6 +114,8 @@ secrets:
     file: ${CHECKPOINT_SIGNING_PRIVATE_KEY_FILE:?set CHECKPOINT_SIGNING_PRIVATE_KEY_FILE}
   checkpoint_database_url:
     file: ${CHECKPOINT_DATABASE_URL_FILE:?set CHECKPOINT_DATABASE_URL_FILE}
+  checkpoint_postgres_ca:
+    file: ${CHECKPOINT_POSTGRES_CA_FILE:?set CHECKPOINT_POSTGRES_CA_FILE}
   checkpoint_postgres_ca:
     file: ${CHECKPOINT_POSTGRES_CA_FILE:?set CHECKPOINT_POSTGRES_CA_FILE}
   checkpoint_server_certificate:
