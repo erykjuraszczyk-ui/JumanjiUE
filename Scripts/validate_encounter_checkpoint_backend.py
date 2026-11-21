@@ -29,14 +29,21 @@ def main() -> int:
     checks = {
         "RFC 8785 canonicalization": "rfc8785.dumps(" in service,
         "Ed25519 signing": "self.signing_key.sign(" in service,
-        "signature verification": "self.verification_key.verify(" in service,
+        "signature verification": "verification_key.verify(" in service,
+        "old signing-key verification keyring": "self.verification_keys.get(" in service,
         "atomic SQLite transactions": "BEGIN IMMEDIATE" in service,
+        "shared PostgreSQL provider": "psycopg.connect(" in service and 'self.storage_kind = "postgresql" if database_url else "sqlite"' in service,
+        "PostgreSQL row locking": "FOR UPDATE" in service and "ON CONFLICT (encounter_id) DO NOTHING" in service,
         "lease fencing": "authority_epoch" in service and "lease_token_hash" in service,
         "sequence compare-and-swap": "SEQUENCE_CONFLICT" in service,
         "server-only Unreal guard": "NM_Client" in source and "GetNetMode()" in source,
         "server token from process environment": "JUMANJI_CHECKPOINT_SERVER_TOKEN" in source,
         "HTTP/JSON module dependencies": all(f'"{module}"' in build_rules for module in ("HTTP", "Json", "JsonUtilities")),
         "native-only API": "UFUNCTION(" not in header,
+        "mTLS listener hardening": "JUMANJI_CHECKPOINT_MTLS_REQUIRED" in service and "CERT_REQUIRED" in service,
+        "readiness probe": 'parsed_path == "/readyz"' in service and "backend.check_ready()" in service,
+        "bounded request concurrency": "BoundedThreadingHTTPServer" in service and "BoundedSemaphore" in service,
+        "SQLite-to-PostgreSQL import excludes active leases": "activeLeasesTransferred" in (ROOT / "Scripts/migrate_encounter_checkpoint_store.py").read_text(encoding="utf-8"),
     }
     failed = [name for name, passed in checks.items() if not passed]
     if failed:
