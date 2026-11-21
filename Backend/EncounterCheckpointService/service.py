@@ -8,7 +8,6 @@ import math
 import os
 import re
 import secrets
-import socket
 import sqlite3
 import ssl
 import sys
@@ -736,8 +735,11 @@ def make_handler(backend: EncounterCheckpointBackend, server_token: str):
                 self._send_json(error.status, response)
             except (sqlite3.Error, OSError):
                 self._send_json(503, {"error": "BACKEND_UNAVAILABLE", "message": "Checkpoint store is temporarily unavailable"})
-            except Exception:
-                self._send_json(500, {"error": "INTERNAL_ERROR", "message": "Request could not be completed"})
+            except Exception as error:
+                if error.__class__.__module__.startswith("psycopg"):
+                    self._send_json(503, {"error": "BACKEND_UNAVAILABLE", "message": "Checkpoint store is temporarily unavailable"})
+                else:
+                    self._send_json(500, {"error": "INTERNAL_ERROR", "message": "Request could not be completed"})
 
         def do_GET(self) -> None:
             self._handle("GET")
