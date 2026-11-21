@@ -87,7 +87,7 @@ class PostgreSQLCheckpointProviderTests(unittest.TestCase):
         with self.assertRaises(CheckpointServiceError) as conflict:
             self.backend.write_checkpoint(
                 self.encounter_id,
-                self.make_request(self.make_payload(2), 0),
+                self.make_request(self.make_payload(1), 0),
             )
         self.assertEqual(conflict.exception.code, "SEQUENCE_CONFLICT")
 
