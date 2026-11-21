@@ -290,6 +290,29 @@ class EncounterCheckpointBackend:
         finally:
             connection.close()
 
+    def validate_import_envelope(self, envelope: object) -> list[str]:
+        """Validate schema, expiry, configured key ID and Ed25519 signature for migration."""
+        errors = validate_envelope(envelope, now=datetime.now(timezone.utc))
+        if errors:
+            return errors[:12]
+        integrity = envelope["integrity"]
+        verification_key = self.verification_keys.get(integrity.get("keyId", ""))
+        if verification_key is None or integrity.get("algorithm") != "Ed25519":
+            return ["source checkpoint signing key is not in the destination verification keyring"]
+        unsigned = {
+            "envelopeVersion": envelope["envelopeVersion"],
+            "payload": envelope["payload"],
+            "integrity": {
+                "algorithm": integrity["algorithm"],
+                "keyId": integrity["keyId"],
+            },
+        }
+        try:
+            verification_key.verify(_decode_signature(integrity["signature"]), rfc8785.dumps(unsigned))
+        except (InvalidSignature, ValueError):
+            return ["source checkpoint Ed25519 signature is invalid"]
+        return []
+
     def import_checkpoint_record(
         self,
         encounter_id: str,
@@ -306,28 +329,16 @@ class EncounterCheckpointBackend:
             envelope = json.loads(envelope_json)
         except (TypeError, json.JSONDecodeError):
             raise CheckpointServiceError(422, "MIGRATION_ENVELOPE_INVALID", "Source checkpoint envelope is invalid JSON") from None
-        errors = validate_envelope(envelope, now=datetime.now(timezone.utc))
+        errors = self.validate_import_envelope(envelope)
         if errors:
-            raise CheckpointServiceError(422, "MIGRATION_ENVELOPE_INVALID", "Source checkpoint failed contract validation", errors[:12])
+            raise CheckpointServiceError(
+                422,
+                "MIGRATION_ENVELOPE_OR_SIGNATURE_INVALID",
+                "Source checkpoint failed validation or signature verification",
+                errors[:12],
+            )
 
         payload = envelope["payload"]
-        integrity = envelope["integrity"]
-        verification_key = self.verification_keys.get(integrity.get("keyId", ""))
-        if verification_key is None or integrity.get("algorithm") != "Ed25519":
-            raise CheckpointServiceError(422, "MIGRATION_SIGNING_KEY_UNKNOWN", "Source checkpoint signing key is not in the verification keyring")
-
-        unsigned = {
-            "envelopeVersion": envelope["envelopeVersion"],
-            "payload": payload,
-            "integrity": {
-                "algorithm": integrity["algorithm"],
-                "keyId": integrity["keyId"],
-            },
-        }
-        try:
-            verification_key.verify(_decode_signature(integrity["signature"]), rfc8785.dumps(unsigned))
-        except (InvalidSignature, ValueError):
-            raise CheckpointServiceError(422, "MIGRATION_SIGNATURE_INVALID", "Source checkpoint signature verification failed") from None
 
         if (
             payload.get("encounterId") != encounter_id
