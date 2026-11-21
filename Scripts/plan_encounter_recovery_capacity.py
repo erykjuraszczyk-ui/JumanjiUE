@@ -60,7 +60,7 @@ def _load_inventory(path: Path | None) -> tuple[dict[str, Any] | None, str]:
         inventory = json.loads(raw.decode("utf-8"))
     except (OSError, UnicodeError, json.JSONDecodeError) as error:
         raise CapacityPlanningError(f"Cannot read host inventory: {error}") from None
-    if not isinstance(inventory, dict) or inventory.get("schemaVersion") != 1:
+    if not isinstance(inventory, dict) or type(inventory.get("schemaVersion")) is not int or inventory.get("schemaVersion") != 1:
         raise CapacityPlanningError("Host inventory must be a schemaVersion 1 JSON object")
     required = (
         "hostId", "hostRole", "measuredAtUtc", "osName", "osVersion", "cpuModel",
@@ -200,6 +200,8 @@ def build_capacity_plan(
     safe_encounters = max(0, math.floor(raw_limit * utilization))
 
     status = str(profile.get("Status", "UNBASELINED")).upper()
+    if status not in {"UNBASELINED", "PROPOSED", "APPROVED"}:
+        raise CapacityPlanningError(f"SLO profile status {status} is not eligible for planning")
     slo_assessment = "NOT_ASSESSED"
     observed_against_targets: dict[str, Any] = {}
     if status == "APPROVED":
@@ -260,7 +262,7 @@ def build_capacity_plan(
             "latencyLimitedEncounters": round(latency_limit, 3),
             "testedWorkerLimit": workers,
             "projectedSafeConcurrentEncounters": safe_encounters,
-            "formula": "max(1, floor(min(pairRate * checkpointCadence, cadenceMs / (writeP99 + readP99), testedWorkers) * utilizationFactor))",
+            "formula": "max(0, floor(min(pairRate * checkpointCadence, cadenceMs / (writeP99 + readP99), testedWorkers) * utilizationFactor))",
             "interpretation": "Conservative planning indicator bounded by observed worker concurrency; requires repeated named-host measurements before sizing a deployment.",
         },
         "hostInventoryStatus": "COMPLETE" if inventory else "NOT_PROVIDED",
