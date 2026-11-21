@@ -33,11 +33,16 @@ def migrate_sqlite_store(
     if not source_path.is_file():
         raise FileNotFoundError("Source SQLite database file does not exist")
 
-    digest = hashlib.sha256(source_path.read_bytes()).hexdigest()
+    digest_builder = hashlib.sha256()
+    with source_path.open("rb") as source_stream:
+        for chunk in iter(lambda: source_stream.read(1024 * 1024), b""):
+            digest_builder.update(chunk)
+    digest = digest_builder.hexdigest()
     uri = f"file:{source_path.as_posix()}?mode=ro"
     connection = sqlite3.connect(uri, uri=True, timeout=10.0)
     connection.row_factory = sqlite3.Row
     imported = 0
+    validated_in_dry_run = 0
     already_present = 0
     skipped_empty = 0
     try:
@@ -78,7 +83,7 @@ def migrate_sqlite_store(
                 errors = destination.validate_import_envelope(envelope)
                 if errors:
                     raise RuntimeError(f"Checkpoint {row['encounter_id']} failed verification: {errors[0]}")
-                imported += 1
+                validated_in_dry_run += 1
                 continue
 
             did_import = destination.import_checkpoint_record(
@@ -98,6 +103,7 @@ def migrate_sqlite_store(
         "sourceDatabaseSha256": digest,
         "sourceRows": len(rows),
         "imported": imported,
+        "validatedInDryRun": validated_in_dry_run,
         "alreadyPresent": already_present,
         "skippedWithoutCheckpoint": skipped_empty,
         "dryRun": dry_run,
