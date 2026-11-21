@@ -1,3 +1,23 @@
+from __future__ import annotations
+
+import copy
+import json
+import os
+import threading
+import unittest
+from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+from uuid import uuid4
+
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
+from Backend.EncounterCheckpointService.service import CheckpointServiceError, EncounterCheckpointBackend
+
+ROOT = Path(__file__).resolve().parents[2]
+SERVER_ID = "srv-test-eu-01"
+SHARD_ID = "eu-test-01"
+
 
 @unittest.skipUnless(
     os.environ.get("JUMANJI_TEST_POSTGRES_URL"),
@@ -95,4 +115,36 @@ class PostgreSQLCheckpointProviderTests(unittest.TestCase):
             )
         self.assertEqual(stale.exception.code, "LEASE_INVALID")
 
+    def test_postgres_concurrent_acquire_has_one_owner(self) -> None:
+        other = EncounterCheckpointBackend(
+            None,
+            self.key,
+            "POSTGRES-TEST-KEY-01",
+            database_url=self.database_url,
+            allow_insecure_database=os.environ.get("JUMANJI_CHECKPOINT_ALLOW_INSECURE_DATABASE") == "true",
+        )
+        target = f"ENCOUNTER_PG_RACE_{uuid4().hex[:10].upper()}"
+        barrier = threading.Barrier(2)
 
+        def acquire(backend: EncounterCheckpointBackend, server_id: str) -> str:
+            barrier.wait()
+            try:
+                backend.acquire_lease(
+                    target,
+                    {"serverInstanceId": server_id, "shardId": SHARD_ID, "ttlSeconds": 45},
+                )
+                return "ACQUIRED"
+            except CheckpointServiceError as error:
+                return error.code
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            results = list(pool.map(
+                lambda entry: acquire(entry[0], entry[1]),
+                [(self.backend, "srv-pg-alpha"), (other, "srv-pg-beta")],
+            ))
+        self.assertEqual(results.count("ACQUIRED"), 1)
+        self.assertEqual(results.count("LEASE_HELD"), 1)
+
+
+if __name__ == "__main__":
+    unittest.main()
