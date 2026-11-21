@@ -118,6 +118,9 @@ jobs:
             "CHECKPOINT_PROBE_CLIENT_PRIVATE_KEY_FILE=$temp_dir/probe-client-private-key" \
             "CHECKPOINT_SERVICE_CA_FILE=$temp_dir/service-ca" \
             "CHECKPOINT_INGRESS_NETWORK=ci-checkpoint-ingress" >> "$GITHUB_ENV"
+          set -a
+          source "$GITHUB_ENV"
+          set +a
           docker compose --file Backend/EncounterCheckpointService/compose.production.yml config --quiet
 
       - name: Upload no-secret test summary
