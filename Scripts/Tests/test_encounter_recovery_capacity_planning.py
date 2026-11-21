@@ -98,6 +98,30 @@ class EncounterRecoveryCapacityPlanningTests(unittest.TestCase):
         with self.assertRaises(CapacityPlanningError):
             build_capacity_plan(report, self.profile, "e" * 64)
 
+    def test_inventory_digest_must_match_the_benchmark_report(self) -> None:
+        profile = dict(self.profile)
+        inventory = {
+            "schemaVersion": 1,
+            "hostId": "qa-host-01",
+            "hostRole": "single-host-checkpoint-prototype",
+            "measuredAtUtc": "2026-11-21T12:00:00Z",
+            "osName": "test-os",
+            "osVersion": "test-version",
+            "cpuModel": "test-cpu",
+            "physicalCoreCount": 4,
+            "logicalProcessorCount": 8,
+            "memoryGiB": 16,
+            "storageModel": "test-nvme",
+            "storageType": "NVMe",
+            "filesystem": "test-fs",
+            "pythonVersion": "3.12.test",
+            "sqliteVersion": "3.test",
+            "benchmarkCommitSha": "abcdef0123456789",
+            "benchmarkReportSha256": "1" * 64,
+        }
+        with self.assertRaises(CapacityPlanningError):
+            build_capacity_plan(synthetic_report(), profile, "2" * 64, inventory, "3" * 64)
+
     def test_capacity_can_be_zero_when_checkpoint_cadence_cannot_be_met(self) -> None:
         report = synthetic_report(workers=4)
         report["throughput"]["successful_checkpoint_pairs_per_second"] = 0.001
