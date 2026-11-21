@@ -43,6 +43,7 @@ Open-world third-person adventure RPG prototype with a shared-world direction an
 - Stage 36 — Encounter Startup Coordinator & Participant Barrier: automatic server recovery after profile restore, persistent-level director discovery, staged-candidate retry after each PostLogin and bounded 180-second wait for all checkpoint participants.
 - Stage 37 — Recovery Observability & Operator Controls: secret-free process diagnostics, correlated outcome logs, bounded retry/abort server APIs, operator runbook, source validator and regression CI.
 - Stage 38 — Recovery Chaos Testing & Failure Injection: lost-write-acknowledgement recovery, backend restart durability, SQLite rollback, sequence CAS races, signature/TTL tampering, transport failure and explicit Unreal PIE/manual fault scenarios.
+- Stage 39 — Recovery Load, Soak & Performance Benchmarks: real HTTP/SQLite/Ed25519 service smoke benchmark, per-operation p50/p95/p99 latency, bounded sampling, concurrent workers, lease renewal, load and 30/60-minute soak profiles.
 
 ## The nine playable Great Spirits
 1. Great Spirit I — Duch Korzeni (Root / Guardian)
@@ -116,9 +117,14 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - Docs/STAGE_36_ENCOUNTER_STARTUP_COORDINATOR_PARTICIPANT_BARRIER.md — automatic PostLogin recovery startup, persistent-level director selection, staged participant barrier, bounded timeout and host acceptance tests.
 - Docs/STAGE_37_ENCOUNTER_RECOVERY_OBSERVABILITY_OPERATOR_CONTROLS.md — process-local diagnostics, stable outcome codes, correlated logs, native server-only operator retry/abort controls and recovery runbook.
 - Docs/STAGE_38_RECOVERY_CHAOS_TESTING_FAILURE_INJECTION.md — fault-injection scope, backend integration tests, Unreal manual test run sheet, acceptance criteria and evidence limitations.
+- Docs/STAGE_39_RECOVERY_LOAD_SOAK_PERFORMANCE_BENCHMARKS.md — benchmark scope, metrics, smoke/load/soak profiles, local commands, interpretation and single-host evidence boundaries.
 - Data/Encounter/EncounterRecoveryChaosMatrix.csv — 14 backend, lease, participant, ledger and materialization failure scenarios.
+- Data/Encounter/EncounterRecoveryBenchmarkProfiles.csv — reproducible CI smoke, baseline, load, 30-minute soak and 60-minute soak profiles.
 - Scripts/validate_encounter_recovery_chaos.py and Scripts/Tests/test_validate_encounter_recovery_chaos.py — Stage 38 source/matrix contract validator and regression tests.
 - Scripts/Tests/test_encounter_checkpoint_chaos.py — Stage 38 HTTP/SQLite failure injection for dropped acknowledgements, restart durability, atomic writes, CAS races, signature, expiry and transport failures.
+- Scripts/benchmark_encounter_checkpoint_recovery.py — Stage 39 real-service HTTP/SQLite load and soak benchmark with bounded p50/p95/p99 latency sampling.
+- Scripts/validate_encounter_recovery_benchmark.py and Scripts/Tests/test_validate_encounter_recovery_benchmark.py — Stage 39 benchmark profile and CI wiring validator/tests.
+- Scripts/Tests/test_encounter_recovery_benchmark.py — Stage 39 live local HTTP/SQLite smoke, percentile and bounded-sample tests.
 - Scripts/validate_encounter_startup_coordinator.py and Scripts/Tests/test_validate_encounter_startup_coordinator.py — Stage 36 static startup/recovery validator and regression tests.
 - Scripts/validate_encounter_restore_materialization.py and Scripts/Tests/test_validate_encounter_restore_materialization.py — Stage 35 static source validator and regression tests.
 - Backend/EncounterCheckpointService/README.md — local checkpoint backend setup and server environment.

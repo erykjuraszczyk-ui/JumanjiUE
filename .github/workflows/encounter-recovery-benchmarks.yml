@@ -1,0 +1,97 @@
+name: Encounter Recovery Load, Soak & Performance
+
+on:
+  pull_request:
+    paths:
+      - "Backend/EncounterCheckpointService/**"
+      - "Data/Encounter/EncounterCheckpoint.schema.json"
+      - "Data/Encounter/EncounterCheckpointExample.json"
+      - "Data/Encounter/EncounterRecoveryBenchmarkProfiles.csv"
+      - "Scripts/benchmark_encounter_checkpoint_recovery.py"
+      - "Scripts/validate_encounter_recovery_benchmark.py"
+      - "Scripts/Tests/test_encounter_recovery_benchmark.py"
+      - "Scripts/Tests/test_validate_encounter_recovery_benchmark.py"
+      - "Scripts/Tests/test_encounter_checkpoint_service.py"
+      - "Scripts/Tests/test_encounter_checkpoint_chaos.py"
+      - "Docs/STAGE_39_RECOVERY_LOAD_SOAK_PERFORMANCE_BENCHMARKS.md"
+      - ".github/workflows/encounter-recovery-benchmarks.yml"
+      - ".github/workflows/encounter-recovery-chaos.yml"
+      - "README.md"
+  push:
+    branches: [main]
+    paths:
+      - "Backend/EncounterCheckpointService/**"
+      - "Data/Encounter/EncounterCheckpoint.schema.json"
+      - "Data/Encounter/EncounterCheckpointExample.json"
+      - "Data/Encounter/EncounterRecoveryBenchmarkProfiles.csv"
+      - "Scripts/benchmark_encounter_checkpoint_recovery.py"
+      - "Scripts/validate_encounter_recovery_benchmark.py"
+      - "Scripts/Tests/test_encounter_recovery_benchmark.py"
+      - "Scripts/Tests/test_validate_encounter_recovery_benchmark.py"
+      - "Scripts/Tests/test_encounter_checkpoint_service.py"
+      - "Scripts/Tests/test_encounter_checkpoint_chaos.py"
+      - "Docs/STAGE_39_RECOVERY_LOAD_SOAK_PERFORMANCE_BENCHMARKS.md"
+      - ".github/workflows/encounter-recovery-benchmarks.yml"
+      - ".github/workflows/encounter-recovery-chaos.yml"
+      - "README.md"
+
+permissions:
+  contents: read
+
+jobs:
+  recovery-benchmark:
+    name: Stage 39 benchmark and recovery regression
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install checkpoint backend requirements
+        run: python -m pip install -r Backend/EncounterCheckpointService/requirements.txt
+      - name: Validate Stage 39 benchmark profile and wiring
+        run: python Scripts/validate_encounter_recovery_benchmark.py
+      - name: Run Stage 39 validator tests
+        run: python -m unittest discover -s Scripts/Tests -p "test_validate_encounter_recovery_benchmark.py" -v
+      - name: Run Stage 39 benchmark integration tests
+        run: python -m unittest discover -s Scripts/Tests -p "test_encounter_recovery_benchmark.py" -v
+      - name: Run short real-service benchmark smoke
+        run: |
+          mkdir -p Artifacts
+          python Scripts/benchmark_encounter_checkpoint_recovery.py \
+            --duration-seconds 3 --workers 2 --warmup-iterations 1 \
+            --lease-ttl-seconds 120 --report Artifacts/recovery-benchmark-smoke.json
+      - name: Upload smoke benchmark report
+        uses: actions/upload-artifact@v4
+        with:
+          name: recovery-benchmark-smoke
+          path: Artifacts/recovery-benchmark-smoke.json
+          if-no-files-found: error
+          retention-days: 14
+      - name: Validate Stage 32 contract
+        run: python Scripts/validate_encounter_checkpoint_contract.py
+      - name: Run Stage 32 contract tests
+        run: python -m unittest discover -s Scripts/Tests -p "test_validate_encounter_checkpoint_contract.py" -v
+      - name: Validate and test Stage 33 backend integration
+        run: |
+          python Scripts/validate_encounter_checkpoint_backend.py
+          python -m unittest discover -s Scripts/Tests -p "test_encounter_checkpoint_service.py" -v
+      - name: Validate and test Stage 38 failure injection
+        run: |
+          python Scripts/validate_encounter_recovery_chaos.py
+          python -m unittest discover -s Scripts/Tests -p "test_validate_encounter_recovery_chaos.py" -v
+          python -m unittest discover -s Scripts/Tests -p "test_encounter_checkpoint_chaos.py" -v
+      - name: Validate Stage 34-37 Unreal source contracts
+        run: |
+          python Scripts/validate_encounter_checkpoint_runtime.py
+          python Scripts/validate_encounter_restore_materialization.py
+          python Scripts/validate_encounter_startup_coordinator.py
+          python Scripts/validate_encounter_recovery_observability.py
+      - name: Run Stage 34-37 source regression tests
+        run: |
+          python -m unittest discover -s Scripts/Tests -p "test_validate_encounter_checkpoint_runtime.py" -v
+          python -m unittest discover -s Scripts/Tests -p "test_validate_encounter_restore_materialization.py" -v
+          python -m unittest discover -s Scripts/Tests -p "test_validate_encounter_startup_coordinator.py" -v
+          python -m unittest discover -s Scripts/Tests -p "test_validate_encounter_recovery_observability.py" -v
