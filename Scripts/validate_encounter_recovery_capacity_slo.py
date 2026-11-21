@@ -34,7 +34,7 @@ TARGET_FIELDS = (
 SOURCE_REQUIREMENTS = {
     "Scripts/plan_encounter_recovery_capacity.py": (
         "successful_checkpoint_pairs_per_second", "checkpoint_write", "checkpoint_read",
-        "UNBASELINED", "projected_safe_concurrent_encounters", "report_sha256",
+        "UNBASELINED", "projectedSafeConcurrentEncounters", "report_sha256",
         "hostInventoryStatus", "MAX_UTILIZATION_FACTOR",
     ),
     "Scripts/Tests/test_encounter_recovery_capacity_planning.py": (
