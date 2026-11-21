@@ -78,8 +78,7 @@ class EncounterRecoveryCapacityPlanningTests(unittest.TestCase):
     def test_capacity_never_exceeds_tested_worker_envelope(self) -> None:
         report = synthetic_report(workers=7)
         report["throughput"]["successful_checkpoint_pairs_per_second"] = 100000.0
-        report["operations"]["checkpoint_write"]["p99_ms"] = 0.01
-        report["operations"]["checkpoint_read"]["p99_ms"] = 0.01
+        # Keep p95 <= p99; make measured latency non-limiting without fabricating an invalid percentile order.
         plan = build_capacity_plan(report, self.profile, "c" * 64)
         self.assertLessEqual(
             plan["capacityEnvelope"]["projectedSafeConcurrentEncounters"],
