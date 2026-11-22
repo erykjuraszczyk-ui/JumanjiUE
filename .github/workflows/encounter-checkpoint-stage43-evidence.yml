@@ -1,0 +1,85 @@
+name: Encounter Checkpoint Stage 43 Evidence Gate
+
+on:
+  pull_request:
+    paths:
+      - "Data/Encounter/ProductionReadinessEvidencePacket.*.json"
+      - "Data/Encounter/EncounterCheckpointProductionDeploymentManifest.json"
+      - "Data/Encounter/EncounterCheckpointStage42ReadinessManifest.json"
+      - "Scripts/validate_encounter_checkpoint_stage43*.py"
+      - "Scripts/validate_encounter_checkpoint_staging_report.py"
+      - "Scripts/Tests/test_validate_encounter_checkpoint_stage43_evidence.py"
+      - "Scripts/Tests/test_validate_encounter_checkpoint_stage42.py"
+      - "Scripts/Tests/test_validate_encounter_checkpoint_production.py"
+      - "Docs/STAGE_43_OPERATOR_EVIDENCE_INTAKE_PRODUCTION_READINESS_GATE.md"
+      - ".github/workflows/encounter-checkpoint-stage43-evidence.yml"
+  push:
+    branches: [main]
+    paths:
+      - "Data/Encounter/ProductionReadinessEvidencePacket.*.json"
+      - "Data/Encounter/EncounterCheckpointProductionDeploymentManifest.json"
+      - "Data/Encounter/EncounterCheckpointStage42ReadinessManifest.json"
+      - "Scripts/validate_encounter_checkpoint_stage43*.py"
+      - "Scripts/validate_encounter_checkpoint_staging_report.py"
+      - "Scripts/Tests/test_validate_encounter_checkpoint_stage43_evidence.py"
+      - "Scripts/Tests/test_validate_encounter_checkpoint_stage42.py"
+      - "Scripts/Tests/test_validate_encounter_checkpoint_production.py"
+      - "Docs/STAGE_43_OPERATOR_EVIDENCE_INTAKE_PRODUCTION_READINESS_GATE.md"
+      - ".github/workflows/encounter-checkpoint-stage43-evidence.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate-stage43-evidence-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate JSON schemas and templates
+        run: |
+          python -m json.tool Data/Encounter/ProductionReadinessEvidencePacket.schema.json > /dev/null
+          python -m json.tool Data/Encounter/ProductionReadinessEvidencePacket.template.json > /dev/null
+
+      - name: Preserve Stage 41 production boundary
+        run: python Scripts/validate_encounter_checkpoint_production.py
+
+      - name: Preserve Stage 42 staging/DR boundary
+        run: python Scripts/validate_encounter_checkpoint_stage42.py
+
+      - name: Validate Stage 43 repository governance
+        run: python Scripts/validate_encounter_checkpoint_stage43.py
+
+      - name: Run Stage 41 and Stage 42 governance regression tests
+        run: |
+          python -m unittest discover -s Scripts/Tests -p "test_validate_encounter_checkpoint_production.py" -v
+          python -m unittest discover -s Scripts/Tests -p "test_validate_encounter_checkpoint_stage42.py" -v
+
+      - name: Run Stage 43 evidence intake and integrity tests
+        run: python -m unittest discover -s Scripts/Tests -p "test_validate_encounter_checkpoint_stage43_evidence.py" -v
+
+      - name: Evaluate the repository template (expected BLOCKED, never PASS)
+        run: |
+          mkdir -p "$RUNNER_TEMP/stage43-empty-evidence"
+          python Scripts/validate_encounter_checkpoint_stage43_evidence.py \
+            --packet Data/Encounter/ProductionReadinessEvidencePacket.template.json \
+            --evidence-root "$RUNNER_TEMP/stage43-empty-evidence" \
+            --report "$RUNNER_TEMP/stage43-template-gate.json"
+          python - "$RUNNER_TEMP/stage43-template-gate.json" <<'PY'
+          import json, sys
+          from pathlib import Path
+          report = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+          assert report["outcome"] == "BLOCKED_MISSING_EVIDENCE", report["outcome"]
+          assert report["promotionAllowed"] is False
+          assert report["productionReady"] is False
+          assert report["highAvailabilityApproved"] is False
+          assert report["sloStatus"] == "UNBASELINED"
+          print("Stage 43 template is valid and fail-closed: BLOCKED_MISSING_EVIDENCE")
+          PY
