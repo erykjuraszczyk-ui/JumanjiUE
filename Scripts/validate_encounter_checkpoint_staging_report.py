@@ -91,8 +91,11 @@ def validate_report(report: object) -> list[str]:
     }:
         errors.append("environment has missing or unsupported fields")
     else:
-        if environment["class"] not in {"staging", "ephemeral-ci"}:
-            errors.append("environment class must be staging or ephemeral-ci")
+        allowed_classes = {"staging", "ephemeral-ci"}
+        if environment["class"] not in allowed_classes and not (
+            report.get("result") == "FAIL" and environment["class"] == "unknown"
+        ):
+            errors.append("environment class must be staging/ephemeral-ci, or unknown on a failed preflight")
         if not isinstance(environment["id"], str) or not environment["id"].strip():
             errors.append("environment id is required")
         if environment["storageProvider"] != "postgresql":
