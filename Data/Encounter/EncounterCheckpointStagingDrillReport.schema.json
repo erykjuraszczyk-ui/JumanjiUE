@@ -54,7 +54,8 @@
         "class": {
           "enum": [
             "staging",
-            "ephemeral-ci"
+            "ephemeral-ci",
+            "unknown"
           ]
         },
         "id": {
