@@ -576,18 +576,18 @@ def evaluate_packet(
             except (ValueError, TypeError, AttributeError):
                 evidence_id = "INVALID_EVIDENCE_ID"
             kind = entry.get("kind")
-            if kind in by_kind:
-                rejected.append({"evidenceId": evidence_id, "code": "DUPLICATE_EVIDENCE_KIND"})
-                errors.append(f"DUPLICATE_EVIDENCE_KIND:{kind}")
-                continue
             if evidence_id in seen_ids:
                 errors.append("DUPLICATE_EVIDENCE_ID")
                 rejected.append({"evidenceId": evidence_id, "code": "DUPLICATE_EVIDENCE_ID"})
                 continue
             seen_ids.add(evidence_id)
-            if kind not in REQUIRED_KINDS:
+            if not isinstance(kind, str) or kind not in REQUIRED_KINDS:
                 rejected.append({"evidenceId": evidence_id, "code": "EVIDENCE_KIND_UNSUPPORTED"})
                 errors.append("EVIDENCE_KIND_UNSUPPORTED")
+                continue
+            if kind in by_kind:
+                rejected.append({"evidenceId": evidence_id, "code": "DUPLICATE_EVIDENCE_KIND"})
+                errors.append(f"DUPLICATE_EVIDENCE_KIND:{kind}")
                 continue
             entry_errors = _validate_evidence_entry(entry, evidence_root, packet_environment_id)
             if entry_errors:
@@ -604,6 +604,9 @@ def evaluate_packet(
             review_decision = "NOT_REVIEWED"
         else:
             review_decision = review.get("decision")
+            if not isinstance(review_decision, str):
+                errors.append("REVIEW_DECISION_INVALID")
+                review_decision = "NOT_REVIEWED"
             reviewer_roles = review.get("reviewerRoles")
             if (
                 not isinstance(reviewer_roles, list)
