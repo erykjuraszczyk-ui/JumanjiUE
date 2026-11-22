@@ -453,9 +453,9 @@ def _validate_evidence_entry(
         UUID(str(entry.get("evidenceId", "")))
     except (ValueError, TypeError, AttributeError):
         errors.append("EVIDENCE_ID_INVALID")
-    if entry.get("operatorRole") not in ROLE_VALUES:
+    if not isinstance(entry.get("operatorRole"), str) or entry.get("operatorRole") not in ROLE_VALUES:
         errors.append("EVIDENCE_OPERATOR_ROLE_INVALID")
-    if entry.get("reviewerRole") not in REVIEWER_ROLE_VALUES:
+    if not isinstance(entry.get("reviewerRole"), str) or entry.get("reviewerRole") not in REVIEWER_ROLE_VALUES:
         errors.append("EVIDENCE_REVIEWER_ROLE_INVALID")
     if entry.get("kind") in CRITICAL_EVIDENCE_KINDS and entry.get("reviewerRole") not in {
         "INDEPENDENT_REVIEWER", "SECURITY_REVIEWER", "DATABASE_REVIEWER"
@@ -571,7 +571,10 @@ def evaluate_packet(
             if not isinstance(entry, dict):
                 errors.append("EVIDENCE_ENTRY_MUST_BE_OBJECT")
                 continue
-            evidence_id = str(entry.get("evidenceId", "UNKNOWN"))
+            try:
+                evidence_id = str(UUID(str(entry.get("evidenceId", ""))))
+            except (ValueError, TypeError, AttributeError):
+                evidence_id = "INVALID_EVIDENCE_ID"
             kind = entry.get("kind")
             if kind in by_kind:
                 rejected.append({"evidenceId": evidence_id, "code": "DUPLICATE_EVIDENCE_KIND"})
