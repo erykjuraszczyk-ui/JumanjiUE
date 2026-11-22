@@ -127,18 +127,21 @@ def validate_project(root: Path) -> list[str]:
         errors.append("Stage 42 readiness manifest is invalid JSON")
     if manifest.get("stage") != 42:
         errors.append("Stage 42 readiness manifest must identify stage=42")
-    for key in (
-        "productionReady",
-        "highAvailabilityApproved",
-        "stagingDeploymentVerified",
-        "postgresFailoverDrillCompleted",
-        "pitrRestoreDrillCompleted",
-        "keyRotationOverlapDrillCompleted",
-        "unrealEngineEndpointSmokeCompleted",
-        "androidPackageTestCompleted",
-    ):
+    evidence = manifest.get("evidence", {})
+    required_false_fields = {
+        "stagingDeploymentVerified": "realStagingDeploymentVerified",
+        "postgresFailoverDrillCompleted": "postgresPrimaryFailoverDrillCompleted",
+        "pitrRestoreDrillCompleted": "postgresPitrRestoreDrillCompleted",
+        "keyRotationOverlapDrillCompleted": "signingKeyOverlapRotationDrillCompleted",
+        "unrealEngineEndpointSmokeCompleted": "liveUnrealDedicatedServerRecoveryVerified",
+        "androidPackageTestCompleted": "androidDevicePackageVerified",
+    }
+    for key in ("productionReady", "highAvailabilityApproved"):
         if manifest.get(key) is not False:
             errors.append(f"Stage 42 manifest must keep {key}=false until evidence is attached")
+    for public_key, stored_key in required_false_fields.items():
+        if evidence.get(stored_key) is not False:
+            errors.append(f"Stage 42 manifest must keep evidence.{stored_key}=false ({public_key}) until evidence is attached")
     if manifest.get("sloStatus") != "UNBASELINED":
         errors.append("Stage 42 must retain Stage 40 UNBASELINED SLO governance")
 
