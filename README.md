@@ -48,6 +48,7 @@ Open-world third-person adventure RPG prototype with a shared-world direction an
 - Stage 41 — Production Checkpoint Store Adapter & Deployment Hardening: shared PostgreSQL provider with row locking and fencing, Ed25519 verification-key overlap rotation, TLS/mTLS listener, bounded request concurrency, non-root Docker/Compose, offline SQLite-to-PostgreSQL import and backup/restore runbook; no HA/SLO/production readiness is claimed.
 - Stage 42 — Production Staging Validation & Recovery DR Drills: HTTPS/mTLS/PostgreSQL staging runner, sanitized signed-readback evidence, offline post-restore lease fencing, disposable PostgreSQL integration tests and ephemeral CI; real staging/PITR/failover/UE/Android evidence remains pending, no production or HA/SLO readiness is claimed.
 - Stage 43 — Operator Evidence Intake & Production Readiness Gate: strict evidence packet schema, SHA-256/path/privacy validation, Stage 42 report and fencing verification, UE/Android/SLO evidence contracts and independent two-role review; empty template remains BLOCKED and never changes production/HA/SLO readiness.
+- Stage 44 — Cryptographic Evidence Attestation: packet-bound Ed25519 signatures for operator, evidence reviewer and final release-board roles; RFC 8785 canonicalization, independently pinned public keyring hash, key revocation/role controls and fail-closed attestation validation; no production/HA/SLO promotion.
 
 ## The nine playable Great Spirits
 1. Great Spirit I — Duch Korzeni (Root / Guardian)
@@ -126,6 +127,12 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - Docs/STAGE_41_PRODUCTION_CHECKPOINT_STORE_DEPLOYMENT_HARDENING.md — PostgreSQL provider, mTLS deployment, signing-key rotation, offline SQLite import, backup/restore and operational limitations.
 - Docs/STAGE_42_PRODUCTION_STAGING_VALIDATION_RECOVERY_DR_DRILLS.md — staging smoke runner, sanitized evidence, post-PITR lease fencing, operator failover/restore steps and explicit production readiness gates.
 - Docs/STAGE_43_OPERATOR_EVIDENCE_INTAKE_PRODUCTION_READINESS_GATE.md — required operator evidence packet, evidence provenance classes, report formats, hash checks, dual-role review and fail-closed release gate.
+- Docs/STAGE_44_CRYPTOGRAPHIC_EVIDENCE_ATTESTATION.md — encrypted Ed25519 operator/reviewer signing, RFC 8785 packet binding, out-of-band trust-keyring pinning, key revocation, independent final review and operator runbook.
+- Data/Encounter/ProductionEvidenceTrustKeyring.schema.json and Data/Encounter/ProductionEvidenceTrustKeyring.template.json — strict public-key trust schema and deliberately empty keyring template.
+- Data/Encounter/ProductionEvidenceAttestation.schema.json and Data/Encounter/ProductionEvidenceAttestation.template.json — strict attestation envelope schema and empty signature template.
+- Scripts/encounter_checkpoint_evidence_attestation.py — encrypted key generation, per-evidence operator/reviewer signatures, final review signatures and packet verification.
+- Scripts/validate_encounter_checkpoint_stage44_attestation.py and Scripts/Tests/test_validate_encounter_checkpoint_stage44_attestation.py — fail-closed Stage 44 governance and Ed25519 security regression tests.
+- .github/workflows/encounter-checkpoint-stage44-attestation.yml — CI for Stage 43 packet integrity, Stage 44 signature verification and blocked empty templates.
 - Data/Encounter/ProductionReadinessEvidencePacket.schema.json and Data/Encounter/ProductionReadinessEvidencePacket.template.json — strict Stage43 schema and empty operator packet (awaiting evidence).
 - Scripts/validate_encounter_checkpoint_stage43_evidence.py and Scripts/Tests/test_validate_encounter_checkpoint_stage43_evidence.py — artifact hash/path/privacy checks, Stage42 staging/fencing validation, platform evidence contracts and review gate tests.
 - Scripts/validate_encounter_checkpoint_stage43.py and .github/workflows/encounter-checkpoint-stage43-evidence.yml — static governance validator and CI; CI validates an empty packet as blocked, never as production-ready.
