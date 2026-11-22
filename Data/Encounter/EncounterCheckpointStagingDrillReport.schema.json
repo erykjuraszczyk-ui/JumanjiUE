@@ -1,0 +1,127 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "JUMANJI Checkpoint Staging Drill Report v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "stage",
+    "runId",
+    "startedAtUtc",
+    "completedAtUtc",
+    "result",
+    "environment",
+    "checks",
+    "evidence",
+    "failureCode"
+  ],
+  "properties": {
+    "schema": {
+      "const": "JUMANJI.CheckpointStagingDrillReport.v1"
+    },
+    "stage": {
+      "const": 42
+    },
+    "runId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "startedAtUtc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "completedAtUtc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "result": {
+      "enum": [
+        "PASS",
+        "FAIL"
+      ]
+    },
+    "environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "class",
+        "id",
+        "storageProvider",
+        "serviceHost",
+        "transport"
+      ],
+      "properties": {
+        "class": {
+          "enum": [
+            "staging",
+            "ephemeral-ci"
+          ]
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 96
+        },
+        "storageProvider": {
+          "const": "postgresql"
+        },
+        "serviceHost": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 253
+        },
+        "transport": {
+          "const": "https-mtls"
+        }
+      }
+    },
+    "checks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "status",
+          "durationMs",
+          "detailCode"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]{2,63}$"
+          },
+          "status": {
+            "enum": [
+              "PASS",
+              "FAIL"
+            ]
+          },
+          "durationMs": {
+            "type": "number",
+            "minimum": 0
+          },
+          "detailCode": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "evidence": {
+            "type": "object"
+          }
+        }
+      }
+    },
+    "evidence": {
+      "type": "object"
+    },
+    "failureCode": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 128
+    }
+  }
+}
