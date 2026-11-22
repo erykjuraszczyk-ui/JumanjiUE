@@ -301,6 +301,25 @@ class Stage43EvidenceGateTests(unittest.TestCase):
             result["errors"],
         )
 
+    def test_malformed_evidence_kind_is_rejected_without_crashing(self) -> None:
+        packet_path = ROOT / "Data/Encounter/ProductionReadinessEvidencePacket.template.json"
+        packet = json.loads(packet_path.read_text(encoding="utf-8"))
+        packet["entries"] = [{"evidenceId": str(uuid4()), "kind": {"bad": "shape"}}]
+        with tempfile.TemporaryDirectory() as folder:
+            result = MODULE.evaluate_packet(packet, Path(folder), ROOT)
+        self.assertIn("EVIDENCE_KIND_UNSUPPORTED", result["errors"])
+
+    def test_malformed_review_values_are_rejected_without_crashing(self) -> None:
+        packet_path = ROOT / "Data/Encounter/ProductionReadinessEvidencePacket.template.json"
+        packet = json.loads(packet_path.read_text(encoding="utf-8"))
+        packet["review"]["decision"] = {"bad": "shape"}
+        packet["review"]["reviewerRoles"] = [{"bad": "role"}]
+        with tempfile.TemporaryDirectory() as folder:
+            result = MODULE.evaluate_packet(packet, Path(folder), ROOT)
+        self.assertEqual(result["outcome"], "INVALID_PACKET")
+        self.assertTrue(any("REVIEW_DECISION_INVALID" in error for error in result["errors"]))
+        self.assertTrue(any("FINAL_REVIEWER_ROLES_INVALID" in error for error in result["errors"]))
+
     def test_stage41_and_stage42_manifests_must_remain_fail_closed(self) -> None:
         errors = MODULE.validate_project_boundaries(ROOT)
         self.assertEqual(errors, [])
