@@ -1,0 +1,15 @@
+TestId,DeviceProfile,Orientation,Viewport,HUDScale,TouchTargetScale,HighContrast,ReduceMotion,SafeAreaCase,ExpectedResult,ExecutionStatus
+HUDQA-001,AndroidCompact,Landscape,1280x720,1.0,1.0,false,false,NoCutout,All five slots visible with no overlap; touch targets remain separate,NOT_RUN
+HUDQA-002,AndroidCompact,Portrait,720x1280,1.0,1.0,false,false,GestureInset,Ability row stays above system gesture region,NOT_RUN
+HUDQA-003,Android1080,Landscape,2400x1080,1.0,1.0,false,false,NoCutout,Primary and utility slots do not cover center gameplay area,NOT_RUN
+HUDQA-004,Android1080,Portrait,1080x2400,1.0,1.0,false,false,CameraCutout,All UI is inside SafeZone and no text clips,NOT_RUN
+HUDQA-005,Android1080,Landscape,2400x1080,1.35,1.5,false,false,GestureInset,No hit-test overlap between slots joystick and system gestures,NOT_RUN
+HUDQA-006,Android1080,Portrait,1080x2400,0.75,0.85,true,false,CameraCutout,Text remains legible; smallest allowed target still usable,NOT_RUN
+HUDQA-007,Android1080,Landscape,2400x1080,1.0,1.0,true,true,NoCutout,High contrast is visible and activation pulse is suppressed,NOT_RUN
+HUDQA-008,Android1080,Portrait,1080x2400,1.0,1.0,false,true,GestureInset,No motion pulse; state text and input feedback remain,NOT_RUN
+HUDQA-009,DeviceWithCutout,Landscape,2340x1080,1.0,1.0,false,false,CameraCutout,SafeZone protects corner HUD and notifications,NOT_RUN
+HUDQA-010,DeviceWithRoundedCorners,Portrait,1080x2340,1.0,1.0,false,false,GestureInset,No controls are clipped by rounded corners or gesture bar,NOT_RUN
+HUDQA-011,REDMAGIC7_Android13,Landscape,2400x1080,1.0,1.0,false,false,GestureInset,Stable layout and responsive touch on reference phone,NOT_RUN
+HUDQA-012,REDMAGIC7_Android13,Portrait,1080x2400,1.0,1.0,false,false,CameraCutout,Rotation preserves settings and HUD state,NOT_RUN
+HUDQA-013,SettingsPersistence,Landscape,2400x1080,1.2,1.25,true,true,NoCutout,Values survive application restart and reset restores HUD-only defaults,NOT_RUN
+HUDQA-014,RotationPersistence,Portrait,1080x2400,0.9,1.1,false,true,GestureInset,Orientation changes do not reset saved preferences or GAS state,NOT_RUN
