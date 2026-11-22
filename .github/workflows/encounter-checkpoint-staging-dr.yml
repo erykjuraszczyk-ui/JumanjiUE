@@ -1,0 +1,249 @@
+name: Encounter Checkpoint Staging & DR Validation
+
+on:
+  pull_request:
+    paths:
+      - "Backend/EncounterCheckpointService/**"
+      - "Data/Encounter/EncounterCheckpoint*.json"
+      - "Docs/STAGE_42_PRODUCTION_STAGING_VALIDATION_RECOVERY_DR_DRILLS.md"
+      - "Scripts/run_encounter_checkpoint_staging_drill.py"
+      - "Scripts/fence_checkpoint_leases_after_restore.py"
+      - "Scripts/validate_encounter_checkpoint_staging_report.py"
+      - "Scripts/validate_encounter_checkpoint_stage42.py"
+      - "Scripts/Tests/test_encounter_checkpoint_stage42.py"
+      - "Scripts/Tests/test_checkpoint_postgres_restore_fencing.py"
+      - "Scripts/Tests/test_validate_encounter_checkpoint_stage42.py"
+      - ".github/workflows/encounter-checkpoint-staging-dr.yml"
+  push:
+    branches: [main]
+    paths:
+      - "Backend/EncounterCheckpointService/**"
+      - "Data/Encounter/EncounterCheckpoint*.json"
+      - "Docs/STAGE_42_PRODUCTION_STAGING_VALIDATION_RECOVERY_DR_DRILLS.md"
+      - "Scripts/run_encounter_checkpoint_staging_drill.py"
+      - "Scripts/fence_checkpoint_leases_after_restore.py"
+      - "Scripts/validate_encounter_checkpoint_staging_report.py"
+      - "Scripts/validate_encounter_checkpoint_stage42.py"
+      - "Scripts/Tests/test_encounter_checkpoint_stage42.py"
+      - "Scripts/Tests/test_checkpoint_postgres_restore_fencing.py"
+      - "Scripts/Tests/test_validate_encounter_checkpoint_stage42.py"
+      - ".github/workflows/encounter-checkpoint-staging-dr.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  stage42-staging-dr:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      JUMANJI_TEST_POSTGRES_URL: postgresql://postgres:postgres@127.0.0.1:5432/postgres?sslmode=disable
+      JUMANJI_CHECKPOINT_ALLOW_INSECURE_DATABASE: "true"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install checkpoint service dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r Backend/EncounterCheckpointService/requirements.txt
+
+      - name: Validate Stage 32 and Stage 41 boundaries
+        run: |
+          python Scripts/validate_encounter_checkpoint_contract.py
+          python Scripts/validate_encounter_checkpoint_backend.py
+          python Scripts/validate_encounter_checkpoint_production.py
+          python Scripts/validate_encounter_checkpoint_stage42.py
+
+      - name: Run Stage 42 report, signature, privacy and governance tests
+        run: |
+          python -m unittest discover -s Scripts/Tests -p "test_encounter_checkpoint_stage42.py" -v
+          python -m unittest discover -s Scripts/Tests -p "test_validate_encounter_checkpoint_stage42.py" -v
+
+      - name: Run Stage 33 SQLite backend regression suite
+        run: |
+          python -m unittest discover -s Scripts/Tests -p "test_encounter_checkpoint_service.py" -v
+
+      - name: Run Stage 41 PostgreSQL provider regression suite
+        run: |
+          python -m unittest discover -s Scripts/Tests -p "test_encounter_checkpoint_postgres.py" -v
+
+      - name: Run Stage 42 PostgreSQL restore fencing integration tests
+        run: |
+          python -m unittest discover -s Scripts/Tests -p "test_checkpoint_postgres_restore_fencing.py" -v
+
+      - name: Run ephemeral HTTPS/mTLS/PostgreSQL staging drill
+        shell: bash
+        run: |
+          set -euo pipefail
+          WORK="$RUNNER_TEMP/stage42"
+          mkdir -p "$WORK"
+          chmod 700 "$WORK"
+
+          # All credentials and private material are generated only inside this ephemeral runner.
+          openssl req -x509 -newkey rsa:2048 -nodes \
+            -keyout "$WORK/ca.key" -out "$WORK/ca.pem" \
+            -subj "/CN=JUMANJI Stage42 Ephemeral CI CA" -days 2
+
+          openssl req -newkey rsa:2048 -nodes \
+            -keyout "$WORK/server.key" -out "$WORK/server.csr" \
+            -subj "/CN=localhost"
+          printf '%s\n' \
+            "subjectAltName=DNS:localhost,IP:127.0.0.1" \
+            "extendedKeyUsage=serverAuth" > "$WORK/server.ext"
+          openssl x509 -req -in "$WORK/server.csr" \
+            -CA "$WORK/ca.pem" -CAkey "$WORK/ca.key" -CAcreateserial \
+            -out "$WORK/server.pem" -days 2 -sha256 -extfile "$WORK/server.ext"
+
+          openssl req -newkey rsa:2048 -nodes \
+            -keyout "$WORK/client.key" -out "$WORK/client.csr" \
+            -subj "/CN=JUMANJI Stage42 Ephemeral Client"
+          printf '%s\n' "extendedKeyUsage=clientAuth" > "$WORK/client.ext"
+          openssl x509 -req -in "$WORK/client.csr" \
+            -CA "$WORK/ca.pem" -CAkey "$WORK/ca.key" -CAcreateserial \
+            -out "$WORK/client.pem" -days 2 -sha256 -extfile "$WORK/client.ext"
+
+          python - "$WORK" <<'PY'
+          import json, os, secrets, sys
+          from pathlib import Path
+          from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+          from cryptography.hazmat.primitives import serialization
+
+          root = Path(sys.argv[1])
+          signing_key = Ed25519PrivateKey.generate()
+          private_path = root / "signing-private.pem"
+          public_path = root / "signing-public.pem"
+          private_path.write_bytes(signing_key.private_bytes(
+              encoding=serialization.Encoding.PEM,
+              format=serialization.PrivateFormat.PKCS8,
+              encryption_algorithm=serialization.NoEncryption(),
+          ))
+          public_path.write_bytes(signing_key.public_key().public_bytes(
+              encoding=serialization.Encoding.PEM,
+              format=serialization.PublicFormat.SubjectPublicKeyInfo,
+          ))
+          (root / "verification-keyring.json").write_text(json.dumps({
+              "keys": [{
+                  "keyId": "STAGE42-CI-ACTIVE-KEY",
+                  "publicKeyFile": str(public_path),
+              }]
+          }), encoding="utf-8")
+          token_path = root / "server-token"
+          token_path.write_text(secrets.token_urlsafe(48), encoding="utf-8")
+          for path in (private_path, token_path, root / "client.key", root / "server.key", root / "ca.key"):
+              os.chmod(path, 0o600)
+          for path in (root / "ca.pem", root / "server.pem", root / "client.pem", public_path, root / "verification-keyring.json"):
+              os.chmod(path, 0o644)
+          (root / "database-url").write_text(
+              os.environ["JUMANJI_TEST_POSTGRES_URL"], encoding="utf-8"
+          )
+          os.chmod(root / "database-url", 0o600)
+          PY
+
+          export JUMANJI_CHECKPOINT_BIND_HOST=127.0.0.1
+          export JUMANJI_CHECKPOINT_BIND_PORT=8787
+          export JUMANJI_CHECKPOINT_MAX_CONCURRENCY=16
+          export JUMANJI_CHECKPOINT_DATABASE_URL_FILE="$WORK/database-url"
+          export JUMANJI_CHECKPOINT_ALLOW_INSECURE_DATABASE=true
+          export JUMANJI_CHECKPOINT_SIGNING_PRIVATE_KEY_FILE="$WORK/signing-private.pem"
+          export JUMANJI_CHECKPOINT_KEY_ID=STAGE42-CI-ACTIVE-KEY
+          export JUMANJI_CHECKPOINT_SERVER_TOKEN_FILE="$WORK/server-token"
+          export JUMANJI_CHECKPOINT_TLS_CERT_FILE="$WORK/server.pem"
+          export JUMANJI_CHECKPOINT_TLS_KEY_FILE="$WORK/server.key"
+          export JUMANJI_CHECKPOINT_MTLS_CA_FILE="$WORK/ca.pem"
+          export JUMANJI_CHECKPOINT_MTLS_REQUIRED=true
+
+          python Backend/EncounterCheckpointService/service.py > "$WORK/checkpoint-service.log" 2>&1 &
+          SERVICE_PID=$!
+          cleanup() {
+            kill "$SERVICE_PID" 2>/dev/null || true
+            wait "$SERVICE_PID" 2>/dev/null || true
+          }
+          trap cleanup EXIT
+
+          export JUMANJI_STAGING_BASE_URL=https://localhost:8787
+          export JUMANJI_STAGING_ENVIRONMENT_CLASS=ephemeral-ci
+          export JUMANJI_STAGING_ENVIRONMENT_ID="gha-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          export JUMANJI_STAGING_SERVER_TOKEN_FILE="$WORK/server-token"
+          export JUMANJI_STAGING_CA_FILE="$WORK/ca.pem"
+          export JUMANJI_STAGING_CLIENT_CERT_FILE="$WORK/client.pem"
+          export JUMANJI_STAGING_CLIENT_KEY_FILE="$WORK/client.key"
+          export JUMANJI_STAGING_VERIFY_KEYRING_FILE="$WORK/verification-keyring.json"
+          export JUMANJI_STAGING_SERVER_INSTANCE_ID=srv-stage42-ci
+          export JUMANJI_STAGING_SHARD_ID=stage42-ci-shard
+          export JUMANJI_STAGING_SERVER_BUILD_ID=JUMANJI-STAGE42-CI
+          export JUMANJI_STAGING_RULESET_VERSION=ruleset-stage42-v1
+          export JUMANJI_STAGING_WORLD_CONTENT_VERSION=world-stage42-v1
+
+          READY=0
+          for attempt in $(seq 1 40); do
+            if python - <<'PY'
+          import os, ssl, urllib.request
+          context = ssl.create_default_context(cafile=os.environ["JUMANJI_STAGING_CA_FILE"])
+          context.load_cert_chain(
+              os.environ["JUMANJI_STAGING_CLIENT_CERT_FILE"],
+              os.environ["JUMANJI_STAGING_CLIENT_KEY_FILE"],
+          )
+          try:
+              with urllib.request.urlopen(
+                  "https://localhost:8787/readyz", context=context, timeout=2
+              ) as response:
+                  raise SystemExit(0 if response.status == 200 else 1)
+          except Exception:
+              raise SystemExit(1)
+          PY
+            then
+              READY=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "$READY" -ne 1 ]; then
+            echo "Checkpoint service did not become ready."
+            exit 1
+          fi
+
+          mkdir -p "$WORK/reports"
+          set +e
+          python Scripts/run_encounter_checkpoint_staging_drill.py \
+            --confirm-staging-mutations \
+            --report "$WORK/reports/stage42-staging-drill-report.json"
+          DRILL_EXIT=$?
+          python Scripts/validate_encounter_checkpoint_staging_report.py \
+            "$WORK/reports/stage42-staging-drill-report.json"
+          REPORT_EXIT=$?
+          set -e
+          echo "DRILL_EXIT=$DRILL_EXIT" >> "$GITHUB_ENV"
+          echo "REPORT_EXIT=$REPORT_EXIT" >> "$GITHUB_ENV"
+          if [ "$DRILL_EXIT" -ne 0 ] || [ "$REPORT_EXIT" -ne 0 ]; then
+            exit 1
+          fi
+
+      - name: Upload sanitized Stage 42 ephemeral drill report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage42-ephemeral-staging-drill-${{ github.run_id }}
+          path: ${{ runner.temp }}/stage42/reports/stage42-staging-drill-report.json
+          if-no-files-found: warn
+          retention-days: 30
