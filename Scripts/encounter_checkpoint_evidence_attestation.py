@@ -271,7 +271,11 @@ def _verify_signature(
     if error:
         return None, error
     assert record is not None
-    if _parse_utc(signature["signedAtUtc"]) < _parse_utc(not_before):
+    signed_time = _parse_utc(signature["signedAtUtc"])
+    boundary_time = _parse_utc(not_before)
+    if boundary_time is None:
+        return None, "SIGNATURE_TIME_BOUNDARY_INVALID"
+    if signed_time is None or signed_time < boundary_time:
         return None, "SIGNATURE_PREDATES_EVIDENCE_OR_REVIEW"
     signed_payload = dict(payload)
     signed_payload["signedAtUtc"] = signature["signedAtUtc"]
@@ -451,6 +455,9 @@ def verify_attestations(
 
     for extra_id in set(entry_map) - valid_packet_ids:
         errors.append("ATTESTATION_REFERENCES_UNKNOWN_EVIDENCE")
+    for reviewer_key_id, reviewer_public_key in reviewer_keys_by_entry:
+        if reviewer_key_id in operator_key_ids or reviewer_public_key in operator_public_keys:
+            errors.append("ENTRY_SIGNERS_NOT_INDEPENDENT")
 
     final_map: dict[str, dict[str, Any]] = {}
     for record in final_records:
@@ -642,6 +649,10 @@ def sign_final_review(
     review = packet.get("review")
     if not isinstance(review, dict) or review.get("decision") not in {"APPROVED", "REJECTED"}:
         raise AttestationError("PACKET_REVIEW_NOT_FINAL")
+    from validate_encounter_checkpoint_stage43_evidence import evaluate_packet
+    stage43_result = evaluate_packet(packet, Path("."), ROOT)
+    if stage43_result.get("outcome") != "ELIGIBLE_FOR_FINAL_RELEASE_BOARD_REVIEW":
+        raise AttestationError("STAGE43_PACKET_NOT_ELIGIBLE_FOR_REVIEW_SIGNATURE")
     if reviewer_role not in review.get("reviewerRoles", []):
         raise AttestationError("FINAL_REVIEW_ROLE_NOT_IN_PACKET")
     index, errors = _keyring_index(keyring)
