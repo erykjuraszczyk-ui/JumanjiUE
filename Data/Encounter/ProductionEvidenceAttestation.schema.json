@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "JUMANJI Production Evidence Attestation Envelope v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "packetId",
+    "packetSha256",
+    "canonicalization",
+    "entryAttestations",
+    "finalReviewSignatures"
+  ],
+  "properties": {
+    "schema": { "const": "JUMANJI.ProductionEvidenceAttestation.v1" },
+    "packetId": { "type": ["string", "null"], "format": "uuid" },
+    "packetSha256": {
+      "type": ["string", "null"],
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "canonicalization": { "const": "RFC8785" },
+    "entryAttestations": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/entryAttestation" }
+    },
+    "finalReviewSignatures": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/finalReviewSignature" }
+    }
+  },
+  "$defs": {
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["keyId", "signedAtUtc", "signatureBase64"],
+      "properties": {
+        "keyId": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 96,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{2,95}$"
+        },
+        "signedAtUtc": { "type": "string", "format": "date-time" },
+        "signatureBase64": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9+/]{86}==$"
+        }
+      }
+    },
+    "entryAttestation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["evidenceId", "operator", "reviewer"],
+      "properties": {
+        "evidenceId": { "type": "string", "format": "uuid" },
+        "operator": {
+          "anyOf": [
+            { "$ref": "#/$defs/signature" },
+            { "type": "null" }
+          ]
+        },
+        "reviewer": {
+          "anyOf": [
+            { "$ref": "#/$defs/signature" },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "finalReviewSignature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reviewerRole", "keyId", "signedAtUtc", "signatureBase64"],
+      "properties": {
+        "reviewerRole": {
+          "enum": [
+            "SERVICE_OWNER",
+            "SECURITY_REVIEWER",
+            "DATABASE_REVIEWER",
+            "PLATFORM_REVIEWER",
+            "QA_REVIEWER"
+          ]
+        },
+        "keyId": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 96,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{2,95}$"
+        },
+        "signedAtUtc": { "type": "string", "format": "date-time" },
+        "signatureBase64": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9+/]{86}==$"
+        }
+      }
+    }
+  }
+}
