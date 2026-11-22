@@ -12,7 +12,7 @@ import hashlib
 import json
 import re
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
 from typing import Any
 from uuid import UUID
@@ -190,7 +190,7 @@ def _aware_utc(value: object) -> bool:
         parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
     except ValueError:
         return False
-    return parsed.tzinfo is not None and parsed.utcoffset() is not None
+    return parsed.tzinfo is not None and parsed.utcoffset() is not None and parsed.utcoffset().total_seconds() == 0
 
 
 def _forbidden_keys(value: object, location: str = "$") -> list[str]:
@@ -602,7 +602,10 @@ def evaluate_packet(
         else:
             review_decision = review.get("decision")
             reviewer_roles = review.get("reviewerRoles")
-            if not isinstance(reviewer_roles, list) or any(role not in FINAL_REVIEW_ROLES for role in reviewer_roles):
+            if (
+                not isinstance(reviewer_roles, list)
+                or any(not isinstance(role, str) or role not in FINAL_REVIEW_ROLES for role in reviewer_roles)
+            ):
                 errors.append("FINAL_REVIEWER_ROLES_INVALID")
                 reviewer_roles = []
             if len(set(reviewer_roles)) != len(reviewer_roles):
@@ -644,7 +647,7 @@ def evaluate_packet(
         "schema": GATE_SCHEMA,
         "stage": 43,
         "packetId": packet_id or None,
-        "evaluatedAtUtc": datetime.now().astimezone().isoformat(),
+        "evaluatedAtUtc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "outcome": outcome,
         "productionReady": False,
         "highAvailabilityApproved": False,
