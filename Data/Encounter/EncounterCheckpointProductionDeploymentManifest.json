@@ -1,0 +1,115 @@
+{
+  "schema": "JUMANJI.CheckpointProductionHardening.v1",
+  "stage": 41,
+  "status": "IMPLEMENTED_WITH_STAGING_AND_PRODUCTION_ACCEPTANCE_PENDING",
+  "productionReady": false,
+  "highAvailabilityApproved": false,
+  "sloStatus": "UNBASELINED",
+  "providers": {
+    "sqlite": {
+      "enabled": true,
+      "purpose": "local development, unit tests, single-host prototype only",
+      "journalMode": "WAL",
+      "multiHostSafe": false
+    },
+    "postgresql": {
+      "enabled": true,
+      "purpose": "shared transactional checkpoint store",
+      "driver": "psycopg3",
+      "requiresSslModeVerifyFull": true,
+      "explicitDevelopmentOverride": "JUMANJI_CHECKPOINT_ALLOW_INSECURE_DATABASE=true",
+      "rowLocking": "SELECT FOR UPDATE",
+      "fencingAndSequenceCas": true,
+      "schemaMigrationTable": "checkpoint_schema_migrations",
+      "connectionPoolImplemented": false
+    }
+  },
+  "transport": {
+    "tlsMinimumVersion": "TLSv1.2",
+    "nonLoopbackBindRequiresTls": true,
+    "nonLoopbackBindRequiresClientCertificate": true,
+    "mtlsEnvironment": "JUMANJI_CHECKPOINT_MTLS_REQUIRED=true",
+    "applicationBearerTokenRetained": true,
+    "hostPublishedPorts": false,
+    "healthEndpoint": "/healthz",
+    "readinessEndpoint": "/readyz"
+  },
+  "processLimits": {
+    "maxConcurrentRequestsEnvironment": "JUMANJI_CHECKPOINT_MAX_CONCURRENCY",
+    "maxConcurrentRequestsRange": [
+      1,
+      1024
+    ],
+    "composeRequiresExplicitValue": true,
+    "socketTimeoutSeconds": 10,
+    "maxRequestBodyBytes": 1048576,
+    "queueCapacity": 128,
+    "overloadResponse": 503
+  },
+  "secrets": {
+    "fileBasedEnvironmentSupported": true,
+    "containerSecretsMountedReadOnly": true,
+    "privateSigningKeyInImage": false,
+    "bearerTokenInImage": false,
+    "databaseUrlInImage": false,
+    "publicVerificationKeyring": "Data/Encounter/EncounterCheckpointVerificationKeyringTemplate.json",
+    "kmsOrHsmIntegrated": false
+  },
+  "signingKeyRotation": {
+    "algorithm": "Ed25519",
+    "activePrivateKeyEnvironment": "JUMANJI_CHECKPOINT_SIGNING_PRIVATE_KEY_FILE",
+    "activeKeyIdEnvironment": "JUMANJI_CHECKPOINT_KEY_ID",
+    "oldPublicKeysLoadedFrom": "JUMANJI_CHECKPOINT_VERIFY_KEYRING_FILE",
+    "overlapRotationSupported": true,
+    "automatedRotationOrRevocation": false,
+    "kmsOrHsmIntegrated": false
+  },
+  "migration": {
+    "tool": "Scripts/migrate_encounter_checkpoint_store.py",
+    "direction": "SQLite to PostgreSQL",
+    "mode": "offline_write_frozen",
+    "verifiesSchemaTtlKeyIdAndEd25519": true,
+    "preservesCheckpointEnvelopeSequenceAndAuthorityEpoch": true,
+    "transfersActiveLease": false,
+    "transfersLeaseTokensOrHashes": false,
+    "destinationConflictPolicy": "reject_non_identical_record",
+    "dryRunSupported": true
+  },
+  "backupAndRecovery": {
+    "backupOrchestratorImplemented": false,
+    "pgDumpAndPgRestoreRunbookProvided": true,
+    "walArchiveAndPointInTimeRecoveryProvidedByDatabaseOperator": true,
+    "restoreDrillCompleted": false,
+    "sqliteOnlineBackupRunbookProvided": true
+  },
+  "deployment": {
+    "dockerfile": "Backend/EncounterCheckpointService/Dockerfile",
+    "compose": "Backend/EncounterCheckpointService/compose.production.yml",
+    "imageUserUid": 10001,
+    "readOnlyRootFilesystem": true,
+    "droppedLinuxCapabilities": true,
+    "noNewPrivileges": true,
+    "externalIngressNetworkRequired": true,
+    "postgresClusterProvisionedByRepository": false,
+    "productionRegistryPublish": false
+  },
+  "tests": {
+    "sqliteUnitTests": "Scripts/Tests/test_encounter_checkpoint_service.py",
+    "postgresIntegrationTests": "Scripts/Tests/test_encounter_checkpoint_postgres.py",
+    "postgresTestsRequire": "JUMANJI_TEST_POSTGRES_URL",
+    "migrationIntegrationIncluded": true,
+    "composeConfigurationValidationPlannedInCi": true,
+    "unrealEngineBuildPerformed": false,
+    "realStagingDeploymentPerformed": false,
+    "productionDeploymentPerformed": false
+  },
+  "mandatoryFollowUp": [
+    "Run Stage 41 PostgreSQL integration tests in CI and on representative staging infrastructure",
+    "Provision PostgreSQL backups, WAL archiving, PITR, failover and restore drills",
+    "Integrate external KMS/HSM and auditable key rotation before production secrets are issued",
+    "Add authenticated per-service certificate identity and authorization mapping",
+    "Measure connection count, pooling, throughput, p95/p99 and overload under representative traffic",
+    "Validate Unreal Engine 5.8 dedicated-server recovery against the deployed HTTPS/mTLS endpoint",
+    "Do not approve production SLO or concurrency capacity from CI smoke results"
+  ]
+}

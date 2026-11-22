@@ -1,0 +1,137 @@
+name: Encounter Checkpoint Production Hardening
+
+on:
+  pull_request:
+    paths:
+      - "Backend/EncounterCheckpointService/**"
+      - "Data/Encounter/EncounterCheckpointProductionDeploymentManifest.json"
+      - "Data/Encounter/EncounterCheckpointVerificationKeyringTemplate.json"
+      - "Scripts/migrate_encounter_checkpoint_store.py"
+      - "Scripts/validate_encounter_checkpoint_backend.py"
+      - "Scripts/validate_encounter_checkpoint_production.py"
+      - "Scripts/Tests/test_encounter_checkpoint_service.py"
+      - "Scripts/Tests/test_encounter_checkpoint_postgres.py"
+      - "Scripts/Tests/test_validate_encounter_checkpoint_production.py"
+      - "Docs/STAGE_41_PRODUCTION_CHECKPOINT_STORE_DEPLOYMENT_HARDENING.md"
+      - ".dockerignore"
+      - ".github/workflows/encounter-checkpoint-production-hardening.yml"
+      - "README.md"
+  push:
+    branches: [main]
+    paths:
+      - "Backend/EncounterCheckpointService/**"
+      - "Data/Encounter/EncounterCheckpointProductionDeploymentManifest.json"
+      - "Data/Encounter/EncounterCheckpointVerificationKeyringTemplate.json"
+      - "Scripts/migrate_encounter_checkpoint_store.py"
+      - "Scripts/validate_encounter_checkpoint_backend.py"
+      - "Scripts/validate_encounter_checkpoint_production.py"
+      - "Scripts/Tests/test_encounter_checkpoint_service.py"
+      - "Scripts/Tests/test_encounter_checkpoint_postgres.py"
+      - "Scripts/Tests/test_validate_encounter_checkpoint_production.py"
+      - "Docs/STAGE_41_PRODUCTION_CHECKPOINT_STORE_DEPLOYMENT_HARDENING.md"
+      - ".dockerignore"
+      - ".github/workflows/encounter-checkpoint-production-hardening.yml"
+      - "README.md"
+
+permissions:
+  contents: read
+
+jobs:
+  backend-and-deployment:
+    name: SQLite regression, PostgreSQL integration and deployment validation
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: jumanji_checkpoint_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d jumanji_checkpoint_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 15
+    env:
+      JUMANJI_TEST_POSTGRES_URL: postgresql://postgres:postgres@127.0.0.1:5432/jumanji_checkpoint_test?sslmode=disable
+      JUMANJI_CHECKPOINT_ALLOW_INSECURE_DATABASE: "true"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install backend dependencies
+        run: python -m pip install -r Backend/EncounterCheckpointService/requirements.txt
+
+      - name: Validate Stage 33 adapter and Stage 41 production boundary
+        run: |
+          python Scripts/validate_encounter_checkpoint_contract.py
+          python Scripts/validate_encounter_checkpoint_backend.py
+          python Scripts/validate_encounter_checkpoint_production.py
+
+      - name: Run SQLite service, signature and key-rotation tests
+        run: python -m unittest discover -s Scripts/Tests -p "test_encounter_checkpoint_service.py" -v
+
+      - name: Run PostgreSQL transaction, fencing, migration and concurrency integration tests
+        run: python -m unittest discover -s Scripts/Tests -p "test_encounter_checkpoint_postgres.py" -v
+
+      - name: Run Stage 41 production-boundary tests
+        run: python -m unittest discover -s Scripts/Tests -p "test_validate_encounter_checkpoint_production.py" -v
+
+      - name: Verify migration CLI is executable
+        run: python Scripts/migrate_encounter_checkpoint_store.py --help
+
+      - name: Build non-root checkpoint service image
+        run: docker build --file Backend/EncounterCheckpointService/Dockerfile --tag jumanji/encounter-checkpoint-service:stage41-ci .
+
+      - name: Validate production Compose configuration without deploying
+        shell: bash
+        run: |
+          set -euo pipefail
+          temp_dir="$(mktemp -d)"
+          mkdir -p "$temp_dir/keyring"
+          printf '{"keys":[]}\n' > "$temp_dir/keyring/checkpoint-verification-keyring.json"
+          for name in \
+            server-token signing-private-key database-url postgres-ca \
+            server-cert server-private-key trusted-client-ca \
+            probe-client-cert probe-client-private-key service-ca; do
+            printf 'CI-PLACEHOLDER-NOT-A-REAL-SECRET\n' > "$temp_dir/$name"
+          done
+          printf '%s\n' \
+            "CHECKPOINT_MAX_CONCURRENCY=8" \
+            "CHECKPOINT_ACTIVE_KEY_ID=CI-PLACEHOLDER-KEY" \
+            "CHECKPOINT_VERIFY_KEYRING_DIRECTORY=$temp_dir/keyring" \
+            "CHECKPOINT_SERVER_TOKEN_FILE=$temp_dir/server-token" \
+            "CHECKPOINT_SIGNING_PRIVATE_KEY_FILE=$temp_dir/signing-private-key" \
+            "CHECKPOINT_DATABASE_URL_FILE=$temp_dir/database-url" \
+            "CHECKPOINT_POSTGRES_CA_FILE=$temp_dir/postgres-ca" \
+            "CHECKPOINT_SERVER_CERTIFICATE_FILE=$temp_dir/server-cert" \
+            "CHECKPOINT_SERVER_PRIVATE_KEY_FILE=$temp_dir/server-private-key" \
+            "CHECKPOINT_TRUSTED_CLIENT_CA_FILE=$temp_dir/trusted-client-ca" \
+            "CHECKPOINT_PROBE_CLIENT_CERTIFICATE_FILE=$temp_dir/probe-client-cert" \
+            "CHECKPOINT_PROBE_CLIENT_PRIVATE_KEY_FILE=$temp_dir/probe-client-private-key" \
+            "CHECKPOINT_SERVICE_CA_FILE=$temp_dir/service-ca" \
+            "CHECKPOINT_INGRESS_NETWORK=ci-checkpoint-ingress" >> "$GITHUB_ENV"
+          set -a
+          source "$GITHUB_ENV"
+          set +a
+          docker compose --file Backend/EncounterCheckpointService/compose.production.yml config --quiet
+
+      - name: Upload no-secret test summary
+        if: always()
+        run: |
+          {
+            echo "Stage 41 CI exercised:"
+            echo "- SQLite signing/readback and key overlap rotation"
+            echo "- PostgreSQL row locking, CAS, fencing, migration and competing lease acquisition"
+            echo "- static production-boundary and Compose configuration validation"
+            echo "- non-root Docker image build"
+            echo ""
+            echo "This is not a staging deployment, HA test, restore drill or SLO approval."
+          } >> "$GITHUB_STEP_SUMMARY"
