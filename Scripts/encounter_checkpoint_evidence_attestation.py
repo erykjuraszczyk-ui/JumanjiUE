@@ -268,16 +268,16 @@ def _verify_signature(
     if not _signature_record_valid(signature):
         return None, "SIGNATURE_RECORD_INVALID"
     assert isinstance(signature, dict)
-    record, error = _resolve_key(index, signature["keyId"], role, signature["signedAtUtc"])
-    if error:
-        return None, error
-    assert record is not None
     signed_time = _parse_utc(signature["signedAtUtc"])
     boundary_time = _parse_utc(not_before)
     if boundary_time is None:
         return None, "SIGNATURE_TIME_BOUNDARY_INVALID"
     if signed_time is None or signed_time < boundary_time:
         return None, "SIGNATURE_PREDATES_EVIDENCE_OR_REVIEW"
+    record, error = _resolve_key(index, signature["keyId"], role, signature["signedAtUtc"])
+    if error:
+        return None, error
+    assert record is not None
     signed_payload = dict(payload)
     signed_payload["signedAtUtc"] = signature["signedAtUtc"]
     try:
