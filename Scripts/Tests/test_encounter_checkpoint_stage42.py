@@ -179,6 +179,20 @@ class Stage42StagingDrillTests(unittest.TestCase):
     def test_complete_sanitized_report_passes(self) -> None:
         self.assertEqual(validate_report(valid_report()), [])
 
+    def test_failed_preflight_report_can_use_unknown_environment(self) -> None:
+        report = valid_report()
+        report["result"] = "FAIL"
+        report["failureCode"] = "ENVIRONMENT_CLASS_MUST_BE_STAGING_OR_EPHEMERAL_CI"
+        report["environment"] = {
+            "class": "unknown",
+            "id": "unknown",
+            "storageProvider": "postgresql",
+            "serviceHost": "unknown",
+            "transport": "https-mtls",
+        }
+        report["checks"] = []
+        self.assertEqual(validate_report(report), [])
+
     def test_report_with_lease_token_is_rejected(self) -> None:
         report = valid_report()
         report["evidence"]["leaseToken"] = "should-never-be-logged"
