@@ -130,7 +130,8 @@ def _keyring_index(keyring: object) -> tuple[dict[str, dict[str, Any]], list[str
         ):
             errors.append("KEY_ROLES_INVALID")
             continue
-        if item.get("status") not in {"ACTIVE", "REVOKED"}:
+        status = item.get("status")
+        if not isinstance(status, str) or status not in {"ACTIVE", "REVOKED"}:
             errors.append("KEY_STATUS_INVALID")
             continue
         valid_from = _parse_utc(item.get("validFromUtc"))
@@ -481,7 +482,15 @@ def verify_attestations(
 
     review = packet.get("review") if isinstance(packet.get("review"), dict) else {}
     decision = review.get("decision")
-    expected_final_roles = set(review.get("reviewerRoles", [])) if decision in {"APPROVED", "REJECTED"} and isinstance(review.get("reviewerRoles"), list) else set()
+    raw_final_roles = review.get("reviewerRoles")
+    if (
+        decision in {"APPROVED", "REJECTED"}
+        and isinstance(raw_final_roles, list)
+        and all(isinstance(role, str) for role in raw_final_roles)
+    ):
+        expected_final_roles = set(raw_final_roles)
+    else:
+        expected_final_roles = set()
     if decision == "NOT_REVIEWED" and final_map:
         errors.append("FINAL_REVIEW_SIGNATURES_UNEXPECTED")
     for role in set(final_map) - expected_final_roles:
@@ -621,6 +630,8 @@ def sign_entry(
     if envelope.get("packetId") != packet.get("packetId") or envelope.get("packetSha256") != digest:
         raise AttestationError("ATTESTATION_PACKET_BINDING_MISMATCH_RECREATE_ENVELOPE")
     records = envelope["entryAttestations"]
+    if any(not isinstance(item, dict) or set(item) != ENTRY_ATTESTATION_FIELDS for item in records):
+        raise AttestationError("ENTRY_ATTESTATION_FIELDS_INVALID")
     record = next((item for item in records if item.get("evidenceId") == evidence_id), None)
     if record is None:
         record = {"evidenceId": evidence_id, "operator": None, "reviewer": None}
@@ -673,6 +684,8 @@ def sign_final_review(
         operator = record.get("operator")
         if isinstance(operator, dict) and operator.get("keyId") == key_id:
             raise AttestationError("FINAL_REVIEWER_WAS_EVIDENCE_OPERATOR")
+    if any(not isinstance(item, dict) or set(item) != FINAL_SIGNATURE_FIELDS for item in envelope["finalReviewSignatures"]):
+        raise AttestationError("FINAL_REVIEW_SIGNATURE_FIELDS_INVALID")
     if any(item.get("reviewerRole") == reviewer_role for item in envelope["finalReviewSignatures"]):
         raise AttestationError("FINAL_REVIEW_SIGNATURE_ALREADY_EXISTS")
     if any(item.get("keyId") == key_id for item in envelope["finalReviewSignatures"]):
@@ -779,6 +792,8 @@ def _load_keyring(path: Path) -> tuple[object, bytes]:
 
 
 def cmd_keygen(args: argparse.Namespace) -> int:
+    if args.private_key_out.resolve() == args.public_key_out.resolve():
+        raise AttestationError("OUTPUT_PATHS_MUST_DIFFER")
     if args.private_key_out.exists() or args.public_key_out.exists():
         raise AttestationError("OUTPUT_FILE_ALREADY_EXISTS")
     roles = sorted(set(args.role))
