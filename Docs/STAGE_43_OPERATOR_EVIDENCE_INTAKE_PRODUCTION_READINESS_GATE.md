@@ -174,7 +174,7 @@ Raport gate jest sanitizowany i nie kopiuje treści załączników. Zawiera zaak
 |---|---|
 | `INVALID_PACKET` | Naruszony schema, integralność, prywatność lub granice projektu |
 | `BLOCKED_MISSING_EVIDENCE` | Co najmniej jeden z 10 wymaganych dowodów nie istnieje lub został odrzucony |
-| `WAITING_FOR_INDEPENDENT_REVIEW` | Wszystkie dowody są poprawne, lecz brak dwurolo-wej recenzji |
+| `WAITING_FOR_INDEPENDENT_REVIEW` | Wszystkie dowody są poprawne, lecz brak recenzji przez dwie niezależne role |
 | `REJECTED_BY_REVIEW` | Niezależna recenzja odrzuciła pakiet |
 | `ELIGIBLE_FOR_FINAL_RELEASE_BOARD_REVIEW` | Wszystkie wymagane dowody są poprawne i pakiet został niezależnie zaakceptowany |
 
