@@ -100,10 +100,10 @@ def validate_project(root: Path) -> list[str]:
 
     doc = (root / REQUIRED_FILES[10]).read_text(encoding="utf-8")
     for marker in (
-        "Stage 43", "Ed25519", "RFC 8785", "out-of-band",
-        "keyring", "private key", "BLOCKED_MISSING_EVIDENCE",
+        "Stage 43", "Ed25519", "RFC 8785", "poza tym samym repozytorium",
+        "keyring", "Prywatne klucze", "BLOCKED_MISSING_EVIDENCE",
         "ELIGIBLE_FOR_FINAL_RELEASE_BOARD_REVIEW",
-        "productionReady=false", "Nie wykonano",
+        "productionReady=false", "nie wykonano zewnętrznych testów",
     ):
         if marker not in doc:
             errors.append(f"ATTESTATION_RUNBOOK_MARKER_MISSING:{marker}")
