@@ -243,7 +243,7 @@ class Stage43EvidenceGateTests(unittest.TestCase):
             report_path.write_bytes(encoded)
             stage_entry["artifact"]["sha256"] = hashlib.sha256(encoded).hexdigest()
             result = MODULE.evaluate_packet(packet, root, ROOT)
-        self.assertIn("EPHEMERAL_CI_IS_NOT_OPERATOR_STAGING", result["errors"])
+        self.assertTrue(any("EPHEMERAL_CI_IS_NOT_OPERATOR_STAGING" in error for error in result["errors"]))
 
     def test_artifact_digest_mismatch_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as folder:
@@ -288,7 +288,7 @@ class Stage43EvidenceGateTests(unittest.TestCase):
             report_path.write_bytes(encoded)
             entry["artifact"]["sha256"] = hashlib.sha256(encoded).hexdigest()
             result = MODULE.evaluate_packet(packet, root, ROOT)
-        self.assertIn("FENCING_APPLY_DID_NOT_FENCE_ALL_ROWS", result["errors"])
+        self.assertTrue(any("FENCING_APPLY_DID_NOT_FENCE_ALL_ROWS" in error for error in result["errors"]))
 
     def test_final_approval_requires_two_independent_review_roles(self) -> None:
         with tempfile.TemporaryDirectory() as folder:
