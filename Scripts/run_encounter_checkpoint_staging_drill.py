@@ -264,7 +264,14 @@ def build_payload(
 
 
 def make_report() -> dict:
+    environment_class = os.environ.get("JUMANJI_STAGING_ENVIRONMENT_CLASS", "").strip()
+    environment_id = os.environ.get("JUMANJI_STAGING_ENVIRONMENT_ID", "").strip()
     parsed = urlsplit(os.environ.get("JUMANJI_STAGING_BASE_URL", ""))
+    is_allowed_environment = (
+        environment_class in {"staging", "ephemeral-ci"}
+        and bool(environment_id)
+        and environment_id.casefold() not in {"prod", "production", "live"}
+    )
     return {
         "schema": "JUMANJI.CheckpointStagingDrillReport.v1",
         "stage": 42,
@@ -273,10 +280,10 @@ def make_report() -> dict:
         "completedAtUtc": None,
         "result": "RUNNING",
         "environment": {
-            "class": os.environ.get("JUMANJI_STAGING_ENVIRONMENT_CLASS", "unknown").strip() or "unknown",
-            "id": os.environ.get("JUMANJI_STAGING_ENVIRONMENT_ID", "unknown").strip() or "unknown",
+            "class": environment_class if is_allowed_environment else "unknown",
+            "id": environment_id if is_allowed_environment else "unknown",
             "storageProvider": "postgresql",
-            "serviceHost": parsed.hostname or "unknown",
+            "serviceHost": parsed.hostname if is_allowed_environment else "unknown",
             "transport": "https-mtls",
         },
         "checks": [],
@@ -632,6 +639,11 @@ def run_drill(args: argparse.Namespace, report: dict) -> dict:
     except DrillFailure as error:
         report["result"] = "FAIL"
         report["failureCode"] = error.code
+    except Exception:
+        # Do not serialize raw exception messages: they may contain host paths,
+        # DSNs or provider details from the operator environment.
+        report["result"] = "FAIL"
+        report["failureCode"] = "STAGING_DRILL_UNEXPECTED_FAILURE"
     finally:
         if release_required and api is not None and encounter_id and lease_token:
             try:
