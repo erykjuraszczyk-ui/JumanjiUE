@@ -1,0 +1,205 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "JUMANJI Production Readiness Evidence Packet v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "stage",
+    "packetId",
+    "createdAtUtc",
+    "environment",
+    "submissionStatus",
+    "entries",
+    "review"
+  ],
+  "properties": {
+    "schema": {
+      "const": "JUMANJI.ProductionReadinessEvidencePacket.v1"
+    },
+    "stage": {
+      "const": 43
+    },
+    "packetId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "createdAtUtc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "class",
+        "storageProvider"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 96,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{2,95}$"
+        },
+        "class": {
+          "const": "staging"
+        },
+        "storageProvider": {
+          "const": "postgresql"
+        }
+      }
+    },
+    "submissionStatus": {
+      "enum": [
+        "AWAITING_OPERATOR_EVIDENCE",
+        "SUBMITTED_FOR_REVIEW",
+        "REVIEWED"
+      ]
+    },
+    "entries": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/evidenceEntry"
+      }
+    },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "decision",
+        "reviewerRoles",
+        "reviewedAtUtc"
+      ],
+      "properties": {
+        "decision": {
+          "enum": [
+            "NOT_REVIEWED",
+            "REJECTED",
+            "APPROVED"
+          ]
+        },
+        "reviewerRoles": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "SERVICE_OWNER",
+              "SECURITY_REVIEWER",
+              "DATABASE_REVIEWER",
+              "PLATFORM_REVIEWER",
+              "QA_REVIEWER"
+            ]
+          }
+        },
+        "reviewedAtUtc": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "evidenceEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evidenceId",
+        "kind",
+        "sourceClass",
+        "environmentId",
+        "capturedAtUtc",
+        "operatorRole",
+        "reviewerRole",
+        "artifact"
+      ],
+      "properties": {
+        "evidenceId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "kind": {
+          "enum": [
+            "staging_smoke",
+            "postgres_primary_failover",
+            "postgres_pitr_restore",
+            "post_restore_fencing_dry_run",
+            "post_restore_fencing_apply",
+            "signing_key_overlap_rotation",
+            "ue58_dedicated_server_recovery",
+            "ue58_pie_multiplayer",
+            "android_device_package",
+            "stage40_slo_approval"
+          ]
+        },
+        "sourceClass": {
+          "enum": [
+            "operator-staging",
+            "dr-rehearsal",
+            "ue-dedicated-server",
+            "ue-pie-multiplayer",
+            "android-device",
+            "stage40-slo-approval"
+          ]
+        },
+        "environmentId": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 96,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{2,95}$"
+        },
+        "capturedAtUtc": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "operatorRole": {
+          "enum": [
+            "SERVICE_OPERATOR",
+            "DATABASE_OPERATOR",
+            "SECURITY_OPERATOR",
+            "UNREAL_QA_OPERATOR",
+            "ANDROID_QA_OPERATOR",
+            "SLO_REVIEWER"
+          ]
+        },
+        "reviewerRole": {
+          "enum": [
+            "INDEPENDENT_REVIEWER",
+            "SECURITY_REVIEWER",
+            "DATABASE_REVIEWER",
+            "PLATFORM_REVIEWER",
+            "QA_REVIEWER"
+          ]
+        },
+        "artifact": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "path",
+            "sha256",
+            "mediaType"
+          ],
+          "properties": {
+            "path": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 240,
+              "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9._/-]+$"
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "mediaType": {
+              "const": "application/json"
+            }
+          }
+        }
+      }
+    }
+  }
+}
