@@ -644,13 +644,13 @@ def sign_entry(
 def sign_final_review(
     packet: dict[str, Any], envelope: dict[str, Any], keyring: object,
     key_id: str, reviewer_role: str,
-    private_key: Ed25519PrivateKey, signed_at: str,
+    private_key: Ed25519PrivateKey, signed_at: str, evidence_root: Path,
 ) -> dict[str, Any]:
     review = packet.get("review")
     if not isinstance(review, dict) or review.get("decision") not in {"APPROVED", "REJECTED"}:
         raise AttestationError("PACKET_REVIEW_NOT_FINAL")
     from validate_encounter_checkpoint_stage43_evidence import evaluate_packet
-    stage43_result = evaluate_packet(packet, Path("."), ROOT)
+    stage43_result = evaluate_packet(packet, evidence_root, ROOT)
     if stage43_result.get("outcome") != "ELIGIBLE_FOR_FINAL_RELEASE_BOARD_REVIEW":
         raise AttestationError("STAGE43_PACKET_NOT_ELIGIBLE_FOR_REVIEW_SIGNATURE")
     if reviewer_role not in review.get("reviewerRoles", []):
@@ -853,6 +853,7 @@ def build_parser() -> argparse.ArgumentParser:
     final = sub.add_parser("sign-final-review", help="Sign the final packet review with an independent reviewer key.")
     _add_signing_options(final)
     final.add_argument("--reviewer-role", required=True, choices=sorted(FINAL_REVIEW_ROLES))
+    final.add_argument("--evidence-root", type=Path, required=True)
     final.set_defaults(func=None)
 
     verify = sub.add_parser("verify", help="Verify the Stage 43 packet and all Stage 44 signatures.")
@@ -898,7 +899,7 @@ def main() -> int:
             if args.command == "sign-entry":
                 sign_entry(packet, envelope, keyring, args.evidence_id, args.signer_type, args.key_id, private, signed_at)
             else:
-                sign_final_review(packet, envelope, keyring, args.key_id, args.reviewer_role, private, signed_at)
+                sign_final_review(packet, envelope, keyring, args.key_id, args.reviewer_role, private, signed_at, args.evidence_root)
             _write_json(args.attestation, envelope)
             print("Signature added. The private key was not written to the attestation file.")
             return 0
