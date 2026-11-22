@@ -1,0 +1,8 @@
+{
+  "schema": "JUMANJI.ProductionEvidenceAttestation.v1",
+  "packetId": null,
+  "packetSha256": null,
+  "canonicalization": "RFC8785",
+  "entryAttestations": [],
+  "finalReviewSignatures": []
+}

@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "JUMANJI Production Evidence Trust Keyring v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "keys"],
+  "properties": {
+    "schema": { "const": "JUMANJI.ProductionEvidenceTrustKeyring.v1" },
+    "keys": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/trustedKey" }
+    }
+  },
+  "$defs": {
+    "trustedKey": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["keyId", "publicKeyBase64", "roles", "status", "validFromUtc", "validUntilUtc"],
+      "properties": {
+        "keyId": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 96,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{2,95}$"
+        },
+        "publicKeyBase64": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9+/]{43}=$"
+        },
+        "roles": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "SERVICE_OPERATOR",
+              "DATABASE_OPERATOR",
+              "SECURITY_OPERATOR",
+              "UNREAL_QA_OPERATOR",
+              "ANDROID_QA_OPERATOR",
+              "SLO_REVIEWER",
+              "INDEPENDENT_REVIEWER",
+              "SECURITY_REVIEWER",
+              "DATABASE_REVIEWER",
+              "PLATFORM_REVIEWER",
+              "QA_REVIEWER",
+              "SERVICE_OWNER"
+            ]
+          }
+        },
+        "status": { "enum": ["ACTIVE", "REVOKED"] },
+        "validFromUtc": { "type": "string", "format": "date-time" },
+        "validUntilUtc": { "type": ["string", "null"], "format": "date-time" }
+      }
+    }
+  }
+}
