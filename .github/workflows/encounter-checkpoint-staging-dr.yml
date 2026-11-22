@@ -204,10 +204,13 @@ jobs:
               os.environ["JUMANJI_STAGING_CLIENT_CERT_FILE"],
               os.environ["JUMANJI_STAGING_CLIENT_KEY_FILE"],
           )
-          with urllib.request.urlopen(
-              "https://localhost:8787/readyz", context=context, timeout=2
-          ) as response:
-              raise SystemExit(0 if response.status == 200 else 1)
+          try:
+              with urllib.request.urlopen(
+                  "https://localhost:8787/readyz", context=context, timeout=2
+              ) as response:
+                  raise SystemExit(0 if response.status == 200 else 1)
+          except Exception:
+              raise SystemExit(1)
           PY
             then
               READY=1
