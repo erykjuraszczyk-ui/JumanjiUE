@@ -13,6 +13,7 @@ from uuid import uuid4
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import validate_encounter_checkpoint_stage43_evidence as MODULE
+import validate_encounter_checkpoint_staging_report as STAGE42_VALIDATOR
 
 
 STAMP = "2026-11-22T12:00:00Z"
@@ -36,7 +37,7 @@ def _stage42_report(environment_id: str, environment_class: str = "staging") -> 
         },
         "checks": [
             {"id": check_id, "status": "PASS", "durationMs": 1, "detailCode": "OK"}
-            for check_id in MODULE.__import__("validate_encounter_checkpoint_staging_report").EXPECTED_CHECKS
+            for check_id in STAGE42_VALIDATOR.EXPECTED_CHECKS
         ],
         "evidence": {
             "encounterId": "DRILL_STAGE42_UNITTEST_20261122",
