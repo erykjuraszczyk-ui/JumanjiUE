@@ -1,0 +1,61 @@
+{
+  "schema": "JUMANJI.CheckpointStagingDRReadiness.v1",
+  "stage": 42,
+  "status": "IMPLEMENTED_TOOLING_WITH_EXTERNAL_STAGING_AND_DR_EVIDENCE_PENDING",
+  "productionReady": false,
+  "highAvailabilityApproved": false,
+  "sloStatus": "UNBASELINED",
+  "evidence": {
+    "ephemeralCiWorkflowConfigured": true,
+    "ephemeralCiWorkflowPassed": false,
+    "realStagingDeploymentVerified": false,
+    "postgresPrimaryFailoverDrillCompleted": false,
+    "postgresPitrRestoreDrillCompleted": false,
+    "postRestoreLeaseFencingDrillCompleted": false,
+    "signingKeyOverlapRotationDrillCompleted": false,
+    "liveUnrealDedicatedServerRecoveryVerified": false,
+    "unrealEngine58BuildVerified": false,
+    "androidDevicePackageVerified": false
+  },
+  "automation": {
+    "stagingRunner": "Scripts/run_encounter_checkpoint_staging_drill.py",
+    "reportSchema": "Data/Encounter/EncounterCheckpointStagingDrillReport.schema.json",
+    "reportValidator": "Scripts/validate_encounter_checkpoint_staging_report.py",
+    "restoreFencingTool": "Scripts/fence_checkpoint_leases_after_restore.py",
+    "restoreFencingDefaultMode": "dry-run",
+    "restoreFencingRequiresExplicitApply": true,
+    "restoreFencingRequiresIsolatedTargetConfirmation": true,
+    "allowedEnvironmentClasses": [
+      "staging",
+      "ephemeral-ci",
+      "dr-rehearsal"
+    ],
+    "syntheticEncounterPrefix": "DRILL_STAGE42_",
+    "transport": "HTTPS + TLS 1.2+ + mTLS",
+    "storageProvider": "PostgreSQL",
+    "reportContainsCredentials": false,
+    "reportContainsLeaseTokens": false,
+    "reportContainsRawParticipantIdentity": false,
+    "reportContainsSignedCheckpointEnvelope": false
+  },
+  "requiredHumanDrills": [
+    "Deploy the checkpoint service into an isolated, operator-managed staging environment using the Stage 41 private ingress and mTLS configuration.",
+    "Run the staging smoke drill against a synthetic DRILL_STAGE42 encounter and retain the sanitized JSON report.",
+    "Perform a PostgreSQL primary failover and confirm the synthetic signed checkpoint remains readable with a new active lease.",
+    "Perform a managed PostgreSQL PITR/backup restore into an isolated recovery target; stop all writers and block ingress before lease fencing.",
+    "Run the restore fencing utility in dry-run mode, review the report, then apply only after a second operator confirms the restored target and all service writers are stopped.",
+    "Restart checkpoint service writers and run the staging drill with the same synthetic encounter ID; confirm the old lease is fenced and the signed checkpoint sequence/envelope is preserved.",
+    "Perform Ed25519 verification-key overlap rotation and verify checkpoints signed by the old key remain readable while new checkpoints use the active key.",
+    "Run an Unreal Engine 5.8 dedicated-server recovery smoke test against the staging HTTPS/mTLS endpoint and record actual restore outcome.",
+    "Execute a multiplayer PIE/reconnect/failure test and validate a packaged Android build on a physical supported device.",
+    "Attach representative latency, throughput, capacity, failure and restore evidence to Stage 40 governance before proposing any SLO or production-readiness change."
+  ],
+  "limitations": [
+    "CI uses an ephemeral PostgreSQL instance and generated test certificates; it is not a real staging deployment.",
+    "The repository does not provision PostgreSQL HA, failover, WAL archiving, PITR, ingress, DNS, CA, secret manager or backup infrastructure.",
+    "The restore fencing utility increments epochs and clears leases on every encounter row in its target database. It is an offline operation, not a per-encounter command.",
+    "All checkpoint service writers must be stopped and ingress blocked before fencing; ACCESS EXCLUSIVE protects the update transaction but does not prevent an old process from reconnecting afterward.",
+    "No Unreal Engine build, dedicated server, PIE multiplayer, Android APK/AAB or physical-device validation is claimed by Stage 42 CI.",
+    "Production readiness, high availability approval and Stage 40 SLOs remain false/UNBASELINED until external evidence is reviewed."
+  ]
+}
