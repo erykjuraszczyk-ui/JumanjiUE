@@ -297,7 +297,7 @@ Po udanym workflow raport ma być zachowany jako artefakt GitHub Actions. Do ope
 Stage42 readiness manifest:
 Data/Encounter/EncounterCheckpointStage42ReadinessManifest.json
 
-Na początku Stage42 wszystkie zewnętrzne dowody pozostają false. CI może potwierdzić jedynie ephemeral-ci. Nie wolno automatycznie podnosić:
+Na początku Stage42 wszystkie zewnętrzne dowody pozostają false: productionReady=false, highAvailabilityApproved=false, a sloStatus=UNBASELINED. CI może potwierdzić jedynie ephemeral-ci. Nie wolno automatycznie podnosić:
 - productionReady;
 - highAvailabilityApproved;
 - sloStatus;
