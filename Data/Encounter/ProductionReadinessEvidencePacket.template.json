@@ -1,0 +1,18 @@
+{
+  "schema": "JUMANJI.ProductionReadinessEvidencePacket.v1",
+  "stage": 43,
+  "packetId": "a62d948a-7b83-4770-b1cb-44e7f1c6a720",
+  "createdAtUtc": "2026-11-22T00:00:00Z",
+  "environment": {
+    "id": "STAGING-ENVIRONMENT-ID-PENDING",
+    "class": "staging",
+    "storageProvider": "postgresql"
+  },
+  "submissionStatus": "AWAITING_OPERATOR_EVIDENCE",
+  "entries": [],
+  "review": {
+    "decision": "NOT_REVIEWED",
+    "reviewerRoles": [],
+    "reviewedAtUtc": null
+  }
+}
