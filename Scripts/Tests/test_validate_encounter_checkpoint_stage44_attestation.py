@@ -204,9 +204,11 @@ class Stage44EvidenceAttestationTests(unittest.TestCase):
                 for role in _roles()
             }
             envelope = MODULE._empty_envelope(packet)
-            entry = packet["entries"][0]
-            MODULE.sign_entry(packet, envelope, keyring, entry["evidenceId"], "operator",
-                              key_by_role[entry["operatorRole"]], private_keys[entry["operatorRole"]], STAMP)
+            for entry in packet["entries"]:
+                MODULE.sign_entry(packet, envelope, keyring, entry["evidenceId"], "operator",
+                                  key_by_role[entry["operatorRole"]], private_keys[entry["operatorRole"]], STAMP)
+                MODULE.sign_entry(packet, envelope, keyring, entry["evidenceId"], "reviewer",
+                                  key_by_role[entry["reviewerRole"]], private_keys[entry["reviewerRole"]], STAMP)
             with self.assertRaisesRegex(MODULE.AttestationError, "FINAL_REVIEWER_WAS_EVIDENCE_OPERATOR"):
                 MODULE.sign_final_review(
                     packet, envelope, keyring, key_by_role["SERVICE_OWNER"], "SERVICE_OWNER",
