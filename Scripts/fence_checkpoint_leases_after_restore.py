@@ -83,6 +83,8 @@ def fence_restored_target(connection, apply: bool = False) -> dict:
     blocked staging ingress. ACCESS EXCLUSIVE prevents concurrent SQL writes
     while the fencing update runs; it does not stop old app servers from
     reconnecting after commit, so ingress must remain blocked until completion.
+    The UPDATE intentionally does not modify checkpoint_sequence or
+    checkpoint_envelope_json; signed checkpoint content is preserved.
     """
     with connection.transaction():
         connection.execute("LOCK TABLE encounter_checkpoint_state IN ACCESS EXCLUSIVE MODE")
