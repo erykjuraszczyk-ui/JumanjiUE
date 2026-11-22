@@ -133,19 +133,19 @@ def validate_report(report: object) -> list[str]:
             errors.append(f"{check_id}: detailCode is required")
 
     missing = [check_id for check_id in EXPECTED_CHECKS if check_id not in by_id]
-    if missing:
-        errors.append("missing checks: " + ", ".join(missing))
     if report.get("result") == "PASS":
+        if missing:
+            errors.append("PASS report is missing checks: " + ", ".join(missing))
         failed = [check_id for check_id, check in by_id.items() if check.get("status") != "PASS"]
         if failed:
             errors.append("PASS report contains failed checks")
         if report.get("failureCode") is not None:
             errors.append("PASS report must have null failureCode")
-        if missing:
-            pass
     else:
         if not isinstance(report.get("failureCode"), str) or not report["failureCode"]:
             errors.append("FAIL report requires failureCode")
+        if not any(check.get("status") == "FAIL" for check in by_id.values()) and not report.get("failureCode"):
+            errors.append("FAIL report must include a failed check or configuration failure code")
 
     evidence = report.get("evidence")
     if not isinstance(evidence, dict):
