@@ -47,6 +47,7 @@ Open-world third-person adventure RPG prototype with a shared-world direction an
 - Stage 40 — Recovery Capacity Planning & SLO Baselines: report-gated capacity planning, anonymous host fingerprint template, SLO approval governance and conservative concurrency projection; all latency/throughput targets remain UNBASELINED pending representative host measurements.
 - Stage 41 — Production Checkpoint Store Adapter & Deployment Hardening: shared PostgreSQL provider with row locking and fencing, Ed25519 verification-key overlap rotation, TLS/mTLS listener, bounded request concurrency, non-root Docker/Compose, offline SQLite-to-PostgreSQL import and backup/restore runbook; no HA/SLO/production readiness is claimed.
 - Stage 42 — Production Staging Validation & Recovery DR Drills: HTTPS/mTLS/PostgreSQL staging runner, sanitized signed-readback evidence, offline post-restore lease fencing, disposable PostgreSQL integration tests and ephemeral CI; real staging/PITR/failover/UE/Android evidence remains pending, no production or HA/SLO readiness is claimed.
+- Stage 43 — Operator Evidence Intake & Production Readiness Gate: strict evidence packet schema, SHA-256/path/privacy validation, Stage 42 report and fencing verification, UE/Android/SLO evidence contracts and independent two-role review; empty template remains BLOCKED and never changes production/HA/SLO readiness.
 
 ## The nine playable Great Spirits
 1. Great Spirit I — Duch Korzeni (Root / Guardian)
@@ -124,6 +125,10 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - Docs/STAGE_40_RECOVERY_CAPACITY_PLANNING_SLO_BASELINES.md — evidence admission, capacity estimate formula, host inventory, SLO governance and local runbook.
 - Docs/STAGE_41_PRODUCTION_CHECKPOINT_STORE_DEPLOYMENT_HARDENING.md — PostgreSQL provider, mTLS deployment, signing-key rotation, offline SQLite import, backup/restore and operational limitations.
 - Docs/STAGE_42_PRODUCTION_STAGING_VALIDATION_RECOVERY_DR_DRILLS.md — staging smoke runner, sanitized evidence, post-PITR lease fencing, operator failover/restore steps and explicit production readiness gates.
+- Docs/STAGE_43_OPERATOR_EVIDENCE_INTAKE_PRODUCTION_READINESS_GATE.md — required operator evidence packet, evidence provenance classes, report formats, hash checks, dual-role review and fail-closed release gate.
+- Data/Encounter/ProductionReadinessEvidencePacket.schema.json and Data/Encounter/ProductionReadinessEvidencePacket.template.json — strict Stage43 schema and empty operator packet (awaiting evidence).
+- Scripts/validate_encounter_checkpoint_stage43_evidence.py and Scripts/Tests/test_validate_encounter_checkpoint_stage43_evidence.py — artifact hash/path/privacy checks, Stage42 staging/fencing validation, platform evidence contracts and review gate tests.
+- Scripts/validate_encounter_checkpoint_stage43.py and .github/workflows/encounter-checkpoint-stage43-evidence.yml — static governance validator and CI; CI validates an empty packet as blocked, never as production-ready.
 - Data/Encounter/EncounterCheckpointStage42ReadinessManifest.json — separate Stage42 evidence manifest; real staging, failover, PITR, UE and Android validations remain false until performed.
 - Data/Encounter/EncounterCheckpointStagingDrillReport.schema.json — strict sanitized report schema for staging/ephemeral CI results.
 - Scripts/run_encounter_checkpoint_staging_drill.py and Scripts/validate_encounter_checkpoint_staging_report.py — HTTPS/mTLS/PostgreSQL signed-checkpoint drill and report privacy validator.
@@ -280,6 +285,7 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - Stage42 synthetic staging runner exercises HTTPS/mTLS, PostgreSQL readiness, bearer authentication, lease exclusion/renewal, sequence CAS, Ed25519 readback, stale owner fencing and signed-envelope preservation after lease reacquisition.
 - Stage42 post-restore fencing tool increments every encounter row fencing epoch and clears restored lease owners while preserving checkpoint sequence/envelope; dry-run is default and apply requires an isolated staging/DR target confirmation.
 - Stage42 CI uses disposable PostgreSQL and generated test certificates; it does not claim managed failover, PITR, real staging deployment, UE build, Android packaging or approved production SLO.
+- Stage43 evidence intake currently has no operator attachments: the required 10 evidence kinds remain pending until actual staging/DR/UE/Android/SLO artifacts are supplied and independently reviewed.
 - Checkpoint backend unit tests for concurrency, lease fencing, stale sequence, signature tampering and server authentication; Stage 33 GitHub Actions workflow.
 - AJumanjiGameMode PostLogin invokes the trusted checkpoint startup coordinator only after identity binding, profile restoration and same-server reconnect processing;
 - persistent-level director discovery requires exactly one AJumanjiWorldEncounterDirector and rejects ambiguous/missing world configuration;
@@ -319,7 +325,7 @@ This is a source-code foundation, not a finished game or installable Android bui
 - production asynchronous profile-service integration: the current AJumanjiGameMode hook runs after the prototype's synchronous local profile restore; a future remote profile adapter must invoke the coordinator only after its authenticated profile load completes;
 - full actor/AI transform, player position, active attack, telegraph and timer restoration; Stage 35 restarts at authored safe spawn anchors and stores only logical chapter/wave/boss phase/health data;
 - production multi-region consensus, managed PostgreSQL HA/failover, database connection pooling, KMS/HSM, automated key/token rotation, an operator backup scheduler and completed PITR restore drills; Stage 41 supplies a PostgreSQL provider and runbook, not an operated HA service;
-- real staging deployment evidence, managed PostgreSQL primary failover/PITR restore drills, signing-key overlap rehearsal, Unreal Engine 5.8 Dedicated Server/PIE recovery validation, Android device validation and approved p95/p99/throughput SLOs; Stage 40 profiles remain UNBASELINED; Stage42 CI is only ephemeral test evidence;
+- real staging deployment evidence, managed PostgreSQL primary failover/PITR restore drills, signing-key overlap rehearsal, Unreal Engine 5.8 Dedicated Server/PIE recovery validation, Android device validation and approved p95/p99/throughput SLOs; Stage 40 profiles remain UNBASELINED; Stage42 CI is only ephemeral test evidence; Stage43 provides an intake gate but has not supplied these operator artifacts;
 - a packaged and device-tested APK/AAB.
 
 The supplied reference image is used as an art direction source. The binary image itself and Unreal binary assets are not added by the text-file GitHub workflow; add them through Git LFS with provenance/license notes.
