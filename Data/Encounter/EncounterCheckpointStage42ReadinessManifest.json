@@ -1,13 +1,13 @@
 {
   "schema": "JUMANJI.CheckpointStagingDRReadiness.v1",
   "stage": 42,
-  "status": "IMPLEMENTED_TOOLING_WITH_EXTERNAL_STAGING_AND_DR_EVIDENCE_PENDING",
+  "status": "EPHEMERAL_CI_VERIFIED_OPERATOR_STAGING_AND_DR_EVIDENCE_PENDING",
   "productionReady": false,
   "highAvailabilityApproved": false,
   "sloStatus": "UNBASELINED",
   "evidence": {
     "ephemeralCiWorkflowConfigured": true,
-    "ephemeralCiWorkflowPassed": false,
+    "ephemeralCiWorkflowPassed": true,
     "realStagingDeploymentVerified": false,
     "postgresPrimaryFailoverDrillCompleted": false,
     "postgresPitrRestoreDrillCompleted": false,
@@ -15,7 +15,9 @@
     "signingKeyOverlapRotationDrillCompleted": false,
     "liveUnrealDedicatedServerRecoveryVerified": false,
     "unrealEngine58BuildVerified": false,
-    "androidDevicePackageVerified": false
+    "androidDevicePackageVerified": false,
+    "ephemeralCiWorkflowRunId": 45007406840,
+    "ephemeralCiWorkflowHeadSha": "165c12c5067f06699c2df26a06422bd8e76cd6fd"
   },
   "automation": {
     "stagingRunner": "Scripts/run_encounter_checkpoint_staging_drill.py",
