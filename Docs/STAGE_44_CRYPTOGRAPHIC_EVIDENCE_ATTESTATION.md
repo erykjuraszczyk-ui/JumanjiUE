@@ -79,10 +79,10 @@ Pusty plik `ProductionEvidenceTrustKeyring.template.json` jest wyłącznie szabl
 Uruchom na zaufanym stanowisku operatora, poza katalogiem repozytorium:
 
 ```bash
-python Scripts/encounter_checkpoint_evidence_attestation.py keygen \\
-  --key-id OPS-STAGING-01 \\
-  --role SERVICE_OPERATOR \\
-  --private-key-out /secure/jumanji/keys/ops-staging-01.pem \\
+python Scripts/encounter_checkpoint_evidence_attestation.py keygen \
+  --key-id OPS-STAGING-01 \
+  --role SERVICE_OPERATOR \
+  --private-key-out /secure/jumanji/keys/ops-staging-01.pem \
   --public-key-out /secure/jumanji/keys/ops-staging-01.public.json
 ```
 
@@ -101,29 +101,29 @@ Nie dodawaj prawdziwych prywatnych kluczy do żadnego pliku w repository.
 Najpierw wykonaj Stage 43:
 
 ```bash
-python Scripts/validate_encounter_checkpoint_stage43_evidence.py \\
-  --packet /secure/stage43/packet.json \\
-  --evidence-root /secure/stage43/evidence \\
+python Scripts/validate_encounter_checkpoint_stage43_evidence.py \
+  --packet /secure/stage43/packet.json \
+  --evidence-root /secure/stage43/evidence \
   --require-eligible
 ```
 
 Utwórz kopię pustej koperty Stage 44:
 
 ```bash
-cp Data/Encounter/ProductionEvidenceAttestation.template.json \\
+cp Data/Encounter/ProductionEvidenceAttestation.template.json \
   /secure/stage43/attestation.json
 ```
 
 Dla każdego `evidenceId` w pakiecie uruchom podpis operatora:
 
 ```bash
-python Scripts/encounter_checkpoint_evidence_attestation.py sign-entry \\
-  --packet /secure/stage43/packet.json \\
-  --attestation /secure/stage43/attestation.json \\
-  --keyring /secure/trust/production-evidence-keyring.json \\
-  --evidence-id <EVIDENCE_UUID> \\
-  --signer-type operator \\
-  --key-id <OPERATOR_KEY_ID> \\
+python Scripts/encounter_checkpoint_evidence_attestation.py sign-entry \
+  --packet /secure/stage43/packet.json \
+  --attestation /secure/stage43/attestation.json \
+  --keyring /secure/trust/production-evidence-keyring.json \
+  --evidence-id <EVIDENCE_UUID> \
+  --signer-type operator \
+  --key-id <OPERATOR_KEY_ID> \
   --private-key /secure/jumanji/keys/operator.pem
 ```
 
@@ -132,13 +132,13 @@ Niezależny recenzent podpisuje ten sam wpis z `--signer-type reviewer`, używaj
 Po kompletnej recenzji Stage 43 każdy element `review.reviewerRoles` podpisuje końcową decyzję:
 
 ```bash
-python Scripts/encounter_checkpoint_evidence_attestation.py sign-final-review \\
-  --packet /secure/stage43/packet.json \\
-  --attestation /secure/stage43/attestation.json \\
-  --keyring /secure/trust/production-evidence-keyring.json \\
-  --evidence-root /secure/stage43/evidence \\
-  --key-id <REVIEWER_KEY_ID> \\
-  --reviewer-role SECURITY_REVIEWER \\
+python Scripts/encounter_checkpoint_evidence_attestation.py sign-final-review \
+  --packet /secure/stage43/packet.json \
+  --attestation /secure/stage43/attestation.json \
+  --keyring /secure/trust/production-evidence-keyring.json \
+  --evidence-root /secure/stage43/evidence \
+  --key-id <REVIEWER_KEY_ID> \
+  --reviewer-role SECURITY_REVIEWER \
   --private-key /secure/jumanji/keys/security-reviewer.pem
 ```
 
@@ -157,13 +157,13 @@ Nie umieszczaj hasła w historii powłoki, argumentach procesu ani logach CI.
 Zdobądź z niezależnego kanału zatwierdzony SHA-256 pliku publicznego keyringu. Następnie uruchom:
 
 ```bash
-python Scripts/encounter_checkpoint_evidence_attestation.py verify \\
-  --packet /secure/stage43/packet.json \\
-  --attestation /secure/stage43/attestation.json \\
-  --keyring /secure/trust/production-evidence-keyring.json \\
-  --trusted-keyring-sha256 <OUT_OF_BAND_SHA256> \\
-  --evidence-root /secure/stage43/evidence \\
-  --report /secure/reports/stage44-attestation-report.json \\
+python Scripts/encounter_checkpoint_evidence_attestation.py verify \
+  --packet /secure/stage43/packet.json \
+  --attestation /secure/stage43/attestation.json \
+  --keyring /secure/trust/production-evidence-keyring.json \
+  --trusted-keyring-sha256 <OUT_OF_BAND_SHA256> \
+  --evidence-root /secure/stage43/evidence \
+  --report /secure/reports/stage44-attestation-report.json \
   --require-eligible
 ```
 
