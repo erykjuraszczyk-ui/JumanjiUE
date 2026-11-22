@@ -26,6 +26,10 @@ public:
 
     virtual void BeginPlay() override;
 
+    /** Reapplies persisted local Ability HUD preferences after the settings screen saves. */
+    UFUNCTION(BlueprintCallable, Category = "JUMANJI|UI|Settings")
+    void ApplySavedAbilityHUDPreferences();
+
     UFUNCTION(BlueprintPure, Category = "JUMANJI|Navigation")
     UJumanjiWorldNavigationComponent* GetWorldNavigationComponent() const
     {
