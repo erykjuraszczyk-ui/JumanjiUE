@@ -65,3 +65,16 @@ In `WBP_AbilityHUD`, wrap the complete HUD content in a `SafeZone` widget. Use a
 Recommended authoring baseline: at least 48 logical UMG units for ordinary touch targets, larger for Primary. Validate actual physical touch size after the Android DPI curve is applied. Do not interpret UMG logical units as raw device pixels.
 
 Persist the four user choices from the settings screen through the game's user-settings/SaveGame layer; this widget API applies values but does not write a profile by itself. See `Docs/STAGE_22_MOBILE_HUD_POLISH_ACCESSIBILITY.md`.
+
+
+## Stage 23 — Settings Persistence
+
+The engine's configured Game User Settings class is `UJumanjiGameUserSettings`. It stores the four local accessibility preferences in `GameUserSettings.ini`; these values are not part of the server-side player profile.
+
+Create `/Game/UI/AbilityHUD/Settings/WBP_AbilityHUDSettings` with parent `UJumanjiAbilityHUDSettingsWidget`. The native base provides:
+- `GetSavedPreferences`
+- `ApplyAndSavePreferences`
+- `ResetAndSavePreferences`
+- `OnPreferencesSaved`
+
+Apply and Reset save locally and ask the owning `AJumanjiPlayerController` to reapply the values to the live HUD. The blueprint should update slider/toggle display from `OnPreferencesSaved` and avoid writing on every slider movement.

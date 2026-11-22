@@ -2,6 +2,8 @@
 
 #include "Blueprint/UserWidget.h"
 #include "Engine/GameInstance.h"
+#include "Engine/Engine.h"
+#include "JumanjiGameUserSettings.h"
 #include "GameFramework/Pawn.h"
 #include "JumanjiCharacterRosterSubsystem.h"
 #include "JumanjiAdventureHUDWidget.h"
@@ -57,6 +59,7 @@ void AJumanjiPlayerController::BeginPlay()
         if (IsValid(ActiveAbilityHUDWidget))
         {
             ActiveAbilityHUDWidget->AddToViewport(60);
+            ApplySavedAbilityHUDPreferences();
         }
     }
 
@@ -88,6 +91,31 @@ void AJumanjiPlayerController::BeginPlay()
 
     // Some overlap BeginPlay events may run before the prompt widget exists.
     RefreshTraversalCandidateFocus();
+}
+
+void AJumanjiPlayerController::ApplySavedAbilityHUDPreferences()
+{
+    if (!IsLocalController() || !IsValid(ActiveAbilityHUDWidget) || !GEngine)
+    {
+        return;
+    }
+
+    const UJumanjiGameUserSettings* Settings =
+        Cast<UJumanjiGameUserSettings>(GEngine->GetGameUserSettings());
+    if (!Settings)
+    {
+        UE_LOG(LogTemp, Warning,
+            TEXT("JUMANJI HUD settings: custom GameUserSettings class is not active; using widget defaults."));
+        return;
+    }
+
+    const FJumanjiAbilityHUDPreferences Preferences = Settings->GetAbilityHUDPreferences();
+    ActiveAbilityHUDWidget->ApplyMobileAccessibilitySettings(
+        Preferences.HUDScale,
+        Preferences.TouchTargetScale,
+        Preferences.bHighContrastMode,
+        Preferences.bReduceMotion
+    );
 }
 
 bool AJumanjiPlayerController::OpenWorldAtlas()

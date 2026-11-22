@@ -1,0 +1,30 @@
+name: Ability HUD Device QA Matrix Validation
+
+on:
+  pull_request:
+    paths:
+      - "Data/UI/AbilityHUD_DeviceQAMatrix.csv"
+      - "Scripts/validate_ability_hud_device_qa.py"
+      - "Scripts/Tests/test_validate_ability_hud_device_qa.py"
+      - ".github/workflows/ability-hud-device-qa.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "Data/UI/AbilityHUD_DeviceQAMatrix.csv"
+      - "Scripts/validate_ability_hud_device_qa.py"
+      - "Scripts/Tests/test_validate_ability_hud_device_qa.py"
+      - ".github/workflows/ability-hud-device-qa.yml"
+
+jobs:
+  validate-matrix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate device QA matrix
+        run: python Scripts/validate_ability_hud_device_qa.py
+      - name: Run regression tests
+        run: python -m unittest discover -s Scripts/Tests -p "test_validate_ability_hud_device_qa.py"
