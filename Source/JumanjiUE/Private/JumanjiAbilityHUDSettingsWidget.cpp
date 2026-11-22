@@ -1,6 +1,7 @@
 #include "JumanjiAbilityHUDSettingsWidget.h"
 
 #include "Engine/Engine.h"
+#include "JumanjiPlayerController.h"
 
 FJumanjiAbilityHUDPreferences UJumanjiAbilityHUDSettingsWidget::GetSavedPreferences() const
 {
@@ -35,7 +36,15 @@ bool UJumanjiAbilityHUDSettingsWidget::ApplyAndSavePreferences(
     }
 
     Settings->SetAbilityHUDPreferences(Preferences);
-    OnPreferencesSaved(Settings->GetAbilityHUDPreferences());
+    const FJumanjiAbilityHUDPreferences SavedPreferences = Settings->GetAbilityHUDPreferences();
+
+    if (AJumanjiPlayerController* PlayerController =
+        Cast<AJumanjiPlayerController>(GetOwningPlayer()))
+    {
+        PlayerController->ApplySavedAbilityHUDPreferences();
+    }
+
+    OnPreferencesSaved(SavedPreferences);
     return true;
 }
 
@@ -54,6 +63,14 @@ bool UJumanjiAbilityHUDSettingsWidget::ResetAndSavePreferences()
     }
 
     Settings->ResetAbilityHUDPreferences();
-    OnPreferencesSaved(Settings->GetAbilityHUDPreferences());
+    const FJumanjiAbilityHUDPreferences SavedPreferences = Settings->GetAbilityHUDPreferences();
+
+    if (AJumanjiPlayerController* PlayerController =
+        Cast<AJumanjiPlayerController>(GetOwningPlayer()))
+    {
+        PlayerController->ApplySavedAbilityHUDPreferences();
+    }
+
+    OnPreferencesSaved(SavedPreferences);
     return true;
 }
