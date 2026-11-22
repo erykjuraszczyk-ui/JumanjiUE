@@ -54,7 +54,7 @@ FENCING_MARKERS = (
     "authority_epoch = authority_epoch + 1",
     "lease_token_hash = NULL",
     "checkpoint_sequence",
-    "CHECKPOINT_EPOCH_OVERFLOW",
+    "AUTHORITY_EPOCH_OVERFLOW",
 )
 
 TEST_MARKERS = (
