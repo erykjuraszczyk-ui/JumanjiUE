@@ -3,60 +3,32 @@
   "title": "JUMANJI Production Release Board Decision v1",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "schema",
-    "stage",
-    "decisionId",
-    "candidateId",
-    "candidateSha256",
-    "packetId",
-    "packetSha256",
-    "attestationSha256",
-    "keyringSha256",
-    "targetEnvironment",
-    "decision",
-    "createdAtUtc",
-    "boardSignatures"
-  ],
+  "required": ["schema","stage","decisionId","candidateId","candidateSha256","packetId","packetSha256","attestationSha256","keyringSha256","targetEnvironment","decision","createdAtUtc","boardSignatures"],
   "properties": {
     "schema": { "const": "JUMANJI.ProductionReleaseBoardDecision.v1" },
     "stage": { "const": 45 },
-    "decisionId": { "type": "string", "format": "uuid" },
-    "candidateId": { "type": "string", "minLength": 3, "maxLength": 96 },
-    "candidateSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
-    "packetId": { "type": "string", "format": "uuid" },
-    "packetSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
-    "attestationSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
-    "keyringSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "decisionId": { "type": ["string","null"], "format": "uuid" },
+    "candidateId": { "type": ["string","null"], "minLength": 3, "maxLength": 96 },
+    "candidateSha256": { "type": ["string","null"], "pattern": "^[a-f0-9]{64}$" },
+    "packetId": { "type": ["string","null"], "format": "uuid" },
+    "packetSha256": { "type": ["string","null"], "pattern": "^[a-f0-9]{64}$" },
+    "attestationSha256": { "type": ["string","null"], "pattern": "^[a-f0-9]{64}$" },
+    "keyringSha256": { "type": ["string","null"], "pattern": "^[a-f0-9]{64}$" },
     "targetEnvironment": { "const": "production" },
-    "decision": { "enum": ["NOT_DECIDED", "APPROVE", "REJECT"] },
-    "createdAtUtc": { "type": ["string", "null"], "format": "date-time" },
-    "boardSignatures": {
-      "type": "array",
-      "maxItems": 3,
-      "items": { "$ref": "#/$defs/boardSignature" }
-    }
+    "decision": { "enum": ["NOT_DECIDED","APPROVE","REJECT"] },
+    "createdAtUtc": { "type": ["string","null"], "format": "date-time" },
+    "boardSignatures": { "type": "array", "maxItems": 3, "items": { "$ref": "#/$defs/boardSignature" } }
   },
   "$defs": {
     "boardSignature": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["boardRole", "keyId", "signedAtUtc", "signatureBase64"],
+      "required": ["boardRole","keyId","signedAtUtc","signatureBase64"],
       "properties": {
-        "boardRole": {
-          "enum": ["SERVICE_OWNER", "SECURITY_REVIEWER", "PLATFORM_REVIEWER"]
-        },
-        "keyId": {
-          "type": "string",
-          "minLength": 3,
-          "maxLength": 96,
-          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{2,95}$"
-        },
+        "boardRole": { "enum": ["SERVICE_OWNER","SECURITY_REVIEWER","PLATFORM_REVIEWER"] },
+        "keyId": { "type": "string", "minLength": 3, "maxLength": 96, "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{2,95}$" },
         "signedAtUtc": { "type": "string", "format": "date-time" },
-        "signatureBase64": {
-          "type": "string",
-          "pattern": "^[A-Za-z0-9+/]{86}==$"
-        }
+        "signatureBase64": { "type": "string", "pattern": "^[A-Za-z0-9+/]{86}==$" }
       }
     }
   }
