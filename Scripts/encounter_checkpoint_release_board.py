@@ -226,7 +226,7 @@ def validate_candidate(
             errors.append("CANDIDATE_TARGET_FIELDS_INVALID")
             continue
         name = target.get("target")
-        if name not in {"ue58-dedicated-server", "android-package", "windows-client"}:
+        if not isinstance(name, str) or name not in {"ue58-dedicated-server", "android-package", "windows-client"}:
             errors.append("CANDIDATE_TARGET_UNKNOWN")
             continue
         if name in seen:
@@ -252,7 +252,12 @@ def validate_candidate(
         except (OSError, ReleaseBoardError) as exc:
             errors.append(str(exc) if isinstance(exc, ReleaseBoardError) else f"CANDIDATE_ARTIFACT_READ_FAILED:{name}")
             continue
-        if not isinstance(target.get("mediaType"), str) or len(target["mediaType"]) > 96:
+        allowed_media = {
+            "ue58-dedicated-server": {"application/octet-stream", "application/zip", "application/x-tar"},
+            "android-package": {"application/vnd.android.package-archive", "application/zip"},
+            "windows-client": {"application/octet-stream", "application/zip"},
+        }
+        if target.get("mediaType") not in allowed_media[name]:
             errors.append(f"CANDIDATE_MEDIA_TYPE_INVALID:{name}")
             continue
         verified[name] = target
