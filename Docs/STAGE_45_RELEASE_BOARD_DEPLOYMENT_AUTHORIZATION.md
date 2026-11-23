@@ -94,6 +94,9 @@ z innego \`keyId\`. Klucz Release Board nie może być użyty jako operator dowo
 recenzent dowodu ani końcowy recenzent Stage 44. Wymagane są osobne klucze
 Release Board, zarejestrowane w zaufanym keyringu.
 
+Próba ponownego użycia klucza Stage 44 zwraca `BOARD_KEY_REUSED_UPSTREAM` i blokuje
+podpis — nawet wtedy, gdy klucz otrzymałby w keyringu dodatkową rolę Release Board.
+
 Stage 45 używa istniejącego keyring Stage 44. Nie tworzy ani nie przechowuje
 kluczy prywatnych. Prywatne klucze pozostają poza repozytorium, najlepiej
 w zatwierdzonym menedżerze sekretów lub HSM/KMS. Weryfikator nadal wymaga
@@ -199,7 +202,8 @@ procedury wdrożenia. Raport zachowuje:
 - \`sloStatus=UNBASELINED\`;
 - \`promotionAllowed=false\`.
 
-Etap 45 nie wykonuje wdrożenia i nie zmienia bramek produkcyjnych.
+Nie wykonuje wdrożenia i nie zmienia bramek produkcyjnych. Etap 45 jedynie
+zapisuje oraz weryfikuje niezależną autoryzację dla dokładnie wskazanego artefaktu.
 
 ## 8. Automatyczna walidacja
 
