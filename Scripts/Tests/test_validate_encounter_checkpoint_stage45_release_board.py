@@ -228,7 +228,13 @@ class Stage45ReleaseBoardTests(unittest.TestCase):
             context = _build_context(Path(folder))
             record = context["envelope"]["entryAttestations"][0]["operator"]
             signer_id = record["keyId"]
-            signer_role = next(
+            signer_role = "SERVICE_OWNER"
+            reused_record = next(item for item in context["keyring"]["keys"] if item["keyId"] == signer_id)
+            reused_record["roles"].append(signer_role)
+            context["keyring_raw"] = _json_bytes(context["keyring"])
+            context["trusted_hash"] = hashlib.sha256(context["keyring_raw"]).hexdigest()
+            context["decision"]["keyringSha256"] = context["trusted_hash"]
+            original_role = next(
                 entry["operatorRole"] for entry in context["packet"]["entries"]
                 if entry["evidenceId"] == context["envelope"]["entryAttestations"][0]["evidenceId"]
             )
@@ -238,7 +244,7 @@ class Stage45ReleaseBoardTests(unittest.TestCase):
                     context["candidate_raw"], context["envelope"], context["attestation_raw"],
                     context["envelope"], context["keyring"], context["keyring_raw"],
                     context["trusted_hash"], context["evidence_root"], context["artifact_root"],
-                    signer_id, signer_role, context["evidence_private"][signer_role],
+                    signer_id, signer_role, context["evidence_private"][original_role],
                     project_root=ROOT,
                 )
 
@@ -254,7 +260,7 @@ class Stage45ReleaseBoardTests(unittest.TestCase):
     def test_candidate_manifest_mutation_invalidates_decision_binding(self) -> None:
         with tempfile.TemporaryDirectory() as folder:
             context = _build_context(Path(folder))
-            context["candidate"]["candidateId"] = "JUMANJI-MUTATED-CANDIDATE"
+            context["candidate"]["buildId"] = "JUMANJI-MUTATED-BUILD"
             report = self._evaluate(context)
         self.assertEqual(report["outcome"], "INVALID_RELEASE_CANDIDATE")
         self.assertIn("CANDIDATE_ANDROID_BUILD_ID_MISMATCH", report["errors"])
