@@ -1,0 +1,111 @@
+name: Encounter Checkpoint Stage 45 Release Board Authorization
+
+on:
+  pull_request:
+    paths:
+      - "Data/Encounter/ProductionReleaseCandidate.*.json"
+      - "Data/Encounter/ProductionReleaseBoardDecision.*.json"
+      - "Data/Encounter/ProductionReadinessEvidencePacket.*.json"
+      - "Data/Encounter/ProductionEvidenceTrustKeyring.*.json"
+      - "Data/Encounter/ProductionEvidenceAttestation.*.json"
+      - "Scripts/encounter_checkpoint_release_board.py"
+      - "Scripts/encounter_checkpoint_evidence_attestation.py"
+      - "Scripts/validate_encounter_checkpoint_stage43_evidence.py"
+      - "Scripts/validate_encounter_checkpoint_stage44_attestation.py"
+      - "Scripts/validate_encounter_checkpoint_stage45_release_board.py"
+      - "Scripts/Tests/test_validate_encounter_checkpoint_stage43_evidence.py"
+      - "Scripts/Tests/test_validate_encounter_checkpoint_stage44_attestation.py"
+      - "Scripts/Tests/test_validate_encounter_checkpoint_stage45_release_board.py"
+      - "Docs/STAGE_45_RELEASE_BOARD_DEPLOYMENT_AUTHORIZATION.md"
+      - ".github/workflows/encounter-checkpoint-stage45-release-board.yml"
+  push:
+    branches: [main]
+    paths:
+      - "Data/Encounter/ProductionReleaseCandidate.*.json"
+      - "Data/Encounter/ProductionReleaseBoardDecision.*.json"
+      - "Data/Encounter/ProductionReadinessEvidencePacket.*.json"
+      - "Data/Encounter/ProductionEvidenceTrustKeyring.*.json"
+      - "Data/Encounter/ProductionEvidenceAttestation.*.json"
+      - "Scripts/encounter_checkpoint_release_board.py"
+      - "Scripts/encounter_checkpoint_evidence_attestation.py"
+      - "Scripts/validate_encounter_checkpoint_stage43_evidence.py"
+      - "Scripts/validate_encounter_checkpoint_stage44_attestation.py"
+      - "Scripts/validate_encounter_checkpoint_stage45_release_board.py"
+      - "Scripts/Tests/test_validate_encounter_checkpoint_stage43_evidence.py"
+      - "Scripts/Tests/test_validate_encounter_checkpoint_stage44_attestation.py"
+      - "Scripts/Tests/test_validate_encounter_checkpoint_stage45_release_board.py"
+      - "Docs/STAGE_45_RELEASE_BOARD_DEPLOYMENT_AUTHORIZATION.md"
+      - ".github/workflows/encounter-checkpoint-stage45-release-board.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  stage45-release-board:
+    name: Validate Release Board and deployment candidate binding
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Stage 44/45 crypto dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install "cryptography>=42.0" "rfc8785==0.1.4"
+
+      - name: Validate JSON schemas and empty templates
+        run: |
+          python -m json.tool Data/Encounter/ProductionReleaseCandidate.schema.json > /dev/null
+          python -m json.tool Data/Encounter/ProductionReleaseCandidate.template.json > /dev/null
+          python -m json.tool Data/Encounter/ProductionReleaseBoardDecision.schema.json > /dev/null
+          python -m json.tool Data/Encounter/ProductionReleaseBoardDecision.template.json > /dev/null
+          python -m json.tool Data/Encounter/ProductionReadinessEvidencePacket.template.json > /dev/null
+          python -m json.tool Data/Encounter/ProductionEvidenceTrustKeyring.template.json > /dev/null
+          python -m json.tool Data/Encounter/ProductionEvidenceAttestation.template.json > /dev/null
+
+      - name: Preserve Stage 43 and 44 governance
+        run: |
+          python Scripts/validate_encounter_checkpoint_stage43.py
+          python Scripts/validate_encounter_checkpoint_stage44_attestation.py
+          python Scripts/validate_encounter_checkpoint_stage45_release_board.py
+
+      - name: Run Stage 43 evidence gate regression tests
+        run: python -m unittest discover -s Scripts/Tests -p "test_validate_encounter_checkpoint_stage43_evidence.py" -v
+
+      - name: Run Stage 44 cryptographic attestation regression tests
+        run: python -m unittest discover -s Scripts/Tests -p "test_validate_encounter_checkpoint_stage44_attestation.py" -v
+
+      - name: Run Stage 45 Release Board regression tests
+        run: python -m unittest discover -s Scripts/Tests -p "test_validate_encounter_checkpoint_stage45_release_board.py" -v
+
+      - name: Empty templates remain blocked
+        run: |
+          mkdir -p "$RUNNER_TEMP/stage45-empty-evidence" "$RUNNER_TEMP/stage45-empty-artifacts"
+          python Scripts/encounter_checkpoint_release_board.py verify \
+            --packet Data/Encounter/ProductionReadinessEvidencePacket.template.json \
+            --evidence-root "$RUNNER_TEMP/stage45-empty-evidence" \
+            --attestation Data/Encounter/ProductionEvidenceAttestation.template.json \
+            --keyring Data/Encounter/ProductionEvidenceTrustKeyring.template.json \
+            --candidate Data/Encounter/ProductionReleaseCandidate.template.json \
+            --artifact-root "$RUNNER_TEMP/stage45-empty-artifacts" \
+            --decision-file Data/Encounter/ProductionReleaseBoardDecision.template.json \
+            --report "$RUNNER_TEMP/stage45-empty-report.json"
+          python - "$RUNNER_TEMP/stage45-empty-report.json" <<'PY'
+          import json, sys
+          from pathlib import Path
+          report = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+          assert report["outcome"] == "BLOCKED_UPSTREAM_NOT_ELIGIBLE", report["outcome"]
+          assert report["deploymentAuthorizationGranted"] is False
+          assert report["deploymentExecuted"] is False
+          assert report["productionReady"] is False
+          assert report["highAvailabilityApproved"] is False
+          assert report["sloStatus"] == "UNBASELINED"
+          assert report["promotionAllowed"] is False
+          print("Stage 45 empty templates remain fail-closed: BLOCKED_UPSTREAM_NOT_ELIGIBLE")
+          PY
