@@ -257,7 +257,8 @@ def validate_candidate(
             "android-package": {"application/vnd.android.package-archive", "application/zip"},
             "windows-client": {"application/octet-stream", "application/zip"},
         }
-        if target.get("mediaType") not in allowed_media[name]:
+        media_type = target.get("mediaType")
+        if not isinstance(media_type, str) or media_type not in allowed_media[name]:
             errors.append(f"CANDIDATE_MEDIA_TYPE_INVALID:{name}")
             continue
         verified[name] = target
@@ -475,7 +476,7 @@ def _validate_decision_shape(decision: object) -> list[str]:
             errors.append(f"RELEASE_BOARD_{field.upper()}_INVALID")
     if decision.get("targetEnvironment") != "production":
         errors.append("RELEASE_BOARD_TARGET_ENVIRONMENT_INVALID")
-    if decision.get("decision") not in {"APPROVE", "REJECT"}:
+    if not isinstance(decision.get("decision"), str) or decision.get("decision") not in {"APPROVE", "REJECT"}:
         errors.append("RELEASE_BOARD_DECISION_VALUE_INVALID")
     created = _parse_utc(decision.get("createdAtUtc"))
     if created is None or created > datetime.now(timezone.utc) + timedelta(minutes=5):
@@ -578,7 +579,10 @@ def evaluate(
         if role in verified_roles:
             signature_errors.append("RELEASE_BOARD_ROLE_DUPLICATE")
             continue
-        if not isinstance(signer_id, str) or signer_id in used_board_keys:
+        if not isinstance(signer_id, str):
+            signature_errors.append("RELEASE_BOARD_SIGNER_KEY_INVALID")
+            continue
+        if signer_id in used_board_keys:
             signature_errors.append("RELEASE_BOARD_SIGNER_KEY_DUPLICATE")
             continue
         if signer_id in used_upstream:
