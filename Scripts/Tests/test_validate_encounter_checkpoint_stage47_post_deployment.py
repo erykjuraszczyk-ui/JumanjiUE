@@ -3,11 +3,16 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
+import sys
 import tempfile
 import unittest
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from uuid import uuid4
+
+ROOT = Path(__file__).resolve().parents[2]
+SCRIPTS = ROOT / "Scripts"
+sys.path.insert(0, str(SCRIPTS))
 
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
