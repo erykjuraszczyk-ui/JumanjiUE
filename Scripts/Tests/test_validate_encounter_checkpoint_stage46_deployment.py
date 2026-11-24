@@ -178,6 +178,20 @@ class Stage46ControlledDeploymentTests(unittest.TestCase):
             with self.assertRaisesRegex(MODULE.DeploymentPlanError, "RELEASE_BOARD_DECISION_BYTES_MISMATCH"):
                 _prepare(context)
 
+    def test_rollback_baseline_bytes_must_match_parsed_object(self) -> None:
+        with tempfile.TemporaryDirectory() as folder:
+            context = _build_context(Path(folder))
+            context["baseline_raw"] += b" "
+            with self.assertRaisesRegex(MODULE.DeploymentPlanError, "ROLLBACK_BASELINE_BYTES_MISMATCH"):
+                _prepare(context)
+
+    def test_candidate_bytes_must_match_parsed_candidate(self) -> None:
+        with tempfile.TemporaryDirectory() as folder:
+            context = _build_context(Path(folder))
+            context["candidate_raw"] += b" "
+            with self.assertRaisesRegex(MODULE.DeploymentPlanError, "CANDIDATE_BYTES_MISMATCH"):
+                _prepare(context)
+
     def test_plan_verification_detects_mutation_and_recomputes_bindings(self) -> None:
         with tempfile.TemporaryDirectory() as folder:
             context = _build_context(Path(folder))
