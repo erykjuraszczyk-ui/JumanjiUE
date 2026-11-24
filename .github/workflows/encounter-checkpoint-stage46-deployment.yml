@@ -98,6 +98,14 @@ jobs:
       - name: Run Stage 46 deployment and rollback regression tests
         run: python -m unittest discover -s Scripts/Tests -p "test_validate_encounter_checkpoint_stage46_deployment.py" -v
 
+      - name: Assert CI has no deployment executor
+        run: |
+          if grep -Eiq '(^|[[:space:]])(kubectl|helm|terraform apply|aws deploy|az webapp deploy|gcloud app deploy|ssh)([[:space:]]|$)' .github/workflows/encounter-checkpoint-stage46-deployment.yml; then
+            echo "Deployment command detected in the non-executing Stage 46 workflow." >&2
+            exit 1
+          fi
+          echo "Stage 46 CI has no external deployment executor."
+
       - name: Empty templates remain blocked and non-executing
         run: |
           python - <<'PY'
