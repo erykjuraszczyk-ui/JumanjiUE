@@ -151,7 +151,8 @@ class Stage46ControlledDeploymentTests(unittest.TestCase):
     def test_rollback_artifact_hash_mismatch_blocks_plan(self) -> None:
         with tempfile.TemporaryDirectory() as folder:
             context = _build_context(Path(folder))
-            (context["rollback_root"] / "android" / "previous.apk").write_bytes(b"tampered")
+            original = (context["rollback_root"] / "android" / "previous.apk").read_bytes()
+            (context["rollback_root"] / "android" / "previous.apk").write_bytes(b"x" * len(original))
             with self.assertRaisesRegex(MODULE.DeploymentPlanError, "ROLLBACK_BASELINE_HASH_MISMATCH:android-package"):
                 _prepare(context)
 
@@ -174,21 +175,21 @@ class Stage46ControlledDeploymentTests(unittest.TestCase):
     def test_decision_bytes_must_match_verified_decision_object(self) -> None:
         with tempfile.TemporaryDirectory() as folder:
             context = _build_context(Path(folder))
-            context["decision_raw"] += b" "
+            context["decision_raw"] = _json_bytes({**context["decision"], "decision": "REJECT"})
             with self.assertRaisesRegex(MODULE.DeploymentPlanError, "RELEASE_BOARD_DECISION_BYTES_MISMATCH"):
                 _prepare(context)
 
     def test_rollback_baseline_bytes_must_match_parsed_object(self) -> None:
         with tempfile.TemporaryDirectory() as folder:
             context = _build_context(Path(folder))
-            context["baseline_raw"] += b" "
+            context["baseline_raw"] = _json_bytes({**context["baseline"], "baselineId": "JUMANJI-CHANGED-BASELINE"})
             with self.assertRaisesRegex(MODULE.DeploymentPlanError, "ROLLBACK_BASELINE_BYTES_MISMATCH"):
                 _prepare(context)
 
     def test_candidate_bytes_must_match_parsed_candidate(self) -> None:
         with tempfile.TemporaryDirectory() as folder:
             context = _build_context(Path(folder))
-            context["candidate_raw"] += b" "
+            context["candidate_raw"] = _json_bytes({**context["candidate"], "buildId": "JUMANJI-CHANGED-BUILD"})
             with self.assertRaisesRegex(MODULE.DeploymentPlanError, "CANDIDATE_BYTES_MISMATCH"):
                 _prepare(context)
 
