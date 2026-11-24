@@ -133,7 +133,7 @@ def validate_project(root: Path) -> list[str]:
         "NOT_REQUIRED",
         "promotionAllowed=false",
         "UNBASELINED",
-        "nie wykonuje deploymentu",
+        "Nie wykonuje deploymentu",
     ):
         if marker not in doc:
             errors.append(f"STAGE47_RUNBOOK_MARKER_MISSING:{marker}")
