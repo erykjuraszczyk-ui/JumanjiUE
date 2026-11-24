@@ -25,7 +25,7 @@ SCRIPT_MARKERS = (
     "STAGE45_BOARD_QUORUM_INVALID",
     "ROLLBACK_BASELINE_HASH_MISMATCH",
     "ROLLBACK_BASELINE_TARGET_SET_MISMATCH",
-    "ROLLBACK_BASELINE_PATH_TRAVERSAL",
+    "ROLLBACK_BASELINE_PATH",
     "MANUAL_OUT_OF_BAND",
     "DEPLOYMENT_PLAN_BINDING_MISMATCH",
     "ATTESTATION_BYTES_MISMATCH",
@@ -131,7 +131,7 @@ def validate_project(root: Path) -> list[str]:
         "deploymentExecuted=false",
         "productionReady=false",
         "UNBASELINED",
-        "Nie wykonuje deploymentu",
+        "nie wykonuje deploymentu",
     ):
         if marker not in doc:
             errors.append(f"DEPLOYMENT_RUNBOOK_MARKER_MISSING:{marker}")
