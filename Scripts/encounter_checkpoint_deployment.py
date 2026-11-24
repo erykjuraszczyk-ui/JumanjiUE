@@ -478,28 +478,15 @@ def cmd_verify(args: argparse.Namespace) -> int:
     plan_value, _ = _load_path(args.plan_file, "DEPLOYMENT_PLAN")
     if not isinstance(plan_value, dict):
         raise DeploymentPlanError("DEPLOYMENT_PLAN_ROOT_INVALID")
-    prepared = _prepare_from_args(
-        args,
-        plan_id=plan_value.get("planId"),
-        created_at_utc=plan_value.get("createdAtUtc"),
-    )
+    values = _load_inputs(args)
     verification = verify_plan(
         plan_value,
-        *_load_inputs(args)[:0],
-    ) if False else {
-        "outcome": "PLAN_VERIFIED_NO_SIDE_EFFECTS",
-        "planId": prepared["planId"],
-        "candidateId": prepared["candidate"]["candidateId"],
-        "deploymentExecuted": False,
-        "postDeploymentVerified": False,
-        "rollbackExecuted": False,
-        "productionReady": False,
-        "highAvailabilityApproved": False,
-        "sloStatus": "UNBASELINED",
-        "promotionAllowed": False,
-    }
-    if plan_value != prepared:
-        raise DeploymentPlanError("DEPLOYMENT_PLAN_BINDING_MISMATCH")
+        values[0], args.evidence_root, values[1], values[2],
+        values[3], values[4], args.trusted_keyring_sha256,
+        values[5], values[6], args.artifact_root,
+        values[7], values[8], values[9], values[10],
+        args.rollback_artifact_root, args.project_root,
+    )
     print(json.dumps(verification, indent=2))
     return 0
 
