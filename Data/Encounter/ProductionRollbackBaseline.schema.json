@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "JUMANJI Production Rollback Baseline v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "baselineId", "environmentId", "capturedAtUtc", "sourceCommitSha", "targets"],
+  "properties": {
+    "schema": { "const": "JUMANJI.ProductionRollbackBaseline.v1" },
+    "baselineId": { "type": "string", "minLength": 3, "maxLength": 96, "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{2,95}$" },
+    "environmentId": { "const": "production" },
+    "capturedAtUtc": { "type": "string", "format": "date-time" },
+    "sourceCommitSha": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+    "targets": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 3,
+      "items": { "$ref": "#/$defs/target" }
+    }
+  },
+  "$defs": {
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target", "path", "sha256", "sizeBytes", "mediaType"],
+      "properties": {
+        "target": { "enum": ["ue58-dedicated-server", "android-package", "windows-client"] },
+        "path": { "type": "string", "minLength": 1, "maxLength": 240, "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9._/-]+$" },
+        "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "sizeBytes": { "type": "integer", "minimum": 1, "maximum": 8589934592 },
+        "mediaType": { "enum": ["application/octet-stream", "application/zip", "application/x-tar", "application/vnd.android.package-archive"] }
+      }
+    }
+  }
+}
