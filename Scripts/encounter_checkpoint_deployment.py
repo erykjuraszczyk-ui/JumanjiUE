@@ -170,6 +170,9 @@ def validate_rollback_baseline(
     rollback_artifact_root: Path,
     candidate: dict[str, Any],
 ) -> dict[str, Any]:
+    decoded_baseline = _load_json_bytes(baseline_raw, "ROLLBACK_BASELINE")
+    if decoded_baseline != baseline:
+        raise DeploymentPlanError("ROLLBACK_BASELINE_BYTES_MISMATCH")
     required_fields = {
         "schema", "baselineId", "environmentId", "capturedAtUtc", "sourceCommitSha", "targets"
     }
@@ -265,6 +268,12 @@ def prepare_plan(
     """Build an operator plan only after re-verifying Stage 45 and rollback bytes."""
     if not isinstance(candidate, dict) or not isinstance(decision, dict):
         raise DeploymentPlanError("RELEASE_INPUT_ROOT_INVALID")
+    if _load_json_bytes(attestation_raw, "ATTESTATION") != attestation:
+        raise DeploymentPlanError("ATTESTATION_BYTES_MISMATCH")
+    if _load_json_bytes(keyring_raw, "KEYRING") != keyring:
+        raise DeploymentPlanError("KEYRING_BYTES_MISMATCH")
+    if _load_json_bytes(candidate_raw, "CANDIDATE") != candidate:
+        raise DeploymentPlanError("CANDIDATE_BYTES_MISMATCH")
     decoded_decision = _load_json_bytes(decision_raw, "RELEASE_BOARD_DECISION")
     if decoded_decision != decision:
         raise DeploymentPlanError("RELEASE_BOARD_DECISION_BYTES_MISMATCH")
