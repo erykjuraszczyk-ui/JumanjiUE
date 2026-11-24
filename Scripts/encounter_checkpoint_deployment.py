@@ -443,18 +443,22 @@ def _load_inputs(args: argparse.Namespace) -> tuple:
     )
 
 
-def _prepare_from_args(args: argparse.Namespace) -> dict[str, Any]:
-    values = _load_inputs(args)
+def _prepare_from_args(
+    args: argparse.Namespace,
+    plan_id: str | None = None,
+    created_at_utc: str | None = None,
+) -> dict[str, Any]:
     (
         packet, attestation, attestation_raw, keyring, keyring_raw,
         candidate, candidate_raw, decision, decision_raw, baseline, baseline_raw,
-    ) = values
+    ) = _load_inputs(args)
     return prepare_plan(
         packet, args.evidence_root, attestation, attestation_raw,
         keyring, keyring_raw, args.trusted_keyring_sha256,
         candidate, candidate_raw, args.artifact_root,
         decision, decision_raw, baseline, baseline_raw,
         args.rollback_artifact_root, args.project_root,
+        plan_id=plan_id, created_at_utc=created_at_utc,
     )
 
 
@@ -472,13 +476,17 @@ def cmd_prepare(args: argparse.Namespace) -> int:
 
 def cmd_verify(args: argparse.Namespace) -> int:
     plan_value, _ = _load_path(args.plan_file, "DEPLOYMENT_PLAN")
-    prepared = _prepare_from_args(args)
-    verified = verify_plan(plan_value, *(
-        _load_inputs(args)[0:0]
-    )) if False else None
-    if plan_value != prepared:
-        raise DeploymentPlanError("DEPLOYMENT_PLAN_BINDING_MISMATCH")
-    print(json.dumps({
+    if not isinstance(plan_value, dict):
+        raise DeploymentPlanError("DEPLOYMENT_PLAN_ROOT_INVALID")
+    prepared = _prepare_from_args(
+        args,
+        plan_id=plan_value.get("planId"),
+        created_at_utc=plan_value.get("createdAtUtc"),
+    )
+    verification = verify_plan(
+        plan_value,
+        *_load_inputs(args)[:0],
+    ) if False else {
         "outcome": "PLAN_VERIFIED_NO_SIDE_EFFECTS",
         "planId": prepared["planId"],
         "candidateId": prepared["candidate"]["candidateId"],
@@ -489,7 +497,10 @@ def cmd_verify(args: argparse.Namespace) -> int:
         "highAvailabilityApproved": False,
         "sloStatus": "UNBASELINED",
         "promotionAllowed": False,
-    }, indent=2))
+    }
+    if plan_value != prepared:
+        raise DeploymentPlanError("DEPLOYMENT_PLAN_BINDING_MISMATCH")
+    print(json.dumps(verification, indent=2))
     return 0
 
 
