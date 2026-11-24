@@ -1,0 +1,23 @@
+{
+  "schema": "JUMANJI.ProductionDeploymentPlan.v1",
+  "stage": 46,
+  "planId": null,
+  "createdAtUtc": null,
+  "environmentId": null,
+  "targetEnvironment": "production",
+  "executionMode": "MANUAL_OUT_OF_BAND",
+  "state": "BLOCKED_MISSING_EVIDENCE",
+  "candidate": null,
+  "authorization": null,
+  "rollbackBaseline": null,
+  "rollout": null,
+  "rollbackPolicy": null,
+  "sideEffectsPerformed": false,
+  "deploymentExecuted": false,
+  "postDeploymentVerified": false,
+  "rollbackExecuted": false,
+  "productionReady": false,
+  "highAvailabilityApproved": false,
+  "sloStatus": "UNBASELINED",
+  "promotionAllowed": false
+}

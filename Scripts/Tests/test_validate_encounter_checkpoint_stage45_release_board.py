@@ -134,7 +134,7 @@ def _build_context(root: Path) -> dict:
     decision = MODULE.prepare_decision(
         packet, candidate, candidate_raw, envelope, attestation_raw,
         keyring, keyring_raw, trusted_hash, evidence_root, artifact_root,
-        "APPROVE", project_root=ROOT,
+        "APPROVE", created_at_utc=STAMP, project_root=ROOT,
     )
     return {
         "packet": packet,

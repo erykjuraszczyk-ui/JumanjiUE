@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "JUMANJI Controlled Production Deployment Plan v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "stage", "planId", "createdAtUtc", "environmentId", "targetEnvironment", "executionMode", "state", "candidate", "authorization", "rollbackBaseline", "rollout", "rollbackPolicy", "sideEffectsPerformed", "deploymentExecuted", "postDeploymentVerified", "rollbackExecuted", "productionReady", "highAvailabilityApproved", "sloStatus", "promotionAllowed"],
+  "properties": {
+    "schema": { "const": "JUMANJI.ProductionDeploymentPlan.v1" },
+    "stage": { "const": 46 },
+    "planId": { "type": "string", "format": "uuid" },
+    "createdAtUtc": { "type": "string", "format": "date-time" },
+    "environmentId": { "type": "string", "minLength": 3, "maxLength": 96 },
+    "targetEnvironment": { "const": "production" },
+    "executionMode": { "const": "MANUAL_OUT_OF_BAND" },
+    "state": { "const": "READY_FOR_OPERATOR_REVIEW" },
+    "candidate": { "$ref": "#/$defs/release" },
+    "authorization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["stage45Outcome", "decisionId", "decisionSha256", "candidateSha256", "verifiedBoardRoles"],
+      "properties": {
+        "stage45Outcome": { "const": "APPROVED_FOR_DEPLOYMENT" },
+        "decisionId": { "type": "string", "format": "uuid" },
+        "decisionSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "candidateSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "verifiedBoardRoles": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "uniqueItems": true,
+          "items": { "enum": ["SERVICE_OWNER", "SECURITY_REVIEWER", "PLATFORM_REVIEWER"] }
+        }
+      }
+    },
+    "rollbackBaseline": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["baselineId", "baselineSha256", "sourceCommitSha", "capturedAtUtc", "targets"],
+      "properties": {
+        "baselineId": { "type": "string", "minLength": 3, "maxLength": 96 },
+        "baselineSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "sourceCommitSha": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+        "capturedAtUtc": { "type": "string", "format": "date-time" },
+        "targets": { "type": "array", "minItems": 2, "maxItems": 3, "items": { "$ref": "#/$defs/target" } }
+      }
+    },
+    "rollout": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "stopOnFailedGate", "automaticRetries", "phases"],
+      "properties": {
+        "mode": { "const": "OPERATOR_GATED_SEQUENCE" },
+        "stopOnFailedGate": { "const": true },
+        "automaticRetries": { "const": false },
+        "phases": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["phase", "status", "requiredEvidence"],
+            "properties": {
+              "phase": { "enum": ["PREFLIGHT", "CANARY", "PROGRESSIVE_ROLLOUT", "POST_DEPLOYMENT_VERIFICATION"] },
+              "status": { "const": "NOT_STARTED" },
+              "requiredEvidence": { "type": "array", "minItems": 1, "items": { "type": "string" } }
+            }
+          }
+        }
+      }
+    },
+    "rollbackPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required", "action", "automaticRollback", "abortOnFailedHealthGate"],
+      "properties": {
+        "required": { "const": true },
+        "action": { "const": "MANUAL_REDEPLOY_LAST_KNOWN_GOOD" },
+        "automaticRollback": { "const": false },
+        "abortOnFailedHealthGate": { "const": true }
+      }
+    },
+    "sideEffectsPerformed": { "const": false },
+    "deploymentExecuted": { "const": false },
+    "postDeploymentVerified": { "const": false },
+    "rollbackExecuted": { "const": false },
+    "productionReady": { "const": false },
+    "highAvailabilityApproved": { "const": false },
+    "sloStatus": { "const": "UNBASELINED" },
+    "promotionAllowed": { "const": false }
+  },
+  "$defs": {
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target", "path", "sha256", "sizeBytes", "mediaType"],
+      "properties": {
+        "target": { "enum": ["ue58-dedicated-server", "android-package", "windows-client"] },
+        "path": { "type": "string", "minLength": 1, "maxLength": 240 },
+        "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "sizeBytes": { "type": "integer", "minimum": 1 },
+        "mediaType": { "type": "string", "minLength": 1, "maxLength": 128 }
+      }
+    },
+    "release": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["candidateId", "buildId", "sourceCommitSha", "engineVersion", "candidateSha256", "targets"],
+      "properties": {
+        "candidateId": { "type": "string", "minLength": 3, "maxLength": 96 },
+        "buildId": { "type": "string", "minLength": 3, "maxLength": 96 },
+        "sourceCommitSha": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+        "engineVersion": { "const": "5.8" },
+        "candidateSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "targets": { "type": "array", "minItems": 2, "maxItems": 3, "items": { "$ref": "#/$defs/target" } }
+      }
+    }
+  }
+}
