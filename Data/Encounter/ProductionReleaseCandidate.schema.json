@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "JUMANJI Production Release Candidate v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema","candidateId","buildId","packetId","packetSha256","environmentId","sourceCommitSha","engineVersion","createdAtUtc","targets"],
+  "properties": {
+    "schema": { "const": "JUMANJI.ProductionReleaseCandidate.v1" },
+    "candidateId": { "type": ["string","null"], "minLength": 3, "maxLength": 96, "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{2,95}$" },
+    "buildId": { "type": ["string","null"], "minLength": 3, "maxLength": 96, "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{2,95}$" },
+    "packetId": { "type": ["string","null"], "format": "uuid" },
+    "packetSha256": { "type": ["string","null"], "pattern": "^[a-f0-9]{64}$" },
+    "environmentId": { "type": ["string","null"], "minLength": 3, "maxLength": 96, "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{2,95}$" },
+    "sourceCommitSha": { "type": ["string","null"], "pattern": "^[a-f0-9]{40}$" },
+    "engineVersion": { "anyOf": [{ "const": "5.8" }, { "type": "null" }] },
+    "createdAtUtc": { "type": ["string","null"], "format": "date-time" },
+    "targets": { "type": "array", "maxItems": 8, "items": { "$ref": "#/$defs/target" } }
+  },
+  "$defs": {
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target","path","sha256","sizeBytes","mediaType"],
+      "properties": {
+        "target": { "enum": ["ue58-dedicated-server","android-package","windows-client"] },
+        "path": { "type": "string", "minLength": 1, "maxLength": 240, "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9._/-]+$" },
+        "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "sizeBytes": { "type": "integer", "minimum": 1, "maximum": 8589934592 },
+        "mediaType": { "enum": ["application/octet-stream","application/zip","application/x-tar","application/vnd.android.package-archive"] }
+      }
+    }
+  }
+}

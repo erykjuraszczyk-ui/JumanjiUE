@@ -1,0 +1,15 @@
+{
+  "schema": "JUMANJI.ProductionReleaseBoardDecision.v1",
+  "stage": 45,
+  "decisionId": null,
+  "candidateId": null,
+  "candidateSha256": null,
+  "packetId": null,
+  "packetSha256": null,
+  "attestationSha256": null,
+  "keyringSha256": null,
+  "targetEnvironment": "production",
+  "decision": "NOT_DECIDED",
+  "createdAtUtc": null,
+  "boardSignatures": []
+}

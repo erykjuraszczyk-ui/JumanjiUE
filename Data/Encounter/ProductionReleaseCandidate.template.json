@@ -1,0 +1,12 @@
+{
+  "schema": "JUMANJI.ProductionReleaseCandidate.v1",
+  "candidateId": null,
+  "buildId": null,
+  "packetId": null,
+  "packetSha256": null,
+  "environmentId": null,
+  "sourceCommitSha": null,
+  "engineVersion": null,
+  "createdAtUtc": null,
+  "targets": []
+}
