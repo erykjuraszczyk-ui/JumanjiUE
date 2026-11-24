@@ -131,7 +131,7 @@ def validate_project(root: Path) -> list[str]:
         "deploymentExecuted=false",
         "productionReady=false",
         "UNBASELINED",
-        "nie wykonuje deploymentu",
+        "bez komend wykonujących deployment",
     ):
         if marker not in doc:
             errors.append(f"DEPLOYMENT_RUNBOOK_MARKER_MISSING:{marker}")
