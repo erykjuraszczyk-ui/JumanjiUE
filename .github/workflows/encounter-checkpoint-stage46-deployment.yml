@@ -1,0 +1,120 @@
+name: Encounter Checkpoint Stage 46 Controlled Deployment & Rollback Readiness
+
+on:
+  pull_request:
+    paths:
+      - "Data/Encounter/ProductionRollbackBaseline.*.json"
+      - "Data/Encounter/ProductionDeploymentPlan.*.json"
+      - "Data/Encounter/ProductionReleaseCandidate.*.json"
+      - "Data/Encounter/ProductionReleaseBoardDecision.*.json"
+      - "Data/Encounter/ProductionReadinessEvidencePacket.*.json"
+      - "Data/Encounter/ProductionEvidenceTrustKeyring.*.json"
+      - "Data/Encounter/ProductionEvidenceAttestation.*.json"
+      - "Scripts/encounter_checkpoint_deployment.py"
+      - "Scripts/encounter_checkpoint_release_board.py"
+      - "Scripts/encounter_checkpoint_evidence_attestation.py"
+      - "Scripts/validate_encounter_checkpoint_stage43_evidence.py"
+      - "Scripts/validate_encounter_checkpoint_stage44_attestation.py"
+      - "Scripts/validate_encounter_checkpoint_stage45_release_board.py"
+      - "Scripts/validate_encounter_checkpoint_stage46_deployment.py"
+      - "Scripts/Tests/test_validate_encounter_checkpoint_stage43_evidence.py"
+      - "Scripts/Tests/test_validate_encounter_checkpoint_stage44_attestation.py"
+      - "Scripts/Tests/test_validate_encounter_checkpoint_stage45_release_board.py"
+      - "Scripts/Tests/test_validate_encounter_checkpoint_stage46_deployment.py"
+      - "Docs/STAGE_46_CONTROLLED_DEPLOYMENT_ROLLBACK_READINESS.md"
+      - ".github/workflows/encounter-checkpoint-stage46-deployment.yml"
+  push:
+    branches: [main]
+    paths:
+      - "Data/Encounter/ProductionRollbackBaseline.*.json"
+      - "Data/Encounter/ProductionDeploymentPlan.*.json"
+      - "Data/Encounter/ProductionReleaseCandidate.*.json"
+      - "Data/Encounter/ProductionReleaseBoardDecision.*.json"
+      - "Data/Encounter/ProductionReadinessEvidencePacket.*.json"
+      - "Data/Encounter/ProductionEvidenceTrustKeyring.*.json"
+      - "Data/Encounter/ProductionEvidenceAttestation.*.json"
+      - "Scripts/encounter_checkpoint_deployment.py"
+      - "Scripts/encounter_checkpoint_release_board.py"
+      - "Scripts/encounter_checkpoint_evidence_attestation.py"
+      - "Scripts/validate_encounter_checkpoint_stage43_evidence.py"
+      - "Scripts/validate_encounter_checkpoint_stage44_attestation.py"
+      - "Scripts/validate_encounter_checkpoint_stage45_release_board.py"
+      - "Scripts/validate_encounter_checkpoint_stage46_deployment.py"
+      - "Scripts/Tests/test_validate_encounter_checkpoint_stage43_evidence.py"
+      - "Scripts/Tests/test_validate_encounter_checkpoint_stage44_attestation.py"
+      - "Scripts/Tests/test_validate_encounter_checkpoint_stage45_release_board.py"
+      - "Scripts/Tests/test_validate_encounter_checkpoint_stage46_deployment.py"
+      - "Docs/STAGE_46_CONTROLLED_DEPLOYMENT_ROLLBACK_READINESS.md"
+      - ".github/workflows/encounter-checkpoint-stage46-deployment.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  stage46-controlled-deployment:
+    name: Validate signed release plan and rollback baseline
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Stage 44–46 crypto dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install "cryptography>=42.0" "rfc8785==0.1.4"
+
+      - name: Validate JSON schemas and empty templates
+        run: |
+          python -m json.tool Data/Encounter/ProductionRollbackBaseline.schema.json > /dev/null
+          python -m json.tool Data/Encounter/ProductionRollbackBaseline.template.json > /dev/null
+          python -m json.tool Data/Encounter/ProductionDeploymentPlan.schema.json > /dev/null
+          python -m json.tool Data/Encounter/ProductionDeploymentPlan.template.json > /dev/null
+          python -m json.tool Data/Encounter/ProductionReleaseCandidate.schema.json > /dev/null
+          python -m json.tool Data/Encounter/ProductionReleaseBoardDecision.schema.json > /dev/null
+          python -m compileall -q Scripts/encounter_checkpoint_deployment.py Scripts/encounter_checkpoint_release_board.py
+
+      - name: Preserve Stage 43–46 governance
+        run: |
+          python Scripts/validate_encounter_checkpoint_stage43.py
+          python Scripts/validate_encounter_checkpoint_stage44_attestation.py
+          python Scripts/validate_encounter_checkpoint_stage45_release_board.py
+          python Scripts/validate_encounter_checkpoint_stage46_deployment.py
+
+      - name: Run Stage 43 evidence gate regression tests
+        run: python -m unittest discover -s Scripts/Tests -p "test_validate_encounter_checkpoint_stage43_evidence.py" -v
+
+      - name: Run Stage 44 cryptographic attestation regression tests
+        run: python -m unittest discover -s Scripts/Tests -p "test_validate_encounter_checkpoint_stage44_attestation.py" -v
+
+      - name: Run Stage 45 Release Board regression tests
+        run: python -m unittest discover -s Scripts/Tests -p "test_validate_encounter_checkpoint_stage45_release_board.py" -v
+
+      - name: Run Stage 46 deployment and rollback regression tests
+        run: python -m unittest discover -s Scripts/Tests -p "test_validate_encounter_checkpoint_stage46_deployment.py" -v
+
+      - name: Empty templates remain blocked and non-executing
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          plan = json.loads(Path("Data/Encounter/ProductionDeploymentPlan.template.json").read_text(encoding="utf-8"))
+          rollback = json.loads(Path("Data/Encounter/ProductionRollbackBaseline.template.json").read_text(encoding="utf-8"))
+          assert plan["state"] == "BLOCKED_MISSING_EVIDENCE"
+          assert plan["planId"] is None
+          assert plan["sideEffectsPerformed"] is False
+          assert plan["deploymentExecuted"] is False
+          assert plan["postDeploymentVerified"] is False
+          assert plan["rollbackExecuted"] is False
+          assert plan["productionReady"] is False
+          assert plan["highAvailabilityApproved"] is False
+          assert plan["sloStatus"] == "UNBASELINED"
+          assert plan["promotionAllowed"] is False
+          assert rollback["baselineId"] is None and rollback["targets"] == []
+          print("Stage 46 empty templates remain blocked; no deployment side effects are possible in CI.")
+          PY
