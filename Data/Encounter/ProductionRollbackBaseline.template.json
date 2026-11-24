@@ -1,0 +1,8 @@
+{
+  "schema": "JUMANJI.ProductionRollbackBaseline.v1",
+  "baselineId": null,
+  "environmentId": "production",
+  "capturedAtUtc": null,
+  "sourceCommitSha": null,
+  "targets": []
+}
