@@ -52,6 +52,7 @@ Open-world third-person adventure RPG prototype with a shared-world direction an
 - Stage 44 — Cryptographic Evidence Attestation: packet-bound Ed25519 signatures for operator, evidence reviewer and final release-board roles; RFC 8785 canonicalization, independently pinned public keyring hash, key revocation/role controls and fail-closed attestation validation; no production/HA/SLO promotion.
 - Stage 45 — Release Board Authorization & Deployment Candidate Binding: SHA-256-bound UE 5.8 Dedicated Server and Android candidate artifacts, Stage 43/44 packet/keyring binding, three independent Release Board signatures and fail-closed authorization; no deployment or production/HA/SLO promotion.
 - Stage 46 — Controlled Deployment Orchestration & Rollback Readiness: re-verifies Stage 45 signatures, requires hashed last-known-good server/Android assets, builds an operator-gated rollout plan and post-deployment evidence checklist; no automated deployment or production/HA/SLO promotion.
+- Stage 47 — Post-Deployment Verification & Evidence Reconciliation: verifies the completed four-phase Stage 46 journal, exact plan/candidate/rollback/evidence SHA-256 bindings, and two independent Ed25519 signatures; produces an offline audit report without production/HA/SLO promotion.
 
 ## The nine playable Great Spirits
 1. Great Spirit I — Duch Korzeni (Root / Guardian)
@@ -137,6 +138,7 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - Docs/STAGE_44_CRYPTOGRAPHIC_EVIDENCE_ATTESTATION.md — encrypted Ed25519 operator/reviewer signing, RFC 8785 packet binding, out-of-band trust-keyring pinning, key revocation, independent final review and operator runbook.
 - Docs/STAGE_45_RELEASE_BOARD_DEPLOYMENT_AUTHORIZATION.md — candidate artifact binding, three-role Release Board quorum, Ed25519 signing, exact release authorization and deployment boundary.
 - Docs/STAGE_46_CONTROLLED_DEPLOYMENT_ROLLBACK_READINESS.md — Stage 45 re-verification, rollback baseline, gated rollout sequence, operator runbook and deployment limitations.
+- Docs/STAGE_47_POST_DEPLOYMENT_VERIFICATION_EVIDENCE_RECONCILIATION.md — four-phase post-deployment evidence ledger, two-role signing, SHA-256 verification, operator steps and promotion boundaries.
 - Data/Encounter/ProductionReleaseCandidate.schema.json and Data/Encounter/ProductionReleaseCandidate.template.json — strict release candidate manifest and empty template.
 - Data/Encounter/ProductionRollbackBaseline.schema.json and Data/Encounter/ProductionRollbackBaseline.template.json — strict production last-known-good manifest and empty baseline template.
 - Data/Encounter/ProductionDeploymentPlan.schema.json and Data/Encounter/ProductionDeploymentPlan.template.json — strict non-executing deployment plan and blocked template.
@@ -158,6 +160,11 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - Data/Encounter/EncounterCheckpointStage42ReadinessManifest.json — separate Stage42 evidence manifest; real staging, failover, PITR, UE and Android validations remain false until performed.
 - Data/Encounter/EncounterCheckpointStagingDrillReport.schema.json — strict sanitized report schema for staging/ephemeral CI results.
 - Scripts/run_encounter_checkpoint_staging_drill.py and Scripts/validate_encounter_checkpoint_staging_report.py — HTTPS/mTLS/PostgreSQL signed-checkpoint drill and report privacy validator.
+- Data/Encounter/ProductionDeploymentEvidenceJournal.schema.json and its template — strict four-phase deployment journal; the repository template remains NOT_RECORDED.
+- Data/Encounter/ProductionDeploymentEvidenceAttestation.schema.json and its template — journal/plan-bound RFC 8785 Ed25519 signatures for distinct SERVICE_OPERATOR and INDEPENDENT_REVIEWER roles.
+- Scripts/encounter_checkpoint_deployment_evidence.py — offline sign/verify CLI for Stage 46 execution evidence, exact hashes, trusted-keyring pinning and fail-closed audit reporting.
+- Scripts/validate_encounter_checkpoint_stage47_post_deployment.py and Scripts/Tests/test_validate_encounter_checkpoint_stage47_post_deployment.py — Stage 47 contract validator and signature/evidence/path/tamper regression tests.
+- .github/workflows/encounter-checkpoint-stage47-post-deployment.yml — Stage 46/47 CI; uses synthetic evidence only and has no deployment executor.
 - Scripts/fence_checkpoint_leases_after_restore.py — offline PostgreSQL restore fencing; dry-run by default, explicit staged-target confirmation required for apply.
 - Scripts/validate_encounter_checkpoint_stage42.py and Scripts/Tests/test_encounter_checkpoint_stage42.py — Stage42 static, signature, payload and readiness governance validation.
 - Scripts/Tests/test_checkpoint_postgres_restore_fencing.py — disposable-PostgreSQL tests for dry-run, restored lease invalidation, preserved signed checkpoints and epoch overflow.
