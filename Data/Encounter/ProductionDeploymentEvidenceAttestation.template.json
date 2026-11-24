@@ -1,0 +1,8 @@
+{
+  "schema": "JUMANJI.ProductionDeploymentEvidenceAttestation.v1",
+  "journalId": null,
+  "journalSha256": null,
+  "planSha256": null,
+  "canonicalization": "RFC8785",
+  "signatures": []
+}

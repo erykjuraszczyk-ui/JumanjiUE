@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "JUMANJI Production Deployment Evidence Journal v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "journalId", "planId", "planSha256", "candidateSha256", "rollbackBaselineSha256", "environmentId", "executionMode", "outcome", "rollbackOutcome", "startedAtUtc", "completedAtUtc", "phases"],
+  "properties": {
+    "schema": { "const": "JUMANJI.ProductionDeploymentEvidenceJournal.v1" },
+    "journalId": { "type": ["string", "null"], "format": "uuid" },
+    "planId": { "type": ["string", "null"], "format": "uuid" },
+    "planSha256": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
+    "candidateSha256": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
+    "rollbackBaselineSha256": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
+    "environmentId": { "const": "production" },
+    "executionMode": { "const": "MANUAL_OUT_OF_BAND" },
+    "outcome": { "enum": ["NOT_RECORDED", "SUCCEEDED"] },
+    "rollbackOutcome": { "enum": ["NOT_RECORDED", "NOT_REQUIRED"] },
+    "startedAtUtc": { "type": ["string", "null"], "format": "date-time" },
+    "completedAtUtc": { "type": ["string", "null"], "format": "date-time" },
+    "phases": {
+      "type": "array",
+      "maxItems": 4,
+      "items": { "$ref": "#/$defs/phase" }
+    }
+  },
+  "$defs": {
+    "phase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["phase", "status", "startedAtUtc", "completedAtUtc", "evidence"],
+      "properties": {
+        "phase": { "enum": ["PREFLIGHT", "CANARY", "PROGRESSIVE_ROLLOUT", "POST_DEPLOYMENT_VERIFICATION"] },
+        "status": { "const": "PASSED" },
+        "startedAtUtc": { "type": "string", "format": "date-time" },
+        "completedAtUtc": { "type": "string", "format": "date-time" },
+        "evidence": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/evidence" }
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["evidenceId", "category", "path", "sha256", "sizeBytes", "mediaType"],
+      "properties": {
+        "evidenceId": { "type": "string", "format": "uuid" },
+        "category": { "type": "string", "minLength": 3, "maxLength": 96, "pattern": "^[a-z0-9_]+$" },
+        "path": { "type": "string", "minLength": 1, "maxLength": 240, "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9._/-]+$" },
+        "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "sizeBytes": { "type": "integer", "minimum": 1, "maximum": 26214400 },
+        "mediaType": { "enum": ["application/json", "text/plain", "application/octet-stream", "image/png", "image/jpeg", "text/csv"] }
+      }
+    }
+  }
+}
