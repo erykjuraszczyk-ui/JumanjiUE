@@ -25,6 +25,7 @@ def _json_bytes(value: object) -> bytes:
 
 def _build_context(root: Path) -> dict:
     context = STAGE45_FIXTURES._build_context(root)
+    context["unsigned_decision"] = context["decision"]
     context["decision"] = STAGE45_FIXTURES._sign_all(context)
     context["decision_raw"] = _json_bytes(context["decision"])
 
@@ -122,7 +123,7 @@ class Stage46ControlledDeploymentTests(unittest.TestCase):
     def test_unsigned_release_board_decision_cannot_create_a_plan(self) -> None:
         with tempfile.TemporaryDirectory() as folder:
             context = _build_context(Path(folder))
-            context["decision"] = STAGE45_FIXTURES._build_context(Path(folder) / "unused")["decision"]
+            context["decision"] = context["unsigned_decision"]
             context["decision_raw"] = _json_bytes(context["decision"])
             with self.assertRaisesRegex(MODULE.DeploymentPlanError, "STAGE45_NOT_APPROVED"):
                 _prepare(context)
@@ -165,7 +166,7 @@ class Stage46ControlledDeploymentTests(unittest.TestCase):
     def test_rollback_target_set_must_match_release_targets(self) -> None:
         with tempfile.TemporaryDirectory() as folder:
             context = _build_context(Path(folder))
-            context["baseline"]["targets"].pop()
+            context["baseline"]["targets"][0]["target"] = "windows-client"
             context["baseline_raw"] = _json_bytes(context["baseline"])
             with self.assertRaisesRegex(MODULE.DeploymentPlanError, "ROLLBACK_BASELINE_TARGET_SET_MISMATCH"):
                 _prepare(context)
