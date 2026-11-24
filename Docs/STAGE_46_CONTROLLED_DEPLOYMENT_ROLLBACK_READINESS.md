@@ -163,9 +163,9 @@ wykonany.
 | POST_DEPLOYMENT_VERIFICATION | start Dedicated Server, wejście do encounter, wznowienie checkpointu, test Android, backup po zmianie i akceptacja dwóch osób | komplet zewnętrznych dowodów |
 
 Nie ma automatycznej kontynuacji między fazami. Nieudana bramka oznacza
-zatrzymanie i eskalację. Decyzję o rollback podejmuje uprawniony operator;
-przywraca dokładnie artefakty z zatwierdzonego baseline i ponownie sprawdza
-ich hash przed użyciem.
+zatrzymanie i eskalację. Decyzję o rollback podejmuje uprawniony operator.
+Rollback używa polityki `MANUAL_REDEPLOY_LAST_KNOWN_GOOD`: przywraca dokładnie
+artefakty z zatwierdzonego baseline i ponownie sprawdza ich hash przed użyciem.
 
 ## 7. Walidacja i testy
 
