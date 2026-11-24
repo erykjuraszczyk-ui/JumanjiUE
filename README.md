@@ -51,6 +51,7 @@ Open-world third-person adventure RPG prototype with a shared-world direction an
 - Stage 43 — Operator Evidence Intake & Production Readiness Gate: strict evidence packet schema, SHA-256/path/privacy validation, Stage 42 report and fencing verification, UE/Android/SLO evidence contracts and independent two-role review; empty template remains BLOCKED and never changes production/HA/SLO readiness.
 - Stage 44 — Cryptographic Evidence Attestation: packet-bound Ed25519 signatures for operator, evidence reviewer and final release-board roles; RFC 8785 canonicalization, independently pinned public keyring hash, key revocation/role controls and fail-closed attestation validation; no production/HA/SLO promotion.
 - Stage 45 — Release Board Authorization & Deployment Candidate Binding: SHA-256-bound UE 5.8 Dedicated Server and Android candidate artifacts, Stage 43/44 packet/keyring binding, three independent Release Board signatures and fail-closed authorization; no deployment or production/HA/SLO promotion.
+- Stage 46 — Controlled Deployment Orchestration & Rollback Readiness: re-verifies Stage 45 signatures, requires hashed last-known-good server/Android assets, builds an operator-gated rollout plan and post-deployment evidence checklist; no automated deployment or production/HA/SLO promotion.
 
 ## The nine playable Great Spirits
 1. Great Spirit I — Duch Korzeni (Root / Guardian)
@@ -135,9 +136,15 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - Docs/STAGE_43_OPERATOR_EVIDENCE_INTAKE_PRODUCTION_READINESS_GATE.md — required operator evidence packet, evidence provenance classes, report formats, hash checks, dual-role review and fail-closed release gate.
 - Docs/STAGE_44_CRYPTOGRAPHIC_EVIDENCE_ATTESTATION.md — encrypted Ed25519 operator/reviewer signing, RFC 8785 packet binding, out-of-band trust-keyring pinning, key revocation, independent final review and operator runbook.
 - Docs/STAGE_45_RELEASE_BOARD_DEPLOYMENT_AUTHORIZATION.md — candidate artifact binding, three-role Release Board quorum, Ed25519 signing, exact release authorization and deployment boundary.
+- Docs/STAGE_46_CONTROLLED_DEPLOYMENT_ROLLBACK_READINESS.md — Stage 45 re-verification, rollback baseline, gated rollout sequence, operator runbook and deployment limitations.
 - Data/Encounter/ProductionReleaseCandidate.schema.json and Data/Encounter/ProductionReleaseCandidate.template.json — strict release candidate manifest and empty template.
+- Data/Encounter/ProductionRollbackBaseline.schema.json and Data/Encounter/ProductionRollbackBaseline.template.json — strict production last-known-good manifest and empty baseline template.
+- Data/Encounter/ProductionDeploymentPlan.schema.json and Data/Encounter/ProductionDeploymentPlan.template.json — strict non-executing deployment plan and blocked template.
 - Data/Encounter/ProductionReleaseBoardDecision.schema.json and Data/Encounter/ProductionReleaseBoardDecision.template.json — strict board decision envelope and unsigned template.
 - Scripts/encounter_checkpoint_release_board.py — Stage 43/44 verification, candidate artifact hashing, independent board signatures and authorization report.
+- Scripts/encounter_checkpoint_deployment.py — Stage 45 cryptographic re-verification, rollback artifact hashing, operator-gated plan generation and read-only plan verification.
+- Scripts/validate_encounter_checkpoint_stage46_deployment.py and Scripts/Tests/test_validate_encounter_checkpoint_stage46_deployment.py — Stage 46 static governance validator and security/regression tests.
+- .github/workflows/encounter-checkpoint-stage46-deployment.yml — CI for Stage 43–46; validates empty templates without deploying.
 - Scripts/validate_encounter_checkpoint_stage45_release_board.py and Scripts/Tests/test_validate_encounter_checkpoint_stage45_release_board.py — fail-closed governance checks and synthetic cryptographic regression tests.
 - .github/workflows/encounter-checkpoint-stage45-release-board.yml — CI for Stage 43/44/45 and blocked empty templates.
 - Data/Encounter/ProductionEvidenceTrustKeyring.schema.json and Data/Encounter/ProductionEvidenceTrustKeyring.template.json — strict public-key trust schema and deliberately empty keyring template.
