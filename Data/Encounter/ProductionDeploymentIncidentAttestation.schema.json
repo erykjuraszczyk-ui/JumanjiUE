@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "JUMANJI Production Deployment Incident Attestation v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "incidentId", "incidentSha256", "planSha256", "canonicalization", "signatures"],
+  "properties": {
+    "schema": { "const": "JUMANJI.ProductionDeploymentIncidentAttestation.v1" },
+    "incidentId": { "type": "string", "format": "uuid" },
+    "incidentSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "planSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "canonicalization": { "const": "RFC8785" },
+    "signatures": {
+      "type": "array", "minItems": 0, "maxItems": 2,
+      "items": { "$ref": "#/$defs/signature" }
+    }
+  },
+  "$defs": {
+    "signature": {
+      "type": "object", "additionalProperties": false,
+      "required": ["role", "keyId", "signedAtUtc", "signatureBase64"],
+      "properties": {
+        "role": { "enum": ["SERVICE_OPERATOR", "INDEPENDENT_REVIEWER"] },
+        "keyId": {
+          "type": "string", "minLength": 3, "maxLength": 96,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{2,95}$"
+        },
+        "signedAtUtc": { "type": "string", "format": "date-time" },
+        "signatureBase64": { "type": "string", "pattern": "^[A-Za-z0-9+/]{86}==$" }
+      }
+    }
+  }
+}
