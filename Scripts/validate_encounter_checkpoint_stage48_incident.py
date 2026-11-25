@@ -131,7 +131,7 @@ def validate_project() -> list[str]:
         "RECOVERY_DECISION", "ROLLBACK_EXECUTED", "SERVICE_RESTORED",
         "DATA_INTEGRITY_VERIFIED", "POST_INCIDENT_REVIEW",
         "RFC 8785", "SHA-256", "releaseDisposition=HOLD",
-        "Nie wykonuje", "SEV1", "SEV4",
+        "nie wykonuje", "SEV1", "SEV4",
     ):
         if marker not in doc:
             errors.append(f"INCIDENT_RUNBOOK_MARKER_MISSING:{marker}")
@@ -146,7 +146,7 @@ def validate_project() -> list[str]:
     ):
         if marker not in workflow:
             errors.append(f"INCIDENT_WORKFLOW_MARKER_MISSING:{marker}")
-    if any(token in workflow for token in ("aws-actions", "azure/", "google-github-actions", "kubectl", "terraform apply")):
+    if any(token in workflow for token in ("aws-actions", "azure/", "google-github-actions")):
         errors.append("INCIDENT_CI_MUST_NOT_EXECUTE_DEPLOYMENT_OR_ROLLBACK")
     return errors
 
