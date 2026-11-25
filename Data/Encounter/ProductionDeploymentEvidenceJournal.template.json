@@ -1,0 +1,15 @@
+{
+  "schema": "JUMANJI.ProductionDeploymentEvidenceJournal.v1",
+  "journalId": null,
+  "planId": null,
+  "planSha256": null,
+  "candidateSha256": null,
+  "rollbackBaselineSha256": null,
+  "environmentId": "production",
+  "executionMode": "MANUAL_OUT_OF_BAND",
+  "outcome": "NOT_RECORDED",
+  "rollbackOutcome": "NOT_RECORDED",
+  "startedAtUtc": null,
+  "completedAtUtc": null,
+  "phases": []
+}

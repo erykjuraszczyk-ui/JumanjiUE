@@ -1,0 +1,96 @@
+name: Encounter Checkpoint Stage 47 Post-Deployment Verification & Evidence Reconciliation
+
+on:
+  pull_request:
+    paths:
+      - "Data/Encounter/ProductionDeploymentEvidenceJournal.*.json"
+      - "Data/Encounter/ProductionDeploymentEvidenceAttestation.*.json"
+      - "Data/Encounter/ProductionDeploymentPlan.*.json"
+      - "Data/Encounter/ProductionEvidenceTrustKeyring.*.json"
+      - "Scripts/encounter_checkpoint_deployment_evidence.py"
+      - "Scripts/validate_encounter_checkpoint_stage46_deployment.py"
+      - "Scripts/validate_encounter_checkpoint_stage47_post_deployment.py"
+      - "Scripts/Tests/test_validate_encounter_checkpoint_stage46_deployment.py"
+      - "Scripts/Tests/test_validate_encounter_checkpoint_stage47_post_deployment.py"
+      - "Docs/STAGE_46_CONTROLLED_DEPLOYMENT_ROLLBACK_READINESS.md"
+      - "Docs/STAGE_47_POST_DEPLOYMENT_VERIFICATION_EVIDENCE_RECONCILIATION.md"
+      - ".github/workflows/encounter-checkpoint-stage47-post-deployment.yml"
+  push:
+    branches: [main]
+    paths:
+      - "Data/Encounter/ProductionDeploymentEvidenceJournal.*.json"
+      - "Data/Encounter/ProductionDeploymentEvidenceAttestation.*.json"
+      - "Data/Encounter/ProductionDeploymentPlan.*.json"
+      - "Data/Encounter/ProductionEvidenceTrustKeyring.*.json"
+      - "Scripts/encounter_checkpoint_deployment_evidence.py"
+      - "Scripts/validate_encounter_checkpoint_stage46_deployment.py"
+      - "Scripts/validate_encounter_checkpoint_stage47_post_deployment.py"
+      - "Scripts/Tests/test_validate_encounter_checkpoint_stage46_deployment.py"
+      - "Scripts/Tests/test_validate_encounter_checkpoint_stage47_post_deployment.py"
+      - "Docs/STAGE_46_CONTROLLED_DEPLOYMENT_ROLLBACK_READINESS.md"
+      - "Docs/STAGE_47_POST_DEPLOYMENT_VERIFICATION_EVIDENCE_RECONCILIATION.md"
+      - ".github/workflows/encounter-checkpoint-stage47-post-deployment.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  post-deployment-evidence:
+    name: Verify signed Stage 46 execution evidence
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install cryptographic dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install "cryptography>=42.0" "rfc8785==0.1.4"
+
+      - name: Validate JSON schemas and blocked templates
+        run: |
+          python -m json.tool Data/Encounter/ProductionDeploymentEvidenceJournal.schema.json > /dev/null
+          python -m json.tool Data/Encounter/ProductionDeploymentEvidenceJournal.template.json > /dev/null
+          python -m json.tool Data/Encounter/ProductionDeploymentEvidenceAttestation.schema.json > /dev/null
+          python -m json.tool Data/Encounter/ProductionDeploymentEvidenceAttestation.template.json > /dev/null
+          python -m json.tool Data/Encounter/ProductionDeploymentPlan.schema.json > /dev/null
+          python -m compileall -q Scripts/encounter_checkpoint_deployment_evidence.py
+
+      - name: Preserve Stage 46 deployment boundary
+        run: |
+          python Scripts/validate_encounter_checkpoint_stage46_deployment.py
+          python Scripts/validate_encounter_checkpoint_stage47_post_deployment.py
+
+      - name: Run Stage 46 regression tests
+        run: python -m unittest discover -s Scripts/Tests -p "test_validate_encounter_checkpoint_stage46_deployment.py" -v
+
+      - name: Run Stage 47 signed evidence regression tests
+        run: python -m unittest discover -s Scripts/Tests -p "test_validate_encounter_checkpoint_stage47_post_deployment.py" -v
+
+      - name: Assert CI contains no deployment or rollback executor
+        run: |
+          if grep -Eiq '(^|[[:space:]])(kubectl|helm|terraform apply|aws deploy|az webapp deploy|gcloud app deploy|ssh)([[:space:]]|$)' .github/workflows/encounter-checkpoint-stage47-post-deployment.yml; then
+            echo "Stage 47 CI must remain offline and non-deploying." >&2
+            exit 1
+          fi
+          echo "Stage 47 CI has no external deployment or rollback executor."
+
+      - name: Assert release promotion remains blocked
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          journal = json.loads(Path("Data/Encounter/ProductionDeploymentEvidenceJournal.template.json").read_text(encoding="utf-8"))
+          attestation = json.loads(Path("Data/Encounter/ProductionDeploymentEvidenceAttestation.template.json").read_text(encoding="utf-8"))
+          assert journal["outcome"] == "NOT_RECORDED"
+          assert journal["rollbackOutcome"] == "NOT_RECORDED"
+          assert journal["phases"] == []
+          assert attestation["signatures"] == []
+          print("Stage 47 templates remain empty; CI did not execute or attest a production deployment.")
+          PY
