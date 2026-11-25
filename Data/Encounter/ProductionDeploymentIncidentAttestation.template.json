@@ -1,0 +1,8 @@
+{
+  "schema": "JUMANJI.ProductionDeploymentIncidentAttestation.v1",
+  "incidentId": null,
+  "incidentSha256": null,
+  "planSha256": null,
+  "canonicalization": "RFC8785",
+  "signatures": []
+}
