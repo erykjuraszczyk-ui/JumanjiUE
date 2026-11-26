@@ -1,0 +1,22 @@
+{
+  "schema": "JUMANJI.ProductionServiceReentryGate.v1",
+  "stage": 49,
+  "gateId": null,
+  "createdAtUtc": null,
+  "environment": { "class": "production", "id": null },
+  "status": "BLOCKED_MISSING_EVIDENCE",
+  "incidentBinding": {
+    "incidentId": null,
+    "incidentRecordSha256": null,
+    "incidentAttestationSha256": null,
+    "incidentReportSha256": null
+  },
+  "checks": [],
+  "approvals": [],
+  "releaseControls": {
+    "releaseDisposition": "HOLD",
+    "serviceReentryState": "HUMAN_REVIEW_REQUIRED",
+    "trafficMutationAllowed": false,
+    "promotionAllowed": false
+  }
+}
