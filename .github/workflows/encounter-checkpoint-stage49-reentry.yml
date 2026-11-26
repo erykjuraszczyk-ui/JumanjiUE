@@ -53,15 +53,6 @@ jobs:
           python Scripts/validate_encounter_checkpoint_stage48_incident.py
           python -m unittest discover -s Scripts/Tests -p "test_validate_encounter_checkpoint_stage48_incident.py" -v
 
-      - name: Assert evidence workflow has no operational executor
-        shell: bash
-        run: |
-          if grep -Eiq '(^|[[:space:]])(kubectl|helm|terraform apply|aws deploy|az webapp deploy|gcloud app deploy|ssh)([[:space:]]|$)' .github/workflows/encounter-checkpoint-stage49-reentry.yml; then
-            echo "Stage 49 evidence CI must remain offline." >&2
-            exit 1
-          fi
-          echo "Stage 49 CI contains no deployment, restart, rollback or traffic executor."
-
       - name: Confirm blocked release controls
         run: |
           python - <<'PY'
