@@ -360,9 +360,14 @@ def validate_repository(root: Path = ROOT) -> list[str]:
     }:
         errors.append("STAGE49_TEMPLATE_RELEASE_BOUNDARY_INVALID")
     workflow = (root / required[5]).read_text(encoding="utf-8")
-    for forbidden in ("kubectl", "helm", "terraform apply", "aws deploy", "az webapp deploy", "gcloud app deploy", "ssh "):
-        if forbidden in workflow.lower():
-            errors.append(f"STAGE49_WORKFLOW_MUST_BE_OFFLINE:{forbidden}")
+    allowed_actions = {"actions/checkout@v4", "actions/setup-python@v5"}
+    declared_actions = re.findall(r"(?m)^\\s+uses:\\s*([^\\s]+)", workflow)
+    if not declared_actions or any(action not in allowed_actions for action in declared_actions):
+        errors.append("STAGE49_WORKFLOW_ACTION_ALLOWLIST_INVALID")
+    if "environment:" in workflow or re.search(r"(?m)^\\s*deployment:", workflow):
+        errors.append("STAGE49_WORKFLOW_MUST_NOT_BIND_DEPLOYMENT_ENVIRONMENT")
+    if "permissions:\\n  contents: read" not in workflow:
+        errors.append("STAGE49_WORKFLOW_PERMISSIONS_MUST_BE_READ_ONLY")
     return errors
 
 
