@@ -322,6 +322,7 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - Stage42 post-restore fencing tool increments every encounter row fencing epoch and clears restored lease owners while preserving checkpoint sequence/envelope; dry-run is default and apply requires an isolated staging/DR target confirmation.
 - Stage42 CI uses disposable PostgreSQL and generated test certificates; it does not claim managed failover, PITR, real staging deployment, UE build, Android packaging or approved production SLO.
 - Stage43 evidence intake currently has no operator attachments: the required 10 evidence kinds remain pending until actual staging/DR/UE/Android/SLO artifacts are supplied and independently reviewed.
+- Stage49 post-incident service re-entry gate binds the Stage48 incident record, dual-signature attestation and verification report to 11 operational checks plus two independent approvals; its result remains human-review-only and never changes traffic or releases HOLD.
 - Checkpoint backend unit tests for concurrency, lease fencing, stale sequence, signature tampering and server authentication; Stage 33 GitHub Actions workflow.
 - AJumanjiGameMode PostLogin invokes the trusted checkpoint startup coordinator only after identity binding, profile restoration and same-server reconnect processing;
 - persistent-level director discovery requires exactly one AJumanjiWorldEncounterDirector and rejects ambiguous/missing world configuration;
