@@ -180,15 +180,16 @@ def validate_gate(
         raise GateError("GATE_SCHEMA_INVALID")
     if gate.get("status") != "SUBMITTED_FOR_HUMAN_REVIEW":
         raise GateError("GATE_NOT_SUBMITTED")
+    expected_gate_fields = {
+        "schema", "stage", "gateId", "createdAtUtc", "environment", "status",
+        "incidentBinding", "checks", "approvals", "releaseControls",
+    }
+    if set(gate) != expected_gate_fields:
+        raise GateError("GATE_FIELDS_INVALID")
     try:
         UUID(str(gate.get("gateId")))
-        UUID(str(gate.get("environment", {}).get("id")))
     except (ValueError, TypeError, AttributeError) as exc:
-        # Environment IDs are opaque, not UUIDs; validate separately below.
-        try:
-            UUID(str(gate.get("gateId")))
-        except (ValueError, TypeError, AttributeError) as inner:
-            raise GateError("GATE_ID_INVALID") from inner
+        raise GateError("GATE_ID_INVALID") from exc
     created = _utc(gate.get("createdAtUtc"), "GATE")
     if created > datetime.now(timezone.utc):
         raise GateError("GATE_TIMESTAMP_IN_FUTURE")
@@ -212,6 +213,13 @@ def validate_gate(
     incident_id = incident.get("incidentId")
     if incident.get("schema") != INCIDENT_SCHEMA or incident.get("stage") != 48:
         raise GateError("INCIDENT_RECORD_SCHEMA_INVALID")
+    if (
+        incident.get("status") != "RESOLVED_FOR_REVIEW"
+        or incident.get("serviceState") != "RESTORED"
+        or incident.get("dataIntegrityState") != "VERIFIED"
+        or incident.get("releaseDisposition") != "HOLD"
+    ):
+        raise GateError("INCIDENT_RECORD_NOT_READY_FOR_REENTRY_REVIEW")
     if incident_id != binding.get("incidentId") or report.get("incidentId") != incident_id:
         raise GateError("INCIDENT_ID_BINDING_MISMATCH")
     if _sha(incident_raw) != report.get("incidentSha256"):
@@ -263,8 +271,8 @@ def validate_gate(
         if check.get("status") != "PASS":
             raise GateError(f"REENTRY_CHECK_NOT_PASS:{check_id}")
         observed = _utc(check.get("observedAtUtc"), f"CHECK_{check_id}")
-        if observed < created:
-            raise GateError(f"REENTRY_CHECK_PRECEDES_GATE:{check_id}")
+        if observed < created or observed > datetime.now(timezone.utc):
+            raise GateError(f"REENTRY_CHECK_TIMESTAMP_OUT_OF_RANGE:{check_id}")
         summary = check.get("summary")
         if not isinstance(summary, str) or not 8 <= len(summary) <= 512:
             raise GateError(f"REENTRY_CHECK_SUMMARY_INVALID:{check_id}")
@@ -293,8 +301,8 @@ def validate_gate(
         if approval.get("decision") != "APPROVED":
             raise GateError("REENTRY_APPROVAL_NOT_APPROVED")
         approved = _utc(approval.get("approvedAtUtc"), f"APPROVAL_{role}")
-        if approved < created:
-            raise GateError("REENTRY_APPROVAL_PRECEDES_GATE")
+        if approved < created or approved > datetime.now(timezone.utc):
+            raise GateError("REENTRY_APPROVAL_TIMESTAMP_OUT_OF_RANGE")
         digest = _verify_attachment(evidence_root, approval.get("evidence"), seen_paths, total)
         approval_roles.add(role)
         reviewer_refs.add(ref)
