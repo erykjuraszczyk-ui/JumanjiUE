@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "JUMANJI Production Service Re-entry Gate v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "stage", "gateId", "createdAtUtc", "environment", "status", "incidentBinding", "checks", "approvals", "releaseControls"],
+  "properties": {
+    "schema": { "const": "JUMANJI.ProductionServiceReentryGate.v1" },
+    "stage": { "const": 49 },
+    "gateId": { "type": "string", "format": "uuid" },
+    "createdAtUtc": { "type": "string", "format": "date-time" },
+    "environment": {
+      "type": "object", "additionalProperties": false,
+      "required": ["class", "id"],
+      "properties": {
+        "class": { "const": "production" },
+        "id": { "type": "string", "minLength": 3, "maxLength": 96, "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$" }
+      }
+    },
+    "status": { "enum": ["BLOCKED_MISSING_EVIDENCE", "SUBMITTED_FOR_HUMAN_REVIEW"] },
+    "incidentBinding": {
+      "type": "object", "additionalProperties": false,
+      "required": ["incidentId", "incidentRecordSha256", "incidentAttestationSha256", "incidentReportSha256"],
+      "properties": {
+        "incidentId": { "type": "string", "format": "uuid" },
+        "incidentRecordSha256": { "$ref": "#/$defs/sha256" },
+        "incidentAttestationSha256": { "$ref": "#/$defs/sha256" },
+        "incidentReportSha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "checks": {
+      "type": "array", "minItems": 11, "maxItems": 11,
+      "items": { "$ref": "#/$defs/check" }
+    },
+    "approvals": {
+      "type": "array", "minItems": 2, "maxItems": 2,
+      "items": { "$ref": "#/$defs/approval" }
+    },
+    "releaseControls": {
+      "type": "object", "additionalProperties": false,
+      "required": ["releaseDisposition", "serviceReentryState", "trafficMutationAllowed", "promotionAllowed"],
+      "properties": {
+        "releaseDisposition": { "const": "HOLD" },
+        "serviceReentryState": { "const": "HUMAN_REVIEW_REQUIRED" },
+        "trafficMutationAllowed": { "const": false },
+        "promotionAllowed": { "const": false }
+      }
+    }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "evidence": {
+      "type": "object", "additionalProperties": false,
+      "required": ["path", "sha256", "sizeBytes", "mediaType"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1, "maxLength": 240, "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9._/-]+$" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "sizeBytes": { "type": "integer", "minimum": 1, "maximum": 26214400 },
+        "mediaType": { "enum": ["application/json", "text/plain", "text/csv", "application/octet-stream", "image/png", "image/jpeg"] }
+      }
+    },
+    "check": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "status", "observedAtUtc", "summary", "evidence"],
+      "properties": {
+        "id": { "enum": ["service_health", "database_integrity", "lease_fencing", "signing_key_verification", "queue_backlog", "telemetry_alerts", "gameplay_synthetic", "client_reconnect", "security_access", "oncall_handover", "stability_soak"] },
+        "status": { "enum": ["PASS", "FAIL"] },
+        "observedAtUtc": { "type": "string", "format": "date-time" },
+        "summary": { "type": "string", "minLength": 8, "maxLength": 512 },
+        "evidence": { "$ref": "#/$defs/evidence" }
+      }
+    },
+    "approval": {
+      "type": "object", "additionalProperties": false,
+      "required": ["role", "reviewerRef", "decision", "approvedAtUtc", "evidence"],
+      "properties": {
+        "role": { "enum": ["SERVICE_OWNER", "INDEPENDENT_OPERATIONS_REVIEWER"] },
+        "reviewerRef": { "type": "string", "minLength": 8, "maxLength": 96, "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$" },
+        "decision": { "const": "APPROVED" },
+        "approvedAtUtc": { "type": "string", "format": "date-time" },
+        "evidence": { "$ref": "#/$defs/evidence" }
+      }
+    }
+  }
+}
