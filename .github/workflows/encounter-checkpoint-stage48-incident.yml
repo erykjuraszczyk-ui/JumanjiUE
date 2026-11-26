@@ -1,0 +1,91 @@
+name: Encounter Checkpoint Stage 48 Incident Response & Rollback Evidence
+
+on:
+  pull_request:
+    paths:
+      - "Data/Encounter/ProductionDeploymentIncident*"
+      - "Data/Encounter/ProductionDeploymentPlan.*.json"
+      - "Data/Encounter/ProductionEvidenceTrustKeyring.*.json"
+      - "Scripts/encounter_checkpoint_incident_evidence.py"
+      - "Scripts/validate_encounter_checkpoint_stage47_post_deployment.py"
+      - "Scripts/validate_encounter_checkpoint_stage48_incident.py"
+      - "Scripts/Tests/test_validate_encounter_checkpoint_stage47_post_deployment.py"
+      - "Scripts/Tests/test_validate_encounter_checkpoint_stage48_incident.py"
+      - "Docs/STAGE_48_INCIDENT_RESPONSE_ROLLBACK_EVIDENCE_RECONCILIATION.md"
+      - ".github/workflows/encounter-checkpoint-stage48-incident.yml"
+  push:
+    branches: [main]
+    paths:
+      - "Data/Encounter/ProductionDeploymentIncident*"
+      - "Data/Encounter/ProductionDeploymentPlan.*.json"
+      - "Data/Encounter/ProductionEvidenceTrustKeyring.*.json"
+      - "Scripts/encounter_checkpoint_incident_evidence.py"
+      - "Scripts/validate_encounter_checkpoint_stage47_post_deployment.py"
+      - "Scripts/validate_encounter_checkpoint_stage48_incident.py"
+      - "Scripts/Tests/test_validate_encounter_checkpoint_stage47_post_deployment.py"
+      - "Scripts/Tests/test_validate_encounter_checkpoint_stage48_incident.py"
+      - "Docs/STAGE_48_INCIDENT_RESPONSE_ROLLBACK_EVIDENCE_RECONCILIATION.md"
+      - ".github/workflows/encounter-checkpoint-stage48-incident.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  stage48-incident-evidence:
+    name: Verify rollback and incident evidence without operations
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install cryptographic dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install "cryptography>=42.0" "rfc8785==0.1.4"
+
+      - name: Validate JSON schemas and blocked templates
+        run: |
+          python -m json.tool Data/Encounter/ProductionDeploymentIncidentRecord.schema.json > /dev/null
+          python -m json.tool Data/Encounter/ProductionDeploymentIncidentRecord.template.json > /dev/null
+          python -m json.tool Data/Encounter/ProductionDeploymentIncidentAttestation.schema.json > /dev/null
+          python -m json.tool Data/Encounter/ProductionDeploymentIncidentAttestation.template.json > /dev/null
+          python -m compileall -q Scripts/encounter_checkpoint_incident_evidence.py
+
+      - name: Preserve the Stage 47 success-only boundary
+        run: |
+          python Scripts/validate_encounter_checkpoint_stage47_post_deployment.py
+          python Scripts/validate_encounter_checkpoint_stage48_incident.py
+
+      - name: Run Stage 47 regression suite
+        run: python -m unittest discover -s Scripts/Tests -p "test_validate_encounter_checkpoint_stage47_post_deployment.py" -v
+
+      - name: Run Stage 48 incident evidence regression suite
+        run: python -m unittest discover -s Scripts/Tests -p "test_validate_encounter_checkpoint_stage48_incident.py" -v
+
+      - name: Assert workflow cannot deploy or roll back
+        run: |
+          if grep -Eiq '(^|[[:space:]])(kubectl|helm|terraform apply|aws deploy|az webapp deploy|gcloud app deploy|ssh)([[:space:]]|$)' .github/workflows/encounter-checkpoint-stage48-incident.yml; then
+            echo "Stage 48 evidence CI must remain offline." >&2
+            exit 1
+          fi
+          echo "Stage 48 CI contains no external deployment or rollback executor."
+
+      - name: Empty templates retain hold and no signatures
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          record = json.loads(Path("Data/Encounter/ProductionDeploymentIncidentRecord.template.json").read_text(encoding="utf-8"))
+          attestation = json.loads(Path("Data/Encounter/ProductionDeploymentIncidentAttestation.template.json").read_text(encoding="utf-8"))
+          assert record["status"] == "BLOCKED_MISSING_EVIDENCE"
+          assert record["events"] == []
+          assert record["releaseDisposition"] == "HOLD"
+          assert attestation["signatures"] == []
+          print("Stage 48 templates remain blocked; no incident or release is approved.")
+          PY

@@ -53,6 +53,7 @@ Open-world third-person adventure RPG prototype with a shared-world direction an
 - Stage 45 — Release Board Authorization & Deployment Candidate Binding: SHA-256-bound UE 5.8 Dedicated Server and Android candidate artifacts, Stage 43/44 packet/keyring binding, three independent Release Board signatures and fail-closed authorization; no deployment or production/HA/SLO promotion.
 - Stage 46 — Controlled Deployment Orchestration & Rollback Readiness: re-verifies Stage 45 signatures, requires hashed last-known-good server/Android assets, builds an operator-gated rollout plan and post-deployment evidence checklist; no automated deployment or production/HA/SLO promotion.
 - Stage 47 — Post-Deployment Verification & Evidence Reconciliation: verifies the completed four-phase Stage 46 journal, exact plan/candidate/rollback/evidence SHA-256 bindings, and two independent Ed25519 signatures; produces an offline audit report without production/HA/SLO promotion.
+- Stage 48 — Incident Response & Rollback Evidence Reconciliation: records failed, aborted and partially applied rollouts; verifies ordered recovery evidence and rollback outcome with two independent Ed25519 signatures while keeping the release on HOLD and production/HA/SLO promotion blocked.
 
 ## The nine playable Great Spirits
 1. Great Spirit I — Duch Korzeni (Root / Guardian)
@@ -139,6 +140,7 @@ The names, roles, elements and ability concepts are original gameplay proposals 
 - Docs/STAGE_45_RELEASE_BOARD_DEPLOYMENT_AUTHORIZATION.md — candidate artifact binding, three-role Release Board quorum, Ed25519 signing, exact release authorization and deployment boundary.
 - Docs/STAGE_46_CONTROLLED_DEPLOYMENT_ROLLBACK_READINESS.md — Stage 45 re-verification, rollback baseline, gated rollout sequence, operator runbook and deployment limitations.
 - Docs/STAGE_47_POST_DEPLOYMENT_VERIFICATION_EVIDENCE_RECONCILIATION.md — four-phase post-deployment evidence ledger, two-role signing, SHA-256 verification, operator steps and promotion boundaries.
+- Docs/STAGE_48_INCIDENT_RESPONSE_ROLLBACK_EVIDENCE_RECONCILIATION.md — failed-rollout incident timeline, rollback evidence, service/data restoration, dual-signature audit and release hold.
 - Data/Encounter/ProductionReleaseCandidate.schema.json and Data/Encounter/ProductionReleaseCandidate.template.json — strict release candidate manifest and empty template.
 - Data/Encounter/ProductionRollbackBaseline.schema.json and Data/Encounter/ProductionRollbackBaseline.template.json — strict production last-known-good manifest and empty baseline template.
 - Data/Encounter/ProductionDeploymentPlan.schema.json and Data/Encounter/ProductionDeploymentPlan.template.json — strict non-executing deployment plan and blocked template.

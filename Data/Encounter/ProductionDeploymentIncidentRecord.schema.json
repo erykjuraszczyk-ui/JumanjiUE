@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "JUMANJI Production Deployment Incident Record v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "stage", "incidentId", "planId", "planSha256",
+    "candidateSha256", "rollbackBaselineSha256", "environmentId",
+    "executionMode", "status", "severity", "deploymentOutcome",
+    "rollbackOutcome", "resolutionAction", "serviceState",
+    "dataIntegrityState", "releaseDisposition", "startedAtUtc",
+    "resolvedAtUtc", "events"
+  ],
+  "properties": {
+    "schema": { "const": "JUMANJI.ProductionDeploymentIncidentRecord.v1" },
+    "stage": { "const": 48 },
+    "incidentId": { "type": "string", "format": "uuid" },
+    "planId": { "type": "string", "format": "uuid" },
+    "planSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "candidateSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "rollbackBaselineSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "environmentId": { "const": "production" },
+    "executionMode": { "const": "MANUAL_OUT_OF_BAND" },
+    "status": { "enum": ["BLOCKED_MISSING_EVIDENCE", "RESOLVED_FOR_REVIEW"] },
+    "severity": { "enum": ["SEV1", "SEV2", "SEV3", "SEV4"] },
+    "deploymentOutcome": { "enum": ["ABORTED", "FAILED", "PARTIALLY_APPLIED"] },
+    "rollbackOutcome": { "enum": ["NOT_REQUIRED", "SUCCEEDED", "FAILED"] },
+    "resolutionAction": { "enum": ["ROLLBACK", "FORWARD_FIX", "TRAFFIC_ISOLATION"] },
+    "serviceState": { "const": "RESTORED" },
+    "dataIntegrityState": { "const": "VERIFIED" },
+    "releaseDisposition": { "const": "HOLD" },
+    "startedAtUtc": { "type": "string", "format": "date-time" },
+    "resolvedAtUtc": { "type": "string", "format": "date-time" },
+    "events": {
+      "type": "array",
+      "minItems": 8,
+      "maxItems": 9,
+      "items": { "$ref": "#/$defs/event" }
+    }
+  },
+  "$defs": {
+    "event": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["eventId", "eventType", "occurredAtUtc", "actorRole", "summary", "evidence"],
+      "properties": {
+        "eventId": { "type": "string", "format": "uuid" },
+        "eventType": {
+          "enum": [
+            "DETECTED", "DECLARED", "IMPACT_ASSESSED", "CONTAINED",
+            "RECOVERY_DECISION", "ROLLBACK_EXECUTED", "SERVICE_RESTORED",
+            "DATA_INTEGRITY_VERIFIED", "POST_INCIDENT_REVIEW"
+          ]
+        },
+        "occurredAtUtc": { "type": "string", "format": "date-time" },
+        "actorRole": {
+          "enum": [
+            "SERVICE_OPERATOR", "DATABASE_OPERATOR", "SECURITY_OPERATOR",
+            "UNREAL_QA_OPERATOR", "ANDROID_QA_OPERATOR", "SLO_REVIEWER",
+            "INDEPENDENT_REVIEWER", "SECURITY_REVIEWER", "DATABASE_REVIEWER",
+            "PLATFORM_REVIEWER", "QA_REVIEWER", "SERVICE_OWNER"
+          ]
+        },
+        "summary": { "type": "string", "minLength": 8, "maxLength": 512 },
+        "evidence": { "$ref": "#/$defs/evidence" }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["evidenceId", "path", "sha256", "sizeBytes", "mediaType"],
+      "properties": {
+        "evidenceId": { "type": "string", "format": "uuid" },
+        "path": {
+          "type": "string", "minLength": 1, "maxLength": 240,
+          "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9._/-]+$"
+        },
+        "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "sizeBytes": { "type": "integer", "minimum": 1, "maximum": 26214400 },
+        "mediaType": {
+          "enum": [
+            "application/json", "text/plain", "application/octet-stream",
+            "image/png", "image/jpeg", "text/csv"
+          ]
+        }
+      }
+    }
+  }
+}

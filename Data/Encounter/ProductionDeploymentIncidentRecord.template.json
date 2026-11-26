@@ -1,0 +1,22 @@
+{
+  "schema": "JUMANJI.ProductionDeploymentIncidentRecord.v1",
+  "stage": 48,
+  "incidentId": null,
+  "planId": null,
+  "planSha256": null,
+  "candidateSha256": null,
+  "rollbackBaselineSha256": null,
+  "environmentId": "production",
+  "executionMode": "MANUAL_OUT_OF_BAND",
+  "status": "BLOCKED_MISSING_EVIDENCE",
+  "severity": null,
+  "deploymentOutcome": null,
+  "rollbackOutcome": null,
+  "resolutionAction": null,
+  "serviceState": "NOT_VERIFIED",
+  "dataIntegrityState": "NOT_VERIFIED",
+  "releaseDisposition": "HOLD",
+  "startedAtUtc": null,
+  "resolvedAtUtc": null,
+  "events": []
+}
