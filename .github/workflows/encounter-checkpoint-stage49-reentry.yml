@@ -1,0 +1,71 @@
+name: Encounter Checkpoint Stage 49 Service Re-entry Evidence Gate
+
+on:
+  pull_request:
+    paths:
+      - "Data/Encounter/ProductionServiceReentryGate.*.json"
+      - "Scripts/validate_encounter_checkpoint_stage49_reentry.py"
+      - "Scripts/validate_encounter_checkpoint_stage48_incident.py"
+      - "Scripts/Tests/test_validate_encounter_checkpoint_stage49_reentry.py"
+      - "Scripts/Tests/test_validate_encounter_checkpoint_stage48_incident.py"
+      - "Docs/STAGE_49_POST_INCIDENT_SERVICE_REENTRY_OPERATIONAL_CONTINUITY_GATE.md"
+      - ".github/workflows/encounter-checkpoint-stage49-reentry.yml"
+  push:
+    branches: [main]
+    paths:
+      - "Data/Encounter/ProductionServiceReentryGate.*.json"
+      - "Scripts/validate_encounter_checkpoint_stage49_reentry.py"
+      - "Scripts/validate_encounter_checkpoint_stage48_incident.py"
+      - "Scripts/Tests/test_validate_encounter_checkpoint_stage49_reentry.py"
+      - "Scripts/Tests/test_validate_encounter_checkpoint_stage48_incident.py"
+      - "Docs/STAGE_49_POST_INCIDENT_SERVICE_REENTRY_OPERATIONAL_CONTINUITY_GATE.md"
+      - ".github/workflows/encounter-checkpoint-stage49-reentry.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  stage49-service-reentry-evidence:
+    name: Verify Stage 49 evidence without production operations
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate schema and blocked template
+        run: |
+          python -m json.tool Data/Encounter/ProductionServiceReentryGate.schema.json > /dev/null
+          python -m json.tool Data/Encounter/ProductionServiceReentryGate.template.json > /dev/null
+          python -m compileall -q Scripts/validate_encounter_checkpoint_stage49_reentry.py
+          python Scripts/validate_encounter_checkpoint_stage49_reentry.py --check-repository
+
+      - name: Run Stage 49 regression suite
+        run: python -m unittest discover -s Scripts/Tests -p "test_validate_encounter_checkpoint_stage49_reentry.py" -v
+
+      - name: Install Stage 48 cryptographic test dependencies
+        run: python -m pip install "cryptography>=42.0" "rfc8785==0.1.4"
+
+      - name: Preserve Stage 48 incident governance
+        run: |
+          python Scripts/validate_encounter_checkpoint_stage48_incident.py
+          python -m unittest discover -s Scripts/Tests -p "test_validate_encounter_checkpoint_stage48_incident.py" -v
+
+      - name: Confirm blocked release controls
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          value = json.loads(Path("Data/Encounter/ProductionServiceReentryGate.template.json").read_text(encoding="utf-8"))
+          assert value["status"] == "BLOCKED_MISSING_EVIDENCE"
+          assert value["checks"] == [] and value["approvals"] == []
+          assert value["releaseControls"]["releaseDisposition"] == "HOLD"
+          assert value["releaseControls"]["trafficMutationAllowed"] is False
+          assert value["releaseControls"]["promotionAllowed"] is False
+          print("Stage 49 template remains fail-closed.")
+          PY
